@@ -16,13 +16,12 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import AddToPlannerModal from '../components/AddToPlannerModal'
 import ComingSoonSheet from '../components/ComingSoonSheet'
 import EmptyState from '../components/EmptyState'
 import FloatingActionButton from '../components/FloatingActionButton'
 import RecipeCard from '../components/RecipeCard'
 import ScreenHeader from '../components/ScreenHeader'
-import { plannerDays, recipes as sampleRecipes } from '../data/sampleData'
+import { recipes as sampleRecipes } from '../data/sampleData'
 import { getMealIcon } from '../utils/mealIcons'
 import { getRecipeId, getRecipeKey, getVisibleRecipes } from '../utils/recipeKeys'
 import {
@@ -30,7 +29,7 @@ import {
   deleteSavedRecipe,
   getRemovedRecipeIds,
   getSavedRecipes,
-  savePlannedMeal,
+  saveWeeklyQueueItem,
 } from '../utils/localStorage'
 
 const categoryFilters = [
@@ -170,7 +169,7 @@ function RecipeActionButton({ children, icon: Icon, isDanger, onClick }) {
 }
 
 function RecipeActionsSheet({
-  onAddToPlanner,
+  onAddToWeek,
   onClose,
   onDelete,
   onEdit,
@@ -196,8 +195,8 @@ function RecipeActionsSheet({
         <RecipeActionButton icon={Pencil} onClick={onEdit}>
           Edit recipe
         </RecipeActionButton>
-        <RecipeActionButton icon={CalendarPlus} onClick={onAddToPlanner}>
-          Add to Planner
+        <RecipeActionButton icon={CalendarPlus} onClick={onAddToWeek}>
+          Add to Week
         </RecipeActionButton>
         <RecipeActionButton icon={Trash2} isDanger onClick={onDelete}>
           Delete recipe
@@ -247,20 +246,15 @@ function Recipes() {
   const [removedRecipeIds, setRemovedRecipeIds] = useState(() =>
     getRemovedRecipeIds(),
   )
-  const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [recipeForActions, setRecipeForActions] = useState(null)
   const [recipeToDelete, setRecipeToDelete] = useState(null)
   const [comingSoonMessage, setComingSoonMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('All')
-  const [plannerChoice, setPlannerChoice] = useState({
-    day: plannerDays[0].weekday,
-    mealSlot: 'dinner',
-    plannedServings: 1,
-  })
   const [successMessage, setSuccessMessage] = useState(
     location.state?.successMessage || '',
   )
+  const [addedRecipeId, setAddedRecipeId] = useState('')
 
   const allRecipes = getVisibleRecipes(
     savedRecipes,
@@ -284,57 +278,39 @@ function Recipes() {
     return matchesSearch && matchesCategory
   })
 
-  function openPlannerModal(recipe) {
-    const suggestedMealSlot = recipe.mealType?.toLowerCase()
+  function addRecipeToWeek(recipe) {
+    const recipeId = recipe.id || recipe.name
 
-    setSelectedRecipe(recipe)
     setRecipeForActions(null)
-    setPlannerChoice({
-      day: plannerDays[0].weekday,
-      mealSlot: ['breakfast', 'lunch', 'dinner'].includes(suggestedMealSlot)
-        ? suggestedMealSlot
-        : 'dinner',
-      plannedServings: recipe.servings || 1,
-    })
     setSuccessMessage('')
-  }
+    setAddedRecipeId(recipeId)
+    window.setTimeout(() => {
+      setAddedRecipeId((currentId) => (currentId === recipeId ? '' : currentId))
+    }, 1400)
 
-  function updatePlannerChoice(event) {
-    const { name, value } = event.target
-    setPlannerChoice((currentChoice) => ({
-      ...currentChoice,
-      [name]: value,
-    }))
-  }
-
-  function saveRecipeToPlanner() {
-    const plannedMeal = {
-      id: createLocalId('planned-meal'),
-      day: plannerChoice.day,
-      mealSlot: plannerChoice.mealSlot,
-      recipeName: selectedRecipe.name,
-      recipeId: selectedRecipe.id || selectedRecipe.name,
-      plannedServings:
-        Number(plannerChoice.plannedServings) || selectedRecipe.servings || 1,
+    const queueItem = {
+      id: createLocalId('weekly-queue'),
+      recipeId,
+      recipeName: recipe.name,
+      plannedServings: recipe.servings || 1,
       icon:
-        selectedRecipe.icon ||
+        recipe.icon ||
         getMealIcon({
-          mealSlot: plannerChoice.mealSlot,
-          mealType: selectedRecipe.mealType,
-          name: selectedRecipe.name,
+          mealType: recipe.mealType,
+          name: recipe.name,
         }),
+      image: recipe.image,
+      mealType: recipe.mealType,
     }
+    const queueItems = saveWeeklyQueueItem(queueItem)
+    const itemWasSaved = queueItems.some((item) => item.id === queueItem.id)
 
-    const plannedMeals = savePlannedMeal(plannedMeal)
-    const mealWasSaved = plannedMeals.some((meal) => meal.id === plannedMeal.id)
-
-    if (!mealWasSaved) {
-      setSuccessMessage('Meal could not be saved in this browser.')
-      return
-    }
-
-    setSelectedRecipe(null)
-    navigate('/planner')
+    setSuccessMessage(
+      itemWasSaved
+        ? `${recipe.name} added to Meals This Week.`
+        : 'Meal could not be saved in this browser.',
+    )
+    window.setTimeout(() => setSuccessMessage(''), 2200)
   }
 
   function openRecipeDetail(recipe) {
@@ -374,7 +350,7 @@ function Recipes() {
       />
 
       {successMessage && (
-        <div className="mt-5 flex items-center gap-3 rounded-3xl border border-green-100 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-sm">
+        <div className="fixed bottom-[6.25rem] left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 items-center gap-3 rounded-3xl border border-green-100 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-[0_14px_34px_rgba(30,41,59,0.16)]">
           <CheckCircle2 size={22} />
           <p className="font-bold">{successMessage}</p>
         </div>
@@ -392,8 +368,9 @@ function Recipes() {
         <div className="mt-5 grid gap-3">
           {filteredRecipes.map((recipe) => (
             <RecipeCard
+              addedRecipeId={addedRecipeId}
               key={recipe.id || recipe.name}
-              onAddToPlanner={openPlannerModal}
+              onAddToWeek={addRecipeToWeek}
               onOpenActions={openRecipeActions}
               onOpenRecipe={openRecipeDetail}
               recipe={recipe}
@@ -404,16 +381,8 @@ function Recipes() {
 
       <FloatingActionButton label="Add recipe" to="/recipes/add" />
 
-      <AddToPlannerModal
-        choice={plannerChoice}
-        onChangeChoice={updatePlannerChoice}
-        onClose={() => setSelectedRecipe(null)}
-        onSave={saveRecipeToPlanner}
-        recipe={selectedRecipe}
-      />
-
       <RecipeActionsSheet
-        onAddToPlanner={() => openPlannerModal(recipeForActions)}
+        onAddToWeek={() => addRecipeToWeek(recipeForActions)}
         onClose={() => setRecipeForActions(null)}
         onDelete={() => {
           setRecipeToDelete(recipeForActions)

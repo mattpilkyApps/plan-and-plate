@@ -1,13 +1,4 @@
 import {
-  DragOverlay,
-  DndContext,
-  PointerSensor,
-  useDraggable,
-  useDroppable,
-  useSensor,
-  useSensors,
-} from '@dnd-kit/core'
-import {
   BookOpen,
   CalendarDays,
   ChevronDown,
@@ -17,13 +8,14 @@ import {
   MoreVertical,
   MoveRight,
   Plus,
+  Repeat2,
   Sunrise,
   Sun,
   Trash2,
   Users,
   X,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ComingSoonSheet from '../components/ComingSoonSheet'
 import EmptyState from '../components/EmptyState'
@@ -37,7 +29,10 @@ import {
   getRemovedPlannerMealIds,
   getRemovedRecipeIds,
   getSavedRecipes,
+  getWeeklyQueueItems,
+  duplicateWeeklyQueueItem,
   removePlannedMeal,
+  removeWeeklyQueueItem,
   savePlannerSettings,
   savePlannedMeal,
   saveRemovedPlannerMealIds,
@@ -145,7 +140,7 @@ function WeekControls({
 
       <button
         className="flex items-center gap-2 text-lg font-bold tracking-tight text-stone-900"
-        onClick={onOpenSettings}
+        onClick={isEditMode ? onExitEditMode : onOpenSettings}
         type="button"
       >
         <span>
@@ -177,34 +172,12 @@ function MealHeading({ meal }) {
   )
 }
 
-function getMealDragId(item) {
+function getMealItemId(item) {
   return item.plannedMealId || item.starterMealId
 }
 
-function getMealStyle(mealSlot) {
-  return mealTypes.find((meal) => meal.key === mealSlot) || mealTypes[2]
-}
-
-function MealDragPreview({ item }) {
-  if (!item) {
-    return null
-  }
-
-  const meal = getMealStyle(item.mealSlot)
-
-  return (
-    <div
-      className={`flex min-h-10 w-36 scale-105 items-center gap-1 rounded-xl px-2 py-1.5 shadow-[0_18px_34px_rgba(30,41,59,0.24)] ring-2 ring-white ${meal.cardColor}`}
-    >
-      <span className="text-sm leading-none">{item.icon}</span>
-      <p className="line-clamp-2 flex-1 text-[0.72rem] font-bold leading-tight text-stone-800">
-        {item.name}
-      </p>
-    </div>
-  )
-}
-
 function MealCard({
+  canPlaceInSlot,
   index,
   isEditMode,
   meal,
@@ -212,14 +185,44 @@ function MealCard({
   onDeleteMeal,
   onOpenActions,
   onOpenRecipe,
+  onPlaceInSlot,
+  onStartPlacement,
 }) {
-  const dragId = getMealDragId(item)
-  const { attributes, isDragging, listeners, setNodeRef } = useDraggable({
-    id: dragId,
-    data: {
-      item,
-    },
-  })
+  const longPressTimer = useRef(null)
+  const pointerStart = useRef({ x: 0, y: 0 })
+  const ignoreNextClick = useRef(false)
+
+  function clearLongPressTimer() {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }
+
+  function handlePointerDown(event) {
+    if (isEditMode) {
+      return
+    }
+
+    pointerStart.current = {
+      x: event.clientX,
+      y: event.clientY,
+    }
+    clearLongPressTimer()
+    longPressTimer.current = window.setTimeout(() => {
+      ignoreNextClick.current = true
+      onStartPlacement(item)
+    }, 425)
+  }
+
+  function handlePointerMove(event) {
+    const xDistance = Math.abs(event.clientX - pointerStart.current.x)
+    const yDistance = Math.abs(event.clientY - pointerStart.current.y)
+
+    if (xDistance > 12 || yDistance > 12) {
+      clearLongPressTimer()
+    }
+  }
 
   function handleKeyDown(event) {
     if (event.key === 'Enter' || event.key === ' ') {
@@ -234,24 +237,33 @@ function MealCard({
 
   return (
     <div
-      {...listeners}
-      {...attributes}
-      className={`relative flex min-h-9 cursor-pointer touch-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
-        isEditMode && !isDragging ? 'planner-meal-editing' : ''
-      } ${
-        isDragging ? 'opacity-35' : ''
+      className={`relative flex min-h-9 cursor-pointer touch-manipulation select-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
+        isEditMode ? 'planner-meal-editing' : ''
       } ${meal.cardColor}`}
       onClick={(event) => {
         event.stopPropagation()
 
+        if (ignoreNextClick.current) {
+          ignoreNextClick.current = false
+          return
+        }
+
         if (isEditMode) {
+          if (canPlaceInSlot) {
+            onPlaceInSlot(item.day, item.mealSlot)
+          }
           return
         }
 
         onOpenRecipe(item)
       }}
+      onContextMenu={(event) => event.preventDefault()}
       onKeyDown={handleKeyDown}
-      ref={setNodeRef}
+      onPointerCancel={clearLongPressTimer}
+      onPointerDown={handlePointerDown}
+      onPointerLeave={clearLongPressTimer}
+      onPointerMove={handlePointerMove}
+      onPointerUp={clearLongPressTimer}
       role="button"
       style={{
         animationDelay: `${index * 70}ms`,
@@ -296,6 +308,7 @@ function MealCard({
 }
 
 function MealColumn({
+  canPlaceInSlot,
   day,
   isEditMode,
   meal,
@@ -304,41 +317,44 @@ function MealColumn({
   onExitEditMode,
   onOpenActions,
   onOpenRecipe,
+  onPlaceMeal,
+  onStartPlacement,
   showHeading,
 }) {
-  const { isOver, setNodeRef } = useDroppable({
-    id: `${day.weekday}:${meal.key}`,
-    data: {
-      day: day.weekday,
-      mealSlot: meal.key,
-    },
-  })
-
   return (
     <div className="min-w-0">
       {showHeading && <MealHeading meal={meal} />}
 
       <div
         className={`min-h-10 space-y-1 rounded-2xl transition ${
-          isOver ? 'bg-[#EAF3DE]/50 ring-2 ring-[#A8C686]' : ''
+          isEditMode ? 'bg-[#EAF3DE]/45 ring-2 ring-[#A8C686]/70' : ''
         }`}
         onClick={(event) => {
-          if (isEditMode && event.target === event.currentTarget) {
-            onExitEditMode()
+          if (isEditMode) {
+            event.stopPropagation()
+
+            if (!canPlaceInSlot) {
+              onExitEditMode()
+              return
+            }
+
+            onPlaceMeal(day.weekday, meal.key)
           }
         }}
-        ref={setNodeRef}
       >
         {items.map((item, index) => (
           <MealCard
+            canPlaceInSlot={canPlaceInSlot}
             index={index}
             isEditMode={isEditMode}
             item={item}
-            key={getMealDragId(item)}
+            key={getMealItemId(item)}
             meal={meal}
             onDeleteMeal={onDeleteMeal}
             onOpenActions={onOpenActions}
             onOpenRecipe={onOpenRecipe}
+            onPlaceInSlot={onPlaceMeal}
+            onStartPlacement={onStartPlacement}
           />
         ))}
       </div>
@@ -347,19 +363,23 @@ function MealColumn({
 }
 
 function DayCard({
+  canPlaceInSlot,
   day,
   isEditMode,
   onDeleteMeal,
   onExitEditMode,
   onOpenActions,
   onOpenRecipe,
+  onPlaceMeal,
+  onStartPlacement,
   showMealHeadings,
 }) {
   return (
     <article
       className="rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)]"
       onClick={(event) => {
-        if (isEditMode && event.target === event.currentTarget) {
+        if (isEditMode) {
+          event.stopPropagation()
           onExitEditMode()
         }
       }}
@@ -368,6 +388,7 @@ function DayCard({
         className="grid grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5"
         onClick={(event) => {
           if (isEditMode && event.target === event.currentTarget) {
+            event.stopPropagation()
             onExitEditMode()
           }
         }}
@@ -387,6 +408,7 @@ function DayCard({
 
         {mealTypes.map((meal) => (
           <MealColumn
+            canPlaceInSlot={canPlaceInSlot}
             day={day}
             isEditMode={isEditMode}
             key={meal.key}
@@ -396,6 +418,8 @@ function DayCard({
             onExitEditMode={onExitEditMode}
             onOpenActions={onOpenActions}
             onOpenRecipe={onOpenRecipe}
+            onPlaceMeal={onPlaceMeal}
+            onStartPlacement={onStartPlacement}
             showHeading={showMealHeadings}
           />
         ))}
@@ -565,6 +589,144 @@ function MealActionButton({ children, icon: Icon, isDanger, onClick }) {
   )
 }
 
+function getQueueRecipe(queueItem, recipes) {
+  return recipes.find(
+    (recipe) => (recipe.id || recipe.name) === queueItem.recipeId,
+  )
+}
+
+function getQueueDisplay(queueItem, recipes) {
+  const recipe = getQueueRecipe(queueItem, recipes)
+
+  return {
+    image: recipe?.image || queueItem.image,
+    icon: recipe?.icon || queueItem.icon || '🍽️',
+    name: recipe?.name || queueItem.recipeName || 'Recipe',
+    servings: queueItem.plannedServings || recipe?.servings || 1,
+  }
+}
+
+function WeeklyQueueSection({
+  activeQueueItem,
+  items,
+  onOpenActions,
+  onSelectItem,
+  recipes,
+}) {
+  if (items.length === 0) {
+    return null
+  }
+
+  return (
+    <section className="mt-4 rounded-3xl border border-stone-100 bg-white/80 p-3 shadow-[0_8px_24px_rgba(30,41,59,0.05)]">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm font-bold text-stone-900">Meals This Week</p>
+          <p className="text-xs font-semibold text-stone-500">
+            Tap a meal, then tap a planner slot.
+          </p>
+        </div>
+        <span className="rounded-full bg-[#EAF3DE] px-3 py-1 text-xs font-bold text-[#5A8D2B]">
+          {items.length}
+        </span>
+      </div>
+
+      <div className="no-scrollbar -mx-3 mt-3 overflow-x-auto px-3 pb-1">
+        <div className="flex w-max gap-2.5">
+          {items.map((item) => {
+            const display = getQueueDisplay(item, recipes)
+            const isActive = activeQueueItem?.id === item.id
+
+            return (
+              <article
+                className={`relative flex w-40 shrink-0 items-center gap-2 rounded-2xl border bg-[#FAF8F3] p-2 text-left shadow-sm transition active:scale-[0.98] ${
+                  isActive
+                    ? 'border-[#A8C686] ring-2 ring-[#EAF3DE]'
+                    : 'border-stone-100'
+                }`}
+                key={item.id}
+              >
+                <button
+                  className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  onClick={() => onSelectItem(item)}
+                  type="button"
+                >
+                  {display.image ? (
+                    <img
+                      alt=""
+                      className="h-10 w-10 shrink-0 rounded-xl object-cover"
+                      src={display.image}
+                    />
+                  ) : (
+                    <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-lg">
+                      {display.icon}
+                    </span>
+                  )}
+
+                  <span className="min-w-0">
+                    <span className="line-clamp-2 text-xs font-bold leading-tight text-stone-900">
+                      {display.name}
+                    </span>
+                    <span className="mt-0.5 block text-[0.68rem] font-bold text-[#5A8D2B]">
+                      Serves {display.servings}
+                    </span>
+                  </span>
+                </button>
+
+                <button
+                  aria-label={`Queue actions for ${display.name}`}
+                  className="flex h-8 w-6 shrink-0 items-center justify-center text-stone-500"
+                  onClick={() => onOpenActions(item)}
+                  type="button"
+                >
+                  <MoreVertical size={16} />
+                </button>
+              </article>
+            )
+          })}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function QueueActionsSheet({
+  item,
+  onClose,
+  onDuplicate,
+  onPlace,
+  onRemove,
+  recipes,
+}) {
+  if (!item) {
+    return null
+  }
+
+  const display = getQueueDisplay(item, recipes)
+
+  return (
+    <BottomSheet>
+      <SheetHeader
+        eyebrow="Queue actions"
+        onClose={onClose}
+        title={display.name}
+      />
+
+      <div className="mt-5 grid gap-3">
+        <MealActionButton icon={MoveRight} onClick={onPlace}>
+          Place into planner
+        </MealActionButton>
+        <MealActionButton icon={Repeat2} onClick={onDuplicate}>
+          Duplicate
+        </MealActionButton>
+        <MealActionButton icon={Trash2} isDanger onClick={onRemove}>
+          Remove from queue
+        </MealActionButton>
+      </div>
+    </BottomSheet>
+  )
+}
+
 function MealActionsModal({
   canViewRecipe,
   meal,
@@ -603,59 +765,6 @@ function MealActionsModal({
           Remove meal
         </MealActionButton>
       </div>
-    </BottomSheet>
-  )
-}
-
-function MoveMealModal({ choice, meal, onChangeChoice, onClose, onSave, days }) {
-  if (!meal) {
-    return null
-  }
-
-  return (
-    <BottomSheet>
-      <SheetHeader eyebrow="Move meal" onClose={onClose} title={meal.name} />
-
-      <div className="mt-5 grid gap-4">
-        <label>
-          <span className="text-sm font-bold text-stone-700">Day</span>
-          <select
-            className="mt-2 h-14 w-full rounded-2xl border border-stone-100 bg-white px-4 text-base font-bold text-stone-800 shadow-sm outline-none focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
-            name="day"
-            onChange={onChangeChoice}
-            value={choice.day}
-          >
-            {days.map((day) => (
-              <option key={day.weekday} value={day.weekday}>
-                {day.weekday} {day.date}
-              </option>
-            ))}
-          </select>
-        </label>
-
-        <label>
-          <span className="text-sm font-bold text-stone-700">Meal slot</span>
-          <select
-            className="mt-2 h-14 w-full rounded-2xl border border-stone-100 bg-white px-4 text-base font-bold text-stone-800 shadow-sm outline-none focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
-            name="mealSlot"
-            onChange={onChangeChoice}
-            value={choice.mealSlot}
-          >
-            <option value="breakfast">Breakfast</option>
-            <option value="lunch">Lunch</option>
-            <option value="dinner">Dinner</option>
-          </select>
-        </label>
-      </div>
-
-      <button
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)]"
-        onClick={onSave}
-        type="button"
-      >
-        <MoveRight size={21} />
-        Move Meal
-      </button>
     </BottomSheet>
   )
 }
@@ -823,15 +932,10 @@ function getRecipeForMealItem(item, recipes) {
 
 function Planner() {
   const navigate = useNavigate()
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        delay: 450,
-        tolerance: 8,
-      },
-    }),
-  )
   const [plannedMeals, setPlannedMeals] = useState(() => getPlannedMeals())
+  const [weeklyQueueItems, setWeeklyQueueItems] = useState(() =>
+    getWeeklyQueueItems(),
+  )
   const [removedPlannerMealIds, setRemovedPlannerMealIds] = useState(() =>
     getRemovedPlannerMealIds(),
   )
@@ -845,14 +949,10 @@ function Planner() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [comingSoonMessage, setComingSoonMessage] = useState('')
   const [activeMealModal, setActiveMealModal] = useState('')
-  const [isEditMode, setIsEditMode] = useState(false)
-  const [activeDraggedMeal, setActiveDraggedMeal] = useState(null)
+  const [placementSelection, setPlacementSelection] = useState(null)
+  const [activeQueueItem, setActiveQueueItem] = useState(null)
   const [lastRemovedMeal, setLastRemovedMeal] = useState(null)
   const [selectedMeal, setSelectedMeal] = useState(null)
-  const [moveChoice, setMoveChoice] = useState({
-    day: plannerDays[0].weekday,
-    mealSlot: 'dinner',
-  })
   const [servingsChoice, setServingsChoice] = useState(1)
   const [availableRecipes] = useState(() =>
     getVisibleRecipes(getSavedRecipes(), sampleRecipes, getRemovedRecipeIds()),
@@ -863,6 +963,7 @@ function Planner() {
     recipeId: sampleRecipes[0].id || sampleRecipes[0].name,
     plannedServings: sampleRecipes[0].servings,
   }))
+  const isEditMode = Boolean(placementSelection)
   const displayedPlannerDays = reorderPlannerDays(
     plannerDays,
     plannerSettings.weekStartDay,
@@ -949,10 +1050,6 @@ function Planner() {
 
   function openMealActions(item) {
     setSelectedMeal(item)
-    setMoveChoice({
-      day: item.day,
-      mealSlot: item.mealSlot,
-    })
     setServingsChoice(item.plannedServings || 1)
     setActiveMealModal('actions')
   }
@@ -1015,13 +1112,122 @@ function Planner() {
     setShowAddMealModal(false)
   }
 
-  function updateMoveChoice(event) {
-    const { name, value } = event.target
+  function createPlannedMealFromRecipe(recipe, day, mealSlot, plannedServings) {
+    return {
+      id: createLocalId('planned-meal'),
+      day,
+      mealSlot,
+      recipeName: recipe.name,
+      recipeId: recipe.id || recipe.name,
+      plannedServings: Number(plannedServings) || recipe.servings || 1,
+      icon:
+        recipe.icon ||
+        getMealIcon({
+          mealSlot,
+          mealType: recipe.mealType,
+          name: recipe.name,
+        }),
+    }
+  }
 
-    setMoveChoice((currentChoice) => ({
-      ...currentChoice,
-      [name]: value,
-    }))
+  function placeQueuedMeal(queueItem, day, mealSlot) {
+    const recipe = getQueueRecipe(queueItem, availableRecipes)
+    const plannedMeal = recipe
+      ? createPlannedMealFromRecipe(
+          recipe,
+          day,
+          mealSlot,
+          queueItem.plannedServings || recipe.servings,
+        )
+      : {
+          id: createLocalId('planned-meal'),
+          day,
+          mealSlot,
+          recipeName: queueItem.recipeName,
+          recipeId: queueItem.recipeId,
+          plannedServings: Number(queueItem.plannedServings) || 1,
+          icon:
+            queueItem.icon ||
+            getMealIcon({
+              mealSlot,
+              mealType: queueItem.mealType,
+              name: queueItem.recipeName,
+            }),
+        }
+
+    setPlannedMeals(savePlannedMeal(plannedMeal))
+    setWeeklyQueueItems(removeWeeklyQueueItem(queueItem.id))
+  }
+
+  function startPlacementFromQueue(queueItem) {
+    setPlacementSelection({
+      type: 'queue',
+      item: queueItem,
+    })
+    setActiveQueueItem(null)
+    setLastRemovedMeal(null)
+  }
+
+  function startPlacementFromMeal(item, mode = 'delete') {
+    setPlacementSelection({
+      type: 'meal',
+      item,
+      mode,
+    })
+    setActiveMealModal('')
+    setSelectedMeal(null)
+    setLastRemovedMeal(null)
+  }
+
+  function placeSelectionInSlot(day, mealSlot) {
+    if (!placementSelection) {
+      return
+    }
+
+    if (placementSelection.type === 'queue') {
+      placeQueuedMeal(placementSelection.item, day, mealSlot)
+    }
+
+    if (placementSelection.type === 'meal') {
+      moveMealToSlot(placementSelection.item, day, mealSlot)
+      if (placementSelection.item.plannedMealId) {
+        setPlacementSelection({
+          type: 'meal',
+          item: {
+            ...placementSelection.item,
+            day,
+            mealSlot,
+          },
+          mode: placementSelection.mode,
+        })
+        return
+      }
+    }
+
+    if (placementSelection.type === 'queue') {
+      setPlacementSelection(null)
+    }
+  }
+
+  function duplicateQueueItem() {
+    if (!activeQueueItem) {
+      return
+    }
+
+    setWeeklyQueueItems(duplicateWeeklyQueueItem(activeQueueItem.id))
+    setActiveQueueItem(null)
+  }
+
+  function removeQueueItem() {
+    if (!activeQueueItem) {
+      return
+    }
+
+    setWeeklyQueueItems(removeWeeklyQueueItem(activeQueueItem.id))
+    if (placementSelection?.item?.id === activeQueueItem.id) {
+      setPlacementSelection(null)
+    }
+    setActiveQueueItem(null)
   }
 
   function updateDraftPlannerSettings(event) {
@@ -1098,13 +1304,6 @@ function Planner() {
     }
   }
 
-  function moveSelectedMeal() {
-    updateSelectedMeal({
-      day: moveChoice.day,
-      mealSlot: moveChoice.mealSlot,
-    })
-  }
-
   function saveSelectedMealServings() {
     updateSelectedMeal({
       plannedServings: Number(servingsChoice) || selectedMeal.plannedServings || 1,
@@ -1168,29 +1367,6 @@ function Planner() {
         mealSlot,
       })
     }
-  }
-
-  function handleDragStart(event) {
-    const mealItem = event.active.data.current?.item
-
-    setIsEditMode(true)
-    setActiveDraggedMeal(mealItem || null)
-    setLastRemovedMeal(null)
-  }
-
-  function handleDragEnd(event) {
-    const mealItem = event.active.data.current?.item
-    const dropTarget = event.over?.data.current
-
-    if (mealItem && dropTarget) {
-      moveMealToSlot(mealItem, dropTarget.day, dropTarget.mealSlot)
-    }
-
-    setActiveDraggedMeal(null)
-  }
-
-  function handleDragCancel() {
-    setActiveDraggedMeal(null)
   }
 
   function deleteMealWithUndo(item) {
@@ -1259,16 +1435,38 @@ function Planner() {
     setLastRemovedMeal(null)
   }
 
+  useEffect(() => {
+    if (!lastRemovedMeal) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setLastRemovedMeal(null)
+    }, 3500)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [lastRemovedMeal])
+
   const selectedMealRecipe = selectedMeal
     ? getRecipeForMealItem(selectedMeal, availableRecipes)
     : null
+  const shouldShowPlannerGrid =
+    plannedMealCount > 0 ||
+    weeklyQueueItems.length > 0 ||
+    Boolean(placementSelection)
+  const canPlaceInSlot =
+    placementSelection?.type === 'queue' || placementSelection?.mode === 'move'
 
   return (
     <section
       className="relative"
       onClick={(event) => {
+        if (lastRemovedMeal && event.target === event.currentTarget) {
+          setLastRemovedMeal(null)
+        }
+
         if (isEditMode && event.target === event.currentTarget) {
-          setIsEditMode(false)
+          setPlacementSelection(null)
         }
       }}
     >
@@ -1278,48 +1476,67 @@ function Planner() {
         weekRange={weekRange}
         weekStartLabel={weekStartLabel}
       />
-      <DndContext
-        onDragCancel={handleDragCancel}
-        onDragEnd={handleDragEnd}
-        onDragStart={handleDragStart}
-        sensors={sensors}
-      >
-        <WeekControls
-          days={displayedPlannerDays}
-          isEditMode={isEditMode}
-          onExitEditMode={() => setIsEditMode(false)}
-          onOpenSettings={openPlannerSettings}
-          onShowComingSoon={() =>
-            setComingSoonMessage(multiWeekComingSoonMessage)
-          }
-        />
 
-        {plannedMealCount === 0 ? (
-          <div className="mt-4">
-            <EmptyState icon={CalendarDays} title="No meals planned">
-              Add a meal to start building your week.
-            </EmptyState>
-          </div>
-        ) : (
-          <div className="mt-3 space-y-2.5 pb-24">
-            {plannerDaysWithSavedMeals.map((day, index) => (
-              <DayCard
-                day={day}
-                isEditMode={isEditMode}
-                key={day.weekday}
-                onDeleteMeal={deleteMealWithUndo}
-                onExitEditMode={() => setIsEditMode(false)}
-                onOpenActions={openMealActions}
-                onOpenRecipe={openMealRecipe}
-                showMealHeadings={index === 0}
-              />
-            ))}
-          </div>
-        )}
-        <DragOverlay>
-          <MealDragPreview item={activeDraggedMeal} />
-        </DragOverlay>
-      </DndContext>
+      <WeeklyQueueSection
+        activeQueueItem={
+          placementSelection?.type === 'queue' ? placementSelection.item : null
+        }
+        items={weeklyQueueItems}
+        onOpenActions={setActiveQueueItem}
+        onSelectItem={startPlacementFromQueue}
+        recipes={availableRecipes}
+      />
+
+      {placementSelection && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-3xl border border-[#A8C686]/60 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-sm">
+          <p className="text-sm font-bold">
+            Tap a planner slot to place {placementSelection.item.recipeName || placementSelection.item.name}.
+          </p>
+          <button
+            className="rounded-full bg-white px-3 py-1.5 text-xs font-bold shadow-sm"
+            onClick={() => setPlacementSelection(null)}
+            type="button"
+          >
+            Cancel
+          </button>
+        </div>
+      )}
+
+      <WeekControls
+        days={displayedPlannerDays}
+        isEditMode={isEditMode}
+        onExitEditMode={() => setPlacementSelection(null)}
+        onOpenSettings={openPlannerSettings}
+        onShowComingSoon={() =>
+          setComingSoonMessage(multiWeekComingSoonMessage)
+        }
+      />
+
+      {shouldShowPlannerGrid ? (
+        <div className="mt-3 space-y-2.5 pb-24">
+          {plannerDaysWithSavedMeals.map((day, index) => (
+            <DayCard
+              canPlaceInSlot={canPlaceInSlot}
+              day={day}
+              isEditMode={isEditMode}
+              key={day.weekday}
+              onDeleteMeal={deleteMealWithUndo}
+              onExitEditMode={() => setPlacementSelection(null)}
+              onOpenActions={openMealActions}
+              onOpenRecipe={openMealRecipe}
+              onPlaceMeal={placeSelectionInSlot}
+              onStartPlacement={startPlacementFromMeal}
+              showMealHeadings={index === 0}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-4">
+          <EmptyState icon={CalendarDays} title="No meals planned">
+            Add meals to your weekly queue to start building your week.
+          </EmptyState>
+        </div>
+      )}
 
       <FloatingActionButton label="Add meal" onClick={openAddMealModal} />
 
@@ -1344,18 +1561,9 @@ function Planner() {
         meal={activeMealModal === 'actions' ? selectedMeal : null}
         onChangeServings={() => setActiveMealModal('servings')}
         onClose={closeMealModals}
-        onMove={() => setActiveMealModal('move')}
+        onMove={() => startPlacementFromMeal(selectedMeal, 'move')}
         onRemove={() => removeMealFromPlanner(selectedMeal)}
         onViewRecipe={viewSelectedMealRecipe}
-      />
-
-      <MoveMealModal
-        choice={moveChoice}
-        days={displayedPlannerDays}
-        meal={activeMealModal === 'move' ? selectedMeal : null}
-        onChangeChoice={updateMoveChoice}
-        onClose={closeMealModals}
-        onSave={moveSelectedMeal}
       />
 
       <ServingsModal
@@ -1374,6 +1582,15 @@ function Planner() {
           settings={draftPlannerSettings}
         />
       )}
+
+      <QueueActionsSheet
+        item={activeQueueItem}
+        onClose={() => setActiveQueueItem(null)}
+        onDuplicate={duplicateQueueItem}
+        onPlace={() => startPlacementFromQueue(activeQueueItem)}
+        onRemove={removeQueueItem}
+        recipes={availableRecipes}
+      />
 
       <ComingSoonSheet
         message={comingSoonMessage}

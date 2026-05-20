@@ -1,6 +1,7 @@
 import {
   ArrowLeft,
   CalendarPlus,
+  CheckCircle2,
   Clock,
   Pencil,
   Trash2,
@@ -9,9 +10,8 @@ import {
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import AddToPlannerModal from '../components/AddToPlannerModal'
 import EmptyState from '../components/EmptyState'
-import { plannerDays, recipes as sampleRecipes } from '../data/sampleData'
+import { recipes as sampleRecipes } from '../data/sampleData'
 import { getMealIcon } from '../utils/mealIcons'
 import {
   findRecipeByKey,
@@ -24,7 +24,7 @@ import {
   deleteSavedRecipe,
   getRemovedRecipeIds,
   getSavedRecipes,
-  savePlannedMeal,
+  saveWeeklyQueueItem,
 } from '../utils/localStorage'
 
 function InfoPill({ icon: Icon, label, value }) {
@@ -120,13 +120,9 @@ function RecipeDetail() {
     getRemovedRecipeIds(),
   )
   const recipe = findRecipeByKey(allRecipes, recipeKey)
-  const [selectedRecipe, setSelectedRecipe] = useState(null)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [plannerChoice, setPlannerChoice] = useState({
-    day: plannerDays[0].weekday,
-    mealSlot: 'dinner',
-    plannedServings: 1,
-  })
+  const [successMessage, setSuccessMessage] = useState('')
+  const [wasJustAdded, setWasJustAdded] = useState(false)
 
   if (!recipe) {
     return (
@@ -151,50 +147,33 @@ function RecipeDetail() {
   const ingredients = getIngredientLines(recipe)
   const method = recipe.method || recipe.instructions || ''
 
-  function openPlannerModal() {
-    const suggestedMealSlot = category.toLowerCase()
+  function addRecipeToWeek() {
+    setWasJustAdded(true)
+    window.setTimeout(() => setWasJustAdded(false), 1400)
 
-    setSelectedRecipe(recipe)
-    setPlannerChoice({
-      day: plannerDays[0].weekday,
-      mealSlot: ['breakfast', 'lunch', 'dinner'].includes(suggestedMealSlot)
-        ? suggestedMealSlot
-        : 'dinner',
-      plannedServings: servings,
-    })
-  }
-
-  function updatePlannerChoice(event) {
-    const { name, value } = event.target
-    setPlannerChoice((currentChoice) => ({
-      ...currentChoice,
-      [name]: value,
-    }))
-  }
-
-  function saveRecipeToPlanner() {
-    const plannedMeal = {
-      id: createLocalId('planned-meal'),
-      day: plannerChoice.day,
-      mealSlot: plannerChoice.mealSlot,
+    const queueItem = {
+      id: createLocalId('weekly-queue'),
       recipeName: recipe.name,
       recipeId: recipe.id || recipe.name,
-      plannedServings: Number(plannerChoice.plannedServings) || servings,
+      plannedServings: servings,
       icon:
         recipe.icon ||
         getMealIcon({
-          mealSlot: plannerChoice.mealSlot,
           mealType: category,
           name: recipe.name,
         }),
+      image: recipe.image,
+      mealType: category,
     }
+    const queueItems = saveWeeklyQueueItem(queueItem)
+    const itemWasSaved = queueItems.some((item) => item.id === queueItem.id)
 
-    const plannedMeals = savePlannedMeal(plannedMeal)
-    const mealWasSaved = plannedMeals.some((meal) => meal.id === plannedMeal.id)
-
-    if (mealWasSaved) {
-      navigate('/planner')
-    }
+    setSuccessMessage(
+      itemWasSaved
+        ? `${recipe.name} added to Meals This Week.`
+        : 'Meal could not be saved in this browser.',
+    )
+    window.setTimeout(() => setSuccessMessage(''), 2200)
   }
 
   function deleteRecipe() {
@@ -248,6 +227,13 @@ function RecipeDetail() {
           </p>
         )}
       </div>
+
+      {successMessage && (
+        <div className="fixed bottom-[6.25rem] left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 items-center gap-3 rounded-3xl border border-green-100 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-[0_14px_34px_rgba(30,41,59,0.16)]">
+          <CheckCircle2 size={22} />
+          <p className="font-bold">{successMessage}</p>
+        </div>
+      )}
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         <InfoPill icon={Clock} label="Prep" value={prepTime} />
@@ -306,21 +292,17 @@ function RecipeDetail() {
       </div>
 
       <button
-        className="sticky bottom-[6.4rem] mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)] transition hover:scale-[1.01]"
-        onClick={openPlannerModal}
+        className={`sticky bottom-[6.4rem] mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-white transition active:scale-[0.96] ${
+          wasJustAdded
+            ? 'bg-[#466F22] shadow-[0_16px_28px_rgba(70,111,34,0.28)]'
+            : 'bg-[#5A8D2B] shadow-[0_12px_24px_rgba(90,141,43,0.3)] hover:scale-[1.01]'
+        }`}
+        onClick={addRecipeToWeek}
         type="button"
       >
         <CalendarPlus size={21} />
-        Add to Planner
+        {wasJustAdded ? 'Added to Week' : 'Add to Week'}
       </button>
-
-      <AddToPlannerModal
-        choice={plannerChoice}
-        onChangeChoice={updatePlannerChoice}
-        onClose={() => setSelectedRecipe(null)}
-        onSave={saveRecipeToPlanner}
-        recipe={selectedRecipe}
-      />
 
       {showDeleteConfirm && (
         <DeleteRecipeModal

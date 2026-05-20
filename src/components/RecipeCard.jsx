@@ -64,12 +64,20 @@ function SmallPill({ icon: Icon, children, className }) {
   )
 }
 
-function RecipeCard({ onAddToPlanner, onOpenActions, onOpenRecipe, recipe }) {
+function RecipeCard({
+  addedRecipeId,
+  onAddToWeek,
+  onOpenActions,
+  onOpenRecipe,
+  recipe,
+}) {
   const mealStyle = mealStyles[recipe.mealType] || mealStyles.Dinner
   const MealIcon = mealStyle.Icon
   const firstBadge = recipe.badges?.[0] || 'Saved Recipe'
   const badgeStyle = badgeStyles[firstBadge] || badgeStyles['Saved Recipe']
   const BadgeIcon = badgeStyle.Icon
+  const recipeId = recipe.id || recipe.name
+  const wasJustAdded = addedRecipeId === recipeId
 
   return (
     <article
@@ -128,15 +136,19 @@ function RecipeCard({ onAddToPlanner, onOpenActions, onOpenRecipe, recipe }) {
         </div>
 
         <button
-          className="mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-2xl bg-[#EAF3DE] text-sm font-bold text-[#5A8D2B] transition hover:scale-[1.01]"
+          className={`mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-sm font-bold transition active:scale-[0.96] ${
+            wasJustAdded
+              ? 'bg-[#5A8D2B] text-white shadow-[0_10px_20px_rgba(90,141,43,0.22)]'
+              : 'bg-[#EAF3DE] text-[#5A8D2B] hover:scale-[1.01]'
+          }`}
           onClick={(event) => {
             event.stopPropagation()
-            onAddToPlanner(recipe)
+            onAddToWeek(recipe)
           }}
           type="button"
         >
           <CalendarPlus size={18} />
-          Add to Planner
+          {wasJustAdded ? 'Added' : 'Add to Week'}
         </button>
       </div>
     </article>

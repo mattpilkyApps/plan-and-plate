@@ -1,5 +1,6 @@
 const SAVED_RECIPES_KEY = 'plan-and-plate-recipes'
 const PLANNED_MEALS_KEY = 'plan-and-plate-planned-meals'
+const WEEKLY_QUEUE_KEY = 'plan-and-plate-weekly-queue'
 const CLEARED_SHOPPING_ITEMS_KEY = 'plan-and-plate-cleared-shopping-items'
 const MANUAL_SHOPPING_ITEMS_KEY = 'plan-and-plate-manual-shopping-items'
 const REMOVED_PLANNER_MEALS_KEY = 'plan-and-plate-removed-planner-meals'
@@ -83,6 +84,7 @@ export function updateSavedRecipe(updatedRecipe) {
   }
 
   syncPlannedMealsForRecipe(updatedRecipe)
+  syncWeeklyQueueForRecipe(updatedRecipe)
   saveRemovedRecipeIds(
     getRemovedRecipeIds().filter((recipeId) => recipeId !== updatedRecipe.id),
   )
@@ -100,6 +102,7 @@ export function deleteSavedRecipe(recipeId) {
   }
 
   removePlannedMealsForRecipe(recipeId)
+  removeWeeklyQueueItemsForRecipe(recipeId)
   saveRemovedRecipeIds([...getRemovedRecipeIds(), recipeId])
 
   return nextRecipes
@@ -162,6 +165,82 @@ export function updatePlannedMeal(updatedMeal) {
   }
 
   return nextPlannedMeals
+}
+
+export function getWeeklyQueueItems() {
+  return readFromStorage(WEEKLY_QUEUE_KEY, [])
+}
+
+export function saveWeeklyQueueItem(queueItem) {
+  const queueItems = getWeeklyQueueItems()
+  const nextQueueItems = [queueItem, ...queueItems]
+  const didSave = writeToStorage(WEEKLY_QUEUE_KEY, nextQueueItems)
+
+  if (!didSave) {
+    return queueItems
+  }
+
+  return nextQueueItems
+}
+
+export function duplicateWeeklyQueueItem(queueItemId) {
+  const queueItems = getWeeklyQueueItems()
+  const queueItem = queueItems.find((item) => item.id === queueItemId)
+
+  if (!queueItem) {
+    return queueItems
+  }
+
+  const copiedQueueItem = {
+    ...queueItem,
+    id: createLocalId('weekly-queue'),
+  }
+  const nextQueueItems = [copiedQueueItem, ...queueItems]
+  const didSave = writeToStorage(WEEKLY_QUEUE_KEY, nextQueueItems)
+
+  if (!didSave) {
+    return queueItems
+  }
+
+  return nextQueueItems
+}
+
+export function removeWeeklyQueueItem(queueItemId) {
+  const queueItems = getWeeklyQueueItems()
+  const nextQueueItems = queueItems.filter((item) => item.id !== queueItemId)
+  const didSave = writeToStorage(WEEKLY_QUEUE_KEY, nextQueueItems)
+
+  if (!didSave) {
+    return queueItems
+  }
+
+  return nextQueueItems
+}
+
+function syncWeeklyQueueForRecipe(recipe) {
+  const queueItems = getWeeklyQueueItems()
+  const nextQueueItems = queueItems.map((item) => {
+    if (item.recipeId !== recipe.id) {
+      return item
+    }
+
+    return {
+      ...item,
+      recipeName: recipe.name,
+      icon: recipe.icon || item.icon,
+      image: recipe.image || item.image,
+      mealType: recipe.mealType || item.mealType,
+    }
+  })
+
+  writeToStorage(WEEKLY_QUEUE_KEY, nextQueueItems)
+}
+
+function removeWeeklyQueueItemsForRecipe(recipeId) {
+  const queueItems = getWeeklyQueueItems()
+  const nextQueueItems = queueItems.filter((item) => item.recipeId !== recipeId)
+
+  writeToStorage(WEEKLY_QUEUE_KEY, nextQueueItems)
 }
 
 function syncPlannedMealsForRecipe(recipe) {
