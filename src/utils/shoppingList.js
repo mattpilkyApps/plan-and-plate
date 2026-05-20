@@ -1,4 +1,4 @@
-import { parseIngredients } from './ingredientParser.js'
+import { parseIngredientLine, parseIngredients } from './ingredientParser.js'
 
 export const shoppingCategoryOptions = [
   'Fresh Produce',
@@ -70,7 +70,13 @@ function getIngredientCategory(ingredientName) {
 
 function getRecipeIngredients(recipe) {
   if (recipe.parsedIngredients?.length) {
-    return recipe.parsedIngredients
+    return recipe.parsedIngredients.map((ingredient) => {
+      if (ingredient.quantity || !ingredient.rawText) {
+        return ingredient
+      }
+
+      return parseIngredientLine(ingredient.rawText) || ingredient
+    })
   }
 
   if (recipe.ingredients) {

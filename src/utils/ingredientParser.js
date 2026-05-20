@@ -33,26 +33,21 @@ function splitAmountAndName(line) {
   }
 }
 
-export function parseIngredientLine(line) {
-  const rawText = line.trim()
+function splitNameAndAmount(line) {
+  const match = line.match(/^(.+?)\s+(\d+(?:\.\d+)?)(?:\s*)?([a-zA-Z]+)?$/)
 
-  if (!rawText) {
+  if (!match) {
     return null
   }
 
-  const fallbackIngredient = {
-    rawText,
-    quantity: '',
-    unit: '',
-    name: rawText,
+  return {
+    amount: match[2],
+    possibleUnit: match[3] || '',
+    restOfLine: match[1],
   }
+}
 
-  const parsedLine = splitAmountAndName(rawText)
-
-  if (!parsedLine) {
-    return fallbackIngredient
-  }
-
+function buildIngredientFromParts(rawText, parsedLine) {
   const unit = parsedLine.possibleUnit.toLowerCase()
 
   if (unit && knownUnits.includes(unit)) {
@@ -107,7 +102,41 @@ export function parseIngredientLine(line) {
     }
   }
 
-  return fallbackIngredient
+  return null
+}
+
+export function parseIngredientLine(line) {
+  const rawText = line.trim()
+
+  if (!rawText) {
+    return null
+  }
+
+  const fallbackIngredient = {
+    rawText,
+    quantity: '',
+    unit: '',
+    name: rawText,
+  }
+
+  const parsedLine = splitAmountAndName(rawText)
+
+  if (parsedLine) {
+    return buildIngredientFromParts(rawText, parsedLine) || fallbackIngredient
+  }
+
+  const trailingAmountLine = splitNameAndAmount(rawText)
+
+  if (trailingAmountLine) {
+    return (
+      buildIngredientFromParts(rawText, trailingAmountLine) ||
+      fallbackIngredient
+    )
+  }
+
+  if (!trailingAmountLine) {
+    return fallbackIngredient
+  }
 }
 
 export function parseIngredients(ingredientsText) {
