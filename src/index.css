@@ -3,6 +3,21 @@
 @tailwind utilities;
 
 @layer utilities {
+  @keyframes planner-meal-edit {
+    0%,
+    100% {
+      rotate: -0.45deg;
+    }
+
+    50% {
+      rotate: 0.45deg;
+    }
+  }
+
+  .planner-meal-editing {
+    animation: planner-meal-edit 1.4s ease-in-out infinite;
+  }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

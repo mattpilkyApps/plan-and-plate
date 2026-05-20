@@ -1,4 +1,13 @@
 import {
+  DragOverlay,
+  DndContext,
+  PointerSensor,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core'
+import {
   BookOpen,
   CalendarDays,
   ChevronDown,
@@ -103,20 +112,36 @@ function PlannerHeader({
   )
 }
 
-function WeekControls({ days, onOpenSettings, onShowComingSoon }) {
+function WeekControls({
+  days,
+  isEditMode,
+  onExitEditMode,
+  onOpenSettings,
+  onShowComingSoon,
+}) {
   const firstDay = days[0]
   const lastDay = days[days.length - 1]
 
   return (
     <div className="mt-4 flex items-center justify-between">
-      <button
-        aria-label="Previous week"
-        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
-        onClick={onShowComingSoon}
-        type="button"
-      >
-        <ChevronLeft size={26} />
-      </button>
+      {isEditMode ? (
+        <button
+          className="flex h-12 items-center justify-center rounded-2xl bg-[#5A8D2B] px-5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(90,141,43,0.24)] transition active:scale-[0.96]"
+          onClick={onExitEditMode}
+          type="button"
+        >
+          Done
+        </button>
+      ) : (
+        <button
+          aria-label="Previous week"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
+          onClick={onShowComingSoon}
+          type="button"
+        >
+          <ChevronLeft size={26} />
+        </button>
+      )}
 
       <button
         className="flex items-center gap-2 text-lg font-bold tracking-tight text-stone-900"
@@ -152,53 +177,166 @@ function MealHeading({ meal }) {
   )
 }
 
-function MealCard({ meal, item, onOpenActions, onOpenRecipe }) {
+function getMealDragId(item) {
+  return item.plannedMealId || item.starterMealId
+}
+
+function getMealStyle(mealSlot) {
+  return mealTypes.find((meal) => meal.key === mealSlot) || mealTypes[2]
+}
+
+function MealDragPreview({ item }) {
+  if (!item) {
+    return null
+  }
+
+  const meal = getMealStyle(item.mealSlot)
+
+  return (
+    <div
+      className={`flex min-h-10 w-36 scale-105 items-center gap-1 rounded-xl px-2 py-1.5 shadow-[0_18px_34px_rgba(30,41,59,0.24)] ring-2 ring-white ${meal.cardColor}`}
+    >
+      <span className="text-sm leading-none">{item.icon}</span>
+      <p className="line-clamp-2 flex-1 text-[0.72rem] font-bold leading-tight text-stone-800">
+        {item.name}
+      </p>
+    </div>
+  )
+}
+
+function MealCard({
+  index,
+  isEditMode,
+  meal,
+  item,
+  onDeleteMeal,
+  onOpenActions,
+  onOpenRecipe,
+}) {
+  const dragId = getMealDragId(item)
+  const { attributes, isDragging, listeners, setNodeRef } = useDraggable({
+    id: dragId,
+    data: {
+      item,
+    },
+  })
+
   function handleKeyDown(event) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
+      if (isEditMode) {
+        return
+      }
+
       onOpenRecipe(item)
     }
   }
 
   return (
     <div
-      className={`relative flex min-h-9 cursor-pointer items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${meal.cardColor}`}
-      onClick={() => onOpenRecipe(item)}
+      {...listeners}
+      {...attributes}
+      className={`relative flex min-h-9 cursor-pointer touch-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
+        isEditMode && !isDragging ? 'planner-meal-editing' : ''
+      } ${
+        isDragging ? 'opacity-35' : ''
+      } ${meal.cardColor}`}
+      onClick={(event) => {
+        event.stopPropagation()
+
+        if (isEditMode) {
+          return
+        }
+
+        onOpenRecipe(item)
+      }}
       onKeyDown={handleKeyDown}
+      ref={setNodeRef}
       role="button"
+      style={{
+        animationDelay: `${index * 70}ms`,
+      }}
       tabIndex={0}
     >
+      {isEditMode && (
+        <button
+          aria-label={`Remove ${item.name}`}
+          className="absolute -left-1.5 -top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-[0_6px_12px_rgba(239,68,68,0.28)] ring-2 ring-white"
+          onClick={(event) => {
+            event.stopPropagation()
+            onDeleteMeal(item)
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+          type="button"
+        >
+          <X size={12} strokeWidth={3} />
+        </button>
+      )}
       <span className="text-sm leading-none">{item.icon}</span>
       <p className="line-clamp-2 flex-1 pr-4 text-[0.68rem] font-bold leading-tight text-stone-800">
         {item.name}
       </p>
-      <button
-        aria-label={`Meal actions for ${item.name}`}
-        className={`absolute right-0.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ${meal.textColor}`}
-        onClick={(event) => {
-          event.stopPropagation()
-          onOpenActions(item)
-        }}
-        title="Meal actions"
-        type="button"
-      >
-        <MoreVertical size={16} />
-      </button>
+      {!isEditMode && (
+        <button
+          aria-label={`Meal actions for ${item.name}`}
+          className={`absolute right-0.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ${meal.textColor}`}
+          onClick={(event) => {
+            event.stopPropagation()
+            onOpenActions(item)
+          }}
+          onPointerDown={(event) => event.stopPropagation()}
+          title="Meal actions"
+          type="button"
+        >
+          <MoreVertical size={16} />
+        </button>
+      )}
     </div>
   )
 }
 
-function MealColumn({ meal, items, onOpenActions, onOpenRecipe, showHeading }) {
+function MealColumn({
+  day,
+  isEditMode,
+  meal,
+  items,
+  onDeleteMeal,
+  onExitEditMode,
+  onOpenActions,
+  onOpenRecipe,
+  showHeading,
+}) {
+  const { isOver, setNodeRef } = useDroppable({
+    id: `${day.weekday}:${meal.key}`,
+    data: {
+      day: day.weekday,
+      mealSlot: meal.key,
+    },
+  })
+
   return (
     <div className="min-w-0">
       {showHeading && <MealHeading meal={meal} />}
 
-      <div className="space-y-1">
+      <div
+        className={`min-h-10 space-y-1 rounded-2xl transition ${
+          isOver ? 'bg-[#EAF3DE]/50 ring-2 ring-[#A8C686]' : ''
+        }`}
+        onClick={(event) => {
+          if (isEditMode && event.target === event.currentTarget) {
+            onExitEditMode()
+          }
+        }}
+        ref={setNodeRef}
+      >
         {items.map((item, index) => (
           <MealCard
+            index={index}
+            isEditMode={isEditMode}
             item={item}
-            key={`${item.name}-${index}`}
+            key={getMealDragId(item)}
             meal={meal}
+            onDeleteMeal={onDeleteMeal}
             onOpenActions={onOpenActions}
             onOpenRecipe={onOpenRecipe}
           />
@@ -208,10 +346,32 @@ function MealColumn({ meal, items, onOpenActions, onOpenRecipe, showHeading }) {
   )
 }
 
-function DayCard({ day, onOpenActions, onOpenRecipe, showMealHeadings }) {
+function DayCard({
+  day,
+  isEditMode,
+  onDeleteMeal,
+  onExitEditMode,
+  onOpenActions,
+  onOpenRecipe,
+  showMealHeadings,
+}) {
   return (
-    <article className="rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)]">
-      <div className="grid grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5">
+    <article
+      className="rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)]"
+      onClick={(event) => {
+        if (isEditMode && event.target === event.currentTarget) {
+          onExitEditMode()
+        }
+      }}
+    >
+      <div
+        className="grid grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5"
+        onClick={(event) => {
+          if (isEditMode && event.target === event.currentTarget) {
+            onExitEditMode()
+          }
+        }}
+      >
         <div className="pt-1">
           <p className="text-sm font-bold text-[#6D8E3D]">{day.weekday}</p>
           <p className="text-[2.15rem] font-bold leading-none tracking-tight text-stone-900">
@@ -227,9 +387,13 @@ function DayCard({ day, onOpenActions, onOpenRecipe, showMealHeadings }) {
 
         {mealTypes.map((meal) => (
           <MealColumn
+            day={day}
+            isEditMode={isEditMode}
             key={meal.key}
             meal={meal}
             items={day.meals[meal.key]}
+            onDeleteMeal={onDeleteMeal}
+            onExitEditMode={onExitEditMode}
             onOpenActions={onOpenActions}
             onOpenRecipe={onOpenRecipe}
             showHeading={showMealHeadings}
@@ -583,6 +747,30 @@ function PlannerSettingsModal({
   )
 }
 
+function UndoMealToast({ mealName, onUndo }) {
+  if (!mealName) {
+    return null
+  }
+
+  return (
+    <div className="fixed bottom-[9.25rem] left-4 right-4 z-20 mx-auto flex max-w-[430px] items-center justify-between gap-3 rounded-3xl bg-stone-900 px-4 py-3 text-white shadow-[0_14px_34px_rgba(30,41,59,0.25)]">
+      <div>
+        <p className="text-sm font-bold">Meal removed</p>
+        <p className="line-clamp-1 text-xs font-medium text-stone-300">
+          {mealName}
+        </p>
+      </div>
+      <button
+        className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#5A8D2B] transition active:scale-[0.96]"
+        onClick={onUndo}
+        type="button"
+      >
+        Undo
+      </button>
+    </div>
+  )
+}
+
 function reorderPlannerDays(days, weekStartDay) {
   const startIndex = days.findIndex((day) => day.weekday === weekStartDay)
 
@@ -635,6 +823,14 @@ function getRecipeForMealItem(item, recipes) {
 
 function Planner() {
   const navigate = useNavigate()
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        delay: 450,
+        tolerance: 8,
+      },
+    }),
+  )
   const [plannedMeals, setPlannedMeals] = useState(() => getPlannedMeals())
   const [removedPlannerMealIds, setRemovedPlannerMealIds] = useState(() =>
     getRemovedPlannerMealIds(),
@@ -649,6 +845,9 @@ function Planner() {
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [comingSoonMessage, setComingSoonMessage] = useState('')
   const [activeMealModal, setActiveMealModal] = useState('')
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [activeDraggedMeal, setActiveDraggedMeal] = useState(null)
+  const [lastRemovedMeal, setLastRemovedMeal] = useState(null)
   const [selectedMeal, setSelectedMeal] = useState(null)
   const [moveChoice, setMoveChoice] = useState({
     day: plannerDays[0].weekday,
@@ -942,47 +1141,192 @@ function Planner() {
     }
   }
 
+  function moveMealToSlot(item, day, mealSlot) {
+    if (item.day === day && item.mealSlot === mealSlot) {
+      return
+    }
+
+    if (item.plannedMealId) {
+      const existingMeal = getExistingPlannedMeal(item)
+
+      if (!existingMeal) {
+        return
+      }
+
+      const nextPlannedMeals = updatePlannedMeal({
+        ...existingMeal,
+        day,
+        mealSlot,
+      })
+      setPlannedMeals(nextPlannedMeals)
+      return
+    }
+
+    if (item.starterMealId) {
+      saveStarterAsPlannedMeal(item, {
+        day,
+        mealSlot,
+      })
+    }
+  }
+
+  function handleDragStart(event) {
+    const mealItem = event.active.data.current?.item
+
+    setIsEditMode(true)
+    setActiveDraggedMeal(mealItem || null)
+    setLastRemovedMeal(null)
+  }
+
+  function handleDragEnd(event) {
+    const mealItem = event.active.data.current?.item
+    const dropTarget = event.over?.data.current
+
+    if (mealItem && dropTarget) {
+      moveMealToSlot(mealItem, dropTarget.day, dropTarget.mealSlot)
+    }
+
+    setActiveDraggedMeal(null)
+  }
+
+  function handleDragCancel() {
+    setActiveDraggedMeal(null)
+  }
+
+  function deleteMealWithUndo(item) {
+    if (item.plannedMealId) {
+      const existingMeal = getExistingPlannedMeal(item)
+      const mealToRestore =
+        existingMeal || {
+          id: item.plannedMealId,
+          day: item.day,
+          mealSlot: item.mealSlot,
+          recipeName: item.name,
+          recipeId: item.recipeId,
+          plannedServings: item.plannedServings,
+          icon: item.icon,
+        }
+
+      const nextPlannedMeals = removePlannedMeal(item.plannedMealId)
+      setPlannedMeals(nextPlannedMeals)
+      setLastRemovedMeal({
+        type: 'planned',
+        meal: mealToRestore,
+        mealName: item.name,
+      })
+      return
+    }
+
+    if (item.starterMealId) {
+      const nextRemovedMealIds = saveRemovedPlannerMealIds([
+        ...new Set([...removedPlannerMealIds, item.starterMealId]),
+      ])
+
+      setRemovedPlannerMealIds(nextRemovedMealIds)
+      setLastRemovedMeal({
+        type: 'starter',
+        starterMealId: item.starterMealId,
+        mealName: item.name,
+      })
+    }
+  }
+
+  function undoLastRemovedMeal() {
+    if (!lastRemovedMeal) {
+      return
+    }
+
+    if (lastRemovedMeal.type === 'planned') {
+      const plannedMealExists = getPlannedMeals().some(
+        (meal) => meal.id === lastRemovedMeal.meal.id,
+      )
+
+      if (!plannedMealExists) {
+        setPlannedMeals(savePlannedMeal(lastRemovedMeal.meal))
+      }
+    }
+
+    if (lastRemovedMeal.type === 'starter') {
+      const nextRemovedMealIds = saveRemovedPlannerMealIds(
+        removedPlannerMealIds.filter(
+          (mealId) => mealId !== lastRemovedMeal.starterMealId,
+        ),
+      )
+
+      setRemovedPlannerMealIds(nextRemovedMealIds)
+    }
+
+    setLastRemovedMeal(null)
+  }
+
   const selectedMealRecipe = selectedMeal
     ? getRecipeForMealItem(selectedMeal, availableRecipes)
     : null
 
   return (
-    <section className="relative">
+    <section
+      className="relative"
+      onClick={(event) => {
+        if (isEditMode && event.target === event.currentTarget) {
+          setIsEditMode(false)
+        }
+      }}
+    >
       <PlannerHeader
         mealCount={plannedMealCount}
         onOpenSettings={openPlannerSettings}
         weekRange={weekRange}
         weekStartLabel={weekStartLabel}
       />
-      <WeekControls
-        days={displayedPlannerDays}
-        onOpenSettings={openPlannerSettings}
-        onShowComingSoon={() =>
-          setComingSoonMessage(multiWeekComingSoonMessage)
-        }
-      />
+      <DndContext
+        onDragCancel={handleDragCancel}
+        onDragEnd={handleDragEnd}
+        onDragStart={handleDragStart}
+        sensors={sensors}
+      >
+        <WeekControls
+          days={displayedPlannerDays}
+          isEditMode={isEditMode}
+          onExitEditMode={() => setIsEditMode(false)}
+          onOpenSettings={openPlannerSettings}
+          onShowComingSoon={() =>
+            setComingSoonMessage(multiWeekComingSoonMessage)
+          }
+        />
 
-      {plannedMealCount === 0 ? (
-        <div className="mt-4">
-          <EmptyState icon={CalendarDays} title="No meals planned">
-            Add a meal to start building your week.
-          </EmptyState>
-        </div>
-      ) : (
-        <div className="mt-3 space-y-2.5 pb-24">
-          {plannerDaysWithSavedMeals.map((day, index) => (
-            <DayCard
-              key={day.weekday}
-              day={day}
-              onOpenActions={openMealActions}
-              onOpenRecipe={openMealRecipe}
-              showMealHeadings={index === 0}
-            />
-          ))}
-        </div>
-      )}
+        {plannedMealCount === 0 ? (
+          <div className="mt-4">
+            <EmptyState icon={CalendarDays} title="No meals planned">
+              Add a meal to start building your week.
+            </EmptyState>
+          </div>
+        ) : (
+          <div className="mt-3 space-y-2.5 pb-24">
+            {plannerDaysWithSavedMeals.map((day, index) => (
+              <DayCard
+                day={day}
+                isEditMode={isEditMode}
+                key={day.weekday}
+                onDeleteMeal={deleteMealWithUndo}
+                onExitEditMode={() => setIsEditMode(false)}
+                onOpenActions={openMealActions}
+                onOpenRecipe={openMealRecipe}
+                showMealHeadings={index === 0}
+              />
+            ))}
+          </div>
+        )}
+        <DragOverlay>
+          <MealDragPreview item={activeDraggedMeal} />
+        </DragOverlay>
+      </DndContext>
 
       <FloatingActionButton label="Add meal" onClick={openAddMealModal} />
+
+      <UndoMealToast
+        mealName={lastRemovedMeal?.mealName}
+        onUndo={undoLastRemovedMeal}
+      />
 
       {showAddMealModal && (
         <PlannerAddMealModal
