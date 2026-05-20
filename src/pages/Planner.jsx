@@ -732,6 +732,7 @@ function MealActionsModal({
   meal,
   onChangeServings,
   onClose,
+  onDuplicate,
   onMove,
   onRemove,
   onViewRecipe,
@@ -757,6 +758,9 @@ function MealActionsModal({
         </MealActionButton>
         <MealActionButton icon={MoveRight} onClick={onMove}>
           Move meal
+        </MealActionButton>
+        <MealActionButton icon={Repeat2} onClick={onDuplicate}>
+          Duplicate
         </MealActionButton>
         <MealActionButton icon={Users} onClick={onChangeServings}>
           Change servings
@@ -1159,6 +1163,33 @@ function Planner() {
     setWeeklyQueueItems(removeWeeklyQueueItem(queueItem.id))
   }
 
+  function duplicatePlannedMeal(item, day, mealSlot) {
+    const recipe = getRecipeForMealItem(item, availableRecipes)
+    const plannedMeal = recipe
+      ? createPlannedMealFromRecipe(
+          recipe,
+          day,
+          mealSlot,
+          item.plannedServings || recipe.servings,
+        )
+      : {
+          id: createLocalId('planned-meal'),
+          day,
+          mealSlot,
+          recipeName: item.name,
+          recipeId: item.recipeId,
+          plannedServings: Number(item.plannedServings) || 1,
+          icon:
+            item.icon ||
+            getMealIcon({
+              mealSlot,
+              name: item.name,
+            }),
+        }
+
+    setPlannedMeals(savePlannedMeal(plannedMeal))
+  }
+
   function startPlacementFromQueue(queueItem) {
     setPlacementSelection({
       type: 'queue',
@@ -1189,6 +1220,12 @@ function Planner() {
     }
 
     if (placementSelection.type === 'meal') {
+      if (placementSelection.mode === 'duplicate') {
+        duplicatePlannedMeal(placementSelection.item, day, mealSlot)
+        setPlacementSelection(null)
+        return
+      }
+
       moveMealToSlot(placementSelection.item, day, mealSlot)
       if (placementSelection.item.plannedMealId) {
         setPlacementSelection({
@@ -1455,7 +1492,9 @@ function Planner() {
     weeklyQueueItems.length > 0 ||
     Boolean(placementSelection)
   const canPlaceInSlot =
-    placementSelection?.type === 'queue' || placementSelection?.mode === 'move'
+    placementSelection?.type === 'queue' ||
+    placementSelection?.mode === 'move' ||
+    placementSelection?.mode === 'duplicate'
 
   return (
     <section
@@ -1561,6 +1600,7 @@ function Planner() {
         meal={activeMealModal === 'actions' ? selectedMeal : null}
         onChangeServings={() => setActiveMealModal('servings')}
         onClose={closeMealModals}
+        onDuplicate={() => startPlacementFromMeal(selectedMeal, 'duplicate')}
         onMove={() => startPlacementFromMeal(selectedMeal, 'move')}
         onRemove={() => removeMealFromPlanner(selectedMeal)}
         onViewRecipe={viewSelectedMealRecipe}
