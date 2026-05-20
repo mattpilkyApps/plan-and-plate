@@ -21,6 +21,7 @@ import ComingSoonSheet from '../components/ComingSoonSheet'
 import EmptyState from '../components/EmptyState'
 import FloatingActionButton from '../components/FloatingActionButton'
 import RecipeCard from '../components/RecipeCard'
+import ScreenHeader from '../components/ScreenHeader'
 import { plannerDays, recipes as sampleRecipes } from '../data/sampleData'
 import { getMealIcon } from '../utils/mealIcons'
 import { getRecipeId, getRecipeKey, getVisibleRecipes } from '../utils/recipeKeys'
@@ -43,22 +44,19 @@ const categoryFilters = [
 const filterComingSoonMessage =
   'More recipe filters are coming soon. For now, use search and the category chips.'
 
-function RecipesHeader() {
+function RecipesHeader({ recipeCount }) {
   return (
-    <header className="flex items-start justify-between gap-4">
-      <div>
-        <h1 className="text-[2.45rem] font-bold leading-none tracking-tight text-stone-900">
-          Recipes
-        </h1>
-        <p className="mt-2 text-base text-stone-500">Your saved recipes</p>
-      </div>
-
-      <div className="flex gap-3">
+    <ScreenHeader
+      actions={
         <span className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm">
           <BookOpen size={25} />
         </span>
-      </div>
-    </header>
+      }
+      eyebrow="Recipe Library"
+      stats={[{ label: `${recipeCount} recipes`, icon: BookOpenText }]}
+      subtitle="Quick meals, family favourites, and saved ideas"
+      title="Your recipes"
+    />
   )
 }
 
@@ -364,7 +362,7 @@ function Recipes() {
 
   return (
     <section className="relative">
-      <RecipesHeader />
+      <RecipesHeader recipeCount={filteredRecipes.length} />
       <SearchAndFilter
         onOpenFilter={() => setComingSoonMessage(filterComingSoonMessage)}
         onSearchChange={(event) => setSearchTerm(event.target.value)}

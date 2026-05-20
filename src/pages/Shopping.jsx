@@ -10,6 +10,7 @@ import {
 import { useState } from 'react'
 import EmptyState from '../components/EmptyState'
 import FloatingActionButton from '../components/FloatingActionButton'
+import ScreenHeader from '../components/ScreenHeader'
 import ShoppingCategory from '../components/ShoppingCategory'
 import { recipes as sampleRecipes } from '../data/sampleData'
 import {
@@ -38,32 +39,32 @@ const initialManualItem = {
   note: '',
 }
 
-function ShoppingHeader({ onOpenOptions }) {
+function ShoppingHeader({ checkedItems, onOpenOptions, totalItems }) {
   return (
-    <header className="flex items-start justify-between gap-4">
-      <div>
-        <h1 className="text-[2.45rem] font-bold leading-none tracking-tight text-stone-900">
-          Shopping List
-        </h1>
-        <p className="mt-2 text-base text-stone-500">
-          Generated from your weekly planner
-        </p>
-      </div>
-
-      <div className="flex gap-3">
+    <ScreenHeader
+      actions={
+        <>
         <span className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm">
           <ListChecks size={25} />
         </span>
         <button
           aria-label="Shopping options"
-          className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#F8F2EA] text-stone-600 shadow-sm"
+          className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#F8F2EA] text-stone-600 shadow-sm transition active:scale-[0.96]"
           onClick={onOpenOptions}
           type="button"
         >
           <MoreHorizontal size={27} />
         </button>
-      </div>
-    </header>
+        </>
+      }
+      eyebrow="Weekly shop"
+      stats={[
+        { label: `${totalItems} items`, icon: ShoppingCart },
+        { label: `${checkedItems} checked`, icon: CheckCircle2 },
+      ]}
+      subtitle="Built from your planned meals"
+      title="Shopping list"
+    />
   )
 }
 
@@ -403,7 +404,11 @@ function Shopping() {
 
   return (
     <section className="relative">
-      <ShoppingHeader onOpenOptions={() => setShowOptionsModal(true)} />
+      <ShoppingHeader
+        checkedItems={checkedItems}
+        onOpenOptions={() => setShowOptionsModal(true)}
+        totalItems={totalItems}
+      />
       <ShoppingSummary totalItems={totalItems} checkedItems={checkedItems} />
       <ShoppingActions
         checkedItems={checkedItems}

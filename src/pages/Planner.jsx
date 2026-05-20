@@ -19,6 +19,7 @@ import { useNavigate } from 'react-router-dom'
 import ComingSoonSheet from '../components/ComingSoonSheet'
 import EmptyState from '../components/EmptyState'
 import FloatingActionButton from '../components/FloatingActionButton'
+import ScreenHeader from '../components/ScreenHeader'
 import { plannerDays, recipes as sampleRecipes } from '../data/sampleData'
 import {
   createLocalId,
@@ -73,29 +74,32 @@ const mealTypes = [
   },
 ]
 
-function PlannerHeader({ onOpenSettings }) {
+function PlannerHeader({
+  mealCount,
+  onOpenSettings,
+  weekRange,
+  weekStartLabel,
+}) {
   return (
-    <header className="flex items-start justify-between gap-4">
-      <div>
-        <h1 className="text-[2.45rem] font-bold leading-none tracking-tight text-stone-900">
-          Planner
-        </h1>
-        <p className="mt-2 text-base text-stone-500">
-          Plan your meals for the week
-        </p>
-      </div>
-
-      <div className="flex gap-3">
+    <ScreenHeader
+      actions={
         <button
           aria-label="Planner settings"
-          className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm"
+          className="flex h-[3.05rem] w-[3.05rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm transition active:scale-[0.96]"
           onClick={onOpenSettings}
           type="button"
         >
           <CalendarDays size={25} />
         </button>
-      </div>
-    </header>
+      }
+      eyebrow="This week"
+      stats={[
+        { label: `${mealCount} meals planned`, icon: BookOpen },
+        { label: `Starts ${weekStartLabel}`, icon: CalendarDays },
+      ]}
+      subtitle={weekRange}
+      title="Meal Planner"
+    />
   )
 }
 
@@ -596,6 +600,19 @@ function reorderPlannerDays(days, weekStartDay) {
   return [...daysAfterStart, ...wrappedDays]
 }
 
+function formatPlannerWeekRange(days) {
+  const firstDay = days[0]
+  const lastDay = days[days.length - 1]
+
+  return `${firstDay.weekday} ${firstDay.date} - ${lastDay.weekday} ${lastDay.date}`
+}
+
+function getWeekStartLabel(weekStartDay) {
+  return (
+    weekdayOptions.find((day) => day.key === weekStartDay)?.label || 'Monday'
+  )
+}
+
 function getRecipeForMealItem(item, recipes) {
   if (item.recipeId) {
     const recipeById = recipes.find(
@@ -712,6 +729,8 @@ function Planner() {
       day.meals.dinner.length,
     0,
   )
+  const weekRange = formatPlannerWeekRange(displayedPlannerDays)
+  const weekStartLabel = getWeekStartLabel(plannerSettings.weekStartDay)
 
   function openAddMealModal() {
     const firstRecipe = availableRecipes[0]
@@ -930,7 +949,10 @@ function Planner() {
   return (
     <section className="relative">
       <PlannerHeader
+        mealCount={plannedMealCount}
         onOpenSettings={openPlannerSettings}
+        weekRange={weekRange}
+        weekStartLabel={weekStartLabel}
       />
       <WeekControls
         days={displayedPlannerDays}
