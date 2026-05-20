@@ -18,6 +18,12 @@
     animation: planner-meal-edit 1.4s ease-in-out infinite;
   }
 
+  .no-touch-callout {
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
   .no-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;

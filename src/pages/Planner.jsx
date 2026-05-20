@@ -237,7 +237,7 @@ function MealCard({
 
   return (
     <div
-      className={`relative flex min-h-9 cursor-pointer touch-manipulation select-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
+      className={`no-touch-callout relative flex min-h-9 cursor-pointer touch-manipulation select-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
         isEditMode ? 'planner-meal-editing' : ''
       } ${meal.cardColor}`}
       onClick={(event) => {
@@ -639,7 +639,7 @@ function WeeklyQueueSection({
 
             return (
               <article
-                className={`relative flex w-40 shrink-0 items-center gap-2 rounded-2xl border bg-[#FAF8F3] p-2 text-left shadow-sm transition active:scale-[0.98] ${
+                className={`no-touch-callout relative flex w-40 shrink-0 items-center gap-2 rounded-2xl border bg-[#FAF8F3] p-2 text-left shadow-sm transition active:scale-[0.98] ${
                   isActive
                     ? 'border-[#A8C686] ring-2 ring-[#EAF3DE]'
                     : 'border-stone-100'
