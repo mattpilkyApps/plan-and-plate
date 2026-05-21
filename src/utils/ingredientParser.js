@@ -19,29 +19,112 @@ const knownUnits = [
   'cans',
 ]
 
+const numberWords = {
+  one: '1',
+  two: '2',
+  three: '3',
+  four: '4',
+  five: '5',
+  six: '6',
+  seven: '7',
+  eight: '8',
+  nine: '9',
+  ten: '10',
+}
+
+function cleanIngredientText(text) {
+  return text
+    .trim()
+    .replace(/^[\s\-*\u2022?]+/, '')
+    .replace(/\s+/g, ' ')
+    .replace(/[,.]+$/, '')
+    .trim()
+}
+
+function escapeRegExp(text) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function getNumberWordPattern() {
+  return Object.keys(numberWords).join('|')
+}
+
+function buildQuantityPattern() {
+  const unitPattern = knownUnits.map(escapeRegExp).join('|')
+  const numberWordPattern = getNumberWordPattern()
+
+  return `(?:\\d+(?:\\.\\d+)?|${numberWordPattern})(?:\\s*x)?\\s*(?:${unitPattern})?\\s+`
+}
+
+function splitPastedIngredients(text) {
+  const normalizedText = text
+    .replace(/\r/g, '\n')
+    .replace(/\u2022/g, '\n')
+    .replace(/;/g, '\n')
+    .trim()
+
+  const quantityPattern = buildQuantityPattern()
+  const splitBeforeQuantity = new RegExp(`\\s+(?=${quantityPattern})`, 'gi')
+
+  return normalizedText
+    .split('\n')
+    .flatMap((line) => {
+      const cleanedLine = cleanIngredientText(line)
+      const quantityMatches = cleanedLine.match(new RegExp(quantityPattern, 'gi'))
+
+      if (
+        /[,.]\s+/.test(cleanedLine) &&
+        quantityMatches &&
+        quantityMatches.length > 1
+      ) {
+        return cleanedLine.split(/[,.]\s+/)
+      }
+
+      return cleanedLine.split(splitBeforeQuantity)
+    })
+    .map(cleanIngredientText)
+    .filter(Boolean)
+}
+
 function splitAmountAndName(line) {
-  const match = line.match(/^(\d+(?:\.\d+)?)(?:\s*)?([a-zA-Z]+)?\s+(.+)$/)
+  const numberWordPattern = getNumberWordPattern()
+  const match = line.match(
+    new RegExp(
+      `^(\\d+(?:\\.\\d+)?|${numberWordPattern})(?:\\s*x)?(?:\\s*)?([a-zA-Z]+)?\\s+(.+)$`,
+      'i',
+    ),
+  )
 
   if (!match) {
     return null
   }
 
+  const amount = numberWords[match[1].toLowerCase()] || match[1]
+
   return {
-    amount: match[1],
+    amount,
     possibleUnit: match[2] || '',
     restOfLine: match[3],
   }
 }
 
 function splitNameAndAmount(line) {
-  const match = line.match(/^(.+?)\s+(\d+(?:\.\d+)?)(?:\s*)?([a-zA-Z]+)?$/)
+  const numberWordPattern = getNumberWordPattern()
+  const match = line.match(
+    new RegExp(
+      `^(.+?)\\s+(\\d+(?:\\.\\d+)?|${numberWordPattern})(?:\\s*x)?(?:\\s*)?([a-zA-Z]+)?$`,
+      'i',
+    ),
+  )
 
   if (!match) {
     return null
   }
 
+  const amount = numberWords[match[2].toLowerCase()] || match[2]
+
   return {
-    amount: match[2],
+    amount,
     possibleUnit: match[3] || '',
     restOfLine: match[1],
   }
@@ -80,7 +163,8 @@ function buildIngredientFromParts(rawText, parsedLine) {
     }
   }
 
-  const fullIngredientName = `${parsedLine.possibleUnit} ${parsedLine.restOfLine}`.trim()
+  const fullIngredientName =
+    `${parsedLine.possibleUnit} ${parsedLine.restOfLine}`.trim()
   const words = fullIngredientName.split(' ')
   const lastWord = words[words.length - 1].toLowerCase()
 
@@ -106,7 +190,7 @@ function buildIngredientFromParts(rawText, parsedLine) {
 }
 
 export function parseIngredientLine(line) {
-  const rawText = line.trim()
+  const rawText = cleanIngredientText(line)
 
   if (!rawText) {
     return null
@@ -134,14 +218,11 @@ export function parseIngredientLine(line) {
     )
   }
 
-  if (!trailingAmountLine) {
-    return fallbackIngredient
-  }
+  return fallbackIngredient
 }
 
 export function parseIngredients(ingredientsText) {
-  return ingredientsText
-    .split('\n')
+  return splitPastedIngredients(ingredientsText)
     .map(parseIngredientLine)
     .filter(Boolean)
 }

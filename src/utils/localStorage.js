@@ -1,5 +1,6 @@
 const SAVED_RECIPES_KEY = 'plan-and-plate-recipes'
 const PLANNED_MEALS_KEY = 'plan-and-plate-planned-meals'
+const PLANNED_MEALS_BY_WEEK_KEY = 'plan-and-plate-planned-meals-by-week'
 const WEEKLY_QUEUE_KEY = 'plan-and-plate-weekly-queue'
 const CLEARED_SHOPPING_ITEMS_KEY = 'plan-and-plate-cleared-shopping-items'
 const MANUAL_SHOPPING_ITEMS_KEY = 'plan-and-plate-manual-shopping-items'
@@ -9,6 +10,7 @@ const PLANNER_SETTINGS_KEY = 'plan-and-plate-planner-settings'
 
 const defaultPlannerSettings = {
   weekStartDay: 'MON',
+  selectedWeekStartDate: '',
 }
 
 function readFromStorage(key, fallbackValue) {
@@ -127,9 +129,58 @@ export function getPlannedMeals() {
   return readFromStorage(PLANNED_MEALS_KEY, [])
 }
 
-export function savePlannedMeal(plannedMeal) {
-  const plannedMeals = getPlannedMeals()
+function getPlannedMealsByWeek() {
+  return readFromStorage(PLANNED_MEALS_BY_WEEK_KEY, {})
+}
+
+export function savePlannedMealsForWeek(weekKey, plannedMeals) {
+  const plannedMealsByWeek = getPlannedMealsByWeek()
+  const nextPlannedMealsByWeek = {
+    ...plannedMealsByWeek,
+    [weekKey]: plannedMeals,
+  }
+  const didSave = writeToStorage(
+    PLANNED_MEALS_BY_WEEK_KEY,
+    nextPlannedMealsByWeek,
+  )
+
+  if (!didSave) {
+    return getPlannedMealsForWeek(weekKey)
+  }
+
+  return plannedMeals
+}
+
+export function getPlannedMealsForWeek(weekKey) {
+  if (!weekKey) {
+    return getPlannedMeals()
+  }
+
+  const plannedMealsByWeek = getPlannedMealsByWeek()
+
+  if (Object.keys(plannedMealsByWeek).length > 0) {
+    return plannedMealsByWeek[weekKey] || []
+  }
+
+  const oldPlannedMeals = getPlannedMeals()
+
+  if (oldPlannedMeals.length === 0) {
+    return []
+  }
+
+  return savePlannedMealsForWeek(weekKey, oldPlannedMeals)
+}
+
+export function savePlannedMeal(plannedMeal, weekKey) {
+  const plannedMeals = weekKey
+    ? getPlannedMealsForWeek(weekKey)
+    : getPlannedMeals()
   const nextPlannedMeals = [plannedMeal, ...plannedMeals]
+
+  if (weekKey) {
+    return savePlannedMealsForWeek(weekKey, nextPlannedMeals)
+  }
+
   const didSave = writeToStorage(PLANNED_MEALS_KEY, nextPlannedMeals)
 
   if (!didSave) {
@@ -153,11 +204,31 @@ export function removePlannedMeal(plannedMealId) {
   return nextPlannedMeals
 }
 
-export function updatePlannedMeal(updatedMeal) {
-  const plannedMeals = getPlannedMeals()
+export function removePlannedMealFromWeek(plannedMealId, weekKey) {
+  if (!weekKey) {
+    return removePlannedMeal(plannedMealId)
+  }
+
+  const plannedMeals = getPlannedMealsForWeek(weekKey)
+  const nextPlannedMeals = plannedMeals.filter(
+    (plannedMeal) => plannedMeal.id !== plannedMealId,
+  )
+
+  return savePlannedMealsForWeek(weekKey, nextPlannedMeals)
+}
+
+export function updatePlannedMeal(updatedMeal, weekKey) {
+  const plannedMeals = weekKey
+    ? getPlannedMealsForWeek(weekKey)
+    : getPlannedMeals()
   const nextPlannedMeals = plannedMeals.map((plannedMeal) =>
     plannedMeal.id === updatedMeal.id ? updatedMeal : plannedMeal,
   )
+
+  if (weekKey) {
+    return savePlannedMealsForWeek(weekKey, nextPlannedMeals)
+  }
+
   const didSave = writeToStorage(PLANNED_MEALS_KEY, nextPlannedMeals)
 
   if (!didSave) {
@@ -258,6 +329,26 @@ function syncPlannedMealsForRecipe(recipe) {
   })
 
   writeToStorage(PLANNED_MEALS_KEY, nextPlannedMeals)
+
+  const plannedMealsByWeek = getPlannedMealsByWeek()
+  const nextPlannedMealsByWeek = Object.fromEntries(
+    Object.entries(plannedMealsByWeek).map(([weekKey, weekMeals]) => [
+      weekKey,
+      weekMeals.map((plannedMeal) => {
+        if (plannedMeal.recipeId !== recipe.id) {
+          return plannedMeal
+        }
+
+        return {
+          ...plannedMeal,
+          recipeName: recipe.name,
+          icon: recipe.icon || plannedMeal.icon,
+        }
+      }),
+    ]),
+  )
+
+  writeToStorage(PLANNED_MEALS_BY_WEEK_KEY, nextPlannedMealsByWeek)
 }
 
 function removePlannedMealsForRecipe(recipeId) {
@@ -267,6 +358,16 @@ function removePlannedMealsForRecipe(recipeId) {
   )
 
   writeToStorage(PLANNED_MEALS_KEY, nextPlannedMeals)
+
+  const plannedMealsByWeek = getPlannedMealsByWeek()
+  const nextPlannedMealsByWeek = Object.fromEntries(
+    Object.entries(plannedMealsByWeek).map(([weekKey, weekMeals]) => [
+      weekKey,
+      weekMeals.filter((plannedMeal) => plannedMeal.recipeId !== recipeId),
+    ]),
+  )
+
+  writeToStorage(PLANNED_MEALS_BY_WEEK_KEY, nextPlannedMealsByWeek)
 }
 
 export function getClearedShoppingItemIds() {

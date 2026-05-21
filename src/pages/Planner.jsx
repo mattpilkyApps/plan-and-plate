@@ -9,6 +9,7 @@ import {
   MoveRight,
   Plus,
   Repeat2,
+  SlidersHorizontal,
   Sunrise,
   Sun,
   Trash2,
@@ -17,7 +18,6 @@ import {
 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import ComingSoonSheet from '../components/ComingSoonSheet'
 import EmptyState from '../components/EmptyState'
 import FloatingActionButton from '../components/FloatingActionButton'
 import ScreenHeader from '../components/ScreenHeader'
@@ -25,20 +25,30 @@ import { plannerDays, recipes as sampleRecipes } from '../data/sampleData'
 import {
   createLocalId,
   getPlannerSettings,
-  getPlannedMeals,
+  getPlannedMealsForWeek,
   getRemovedPlannerMealIds,
   getRemovedRecipeIds,
   getSavedRecipes,
   getWeeklyQueueItems,
   duplicateWeeklyQueueItem,
-  removePlannedMeal,
+  removePlannedMealFromWeek,
   removeWeeklyQueueItem,
   savePlannerSettings,
   savePlannedMeal,
+  savePlannedMealsForWeek,
   saveRemovedPlannerMealIds,
   updatePlannedMeal,
 } from '../utils/localStorage'
 import { getMealIcon } from '../utils/mealIcons'
+import {
+  formatDateKey,
+  formatPlannerWeekRange,
+  getCurrentWeekKey,
+  getDisplayDaysForWeek,
+  getWeekStartDate,
+  parseDateKey,
+  shiftWeekKey,
+} from '../utils/plannerWeeks'
 import { getRecipeKey, getVisibleRecipes } from '../utils/recipeKeys'
 
 const weekdayOptions = [
@@ -50,9 +60,6 @@ const weekdayOptions = [
   { key: 'SAT', label: 'Saturday' },
   { key: 'SUN', label: 'Sunday' },
 ]
-
-const multiWeekComingSoonMessage =
-  'Multi-week planning is coming soon. For now, use Planner settings to choose your week start day.'
 
 const mealTypes = [
   {
@@ -93,7 +100,7 @@ function PlannerHeader({
           onClick={onOpenSettings}
           type="button"
         >
-          <CalendarDays size={25} />
+          <SlidersHorizontal size={25} />
         </button>
       }
       eyebrow="This week"
@@ -111,8 +118,9 @@ function WeekControls({
   days,
   isEditMode,
   onExitEditMode,
+  onNextWeek,
   onOpenSettings,
-  onShowComingSoon,
+  onPreviousWeek,
 }) {
   const firstDay = days[0]
   const lastDay = days[days.length - 1]
@@ -131,7 +139,7 @@ function WeekControls({
         <button
           aria-label="Previous week"
           className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
-          onClick={onShowComingSoon}
+          onClick={onPreviousWeek}
           type="button"
         >
           <ChevronLeft size={26} />
@@ -144,7 +152,7 @@ function WeekControls({
         type="button"
       >
         <span>
-          {firstDay.weekday} {firstDay.date} - {lastDay.weekday} {lastDay.date}
+          {firstDay.dayName} {firstDay.date} - {lastDay.dayName} {lastDay.date}
         </span>
         <ChevronDown size={20} />
       </button>
@@ -152,7 +160,7 @@ function WeekControls({
       <button
         aria-label="Next week"
         className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-[#5A8D2B] shadow-sm"
-        onClick={onShowComingSoon}
+        onClick={onNextWeek}
         type="button"
       >
         <ChevronRight size={26} />
@@ -812,6 +820,8 @@ function ServingsModal({ meal, onChangeServings, onClose, onSave, servings }) {
 }
 
 function PlannerSettingsModal({
+  copiedWeekMessage,
+  onCopyWeek,
   onChangeSettings,
   onClose,
   onSave,
@@ -844,9 +854,33 @@ function PlannerSettingsModal({
       </label>
 
       <p className="mt-3 rounded-2xl bg-[#F8F2EA] px-4 py-3 text-sm font-semibold leading-relaxed text-stone-500">
-        This changes the order of this planner week only. Full future-week
-        planning can come later.
+        This changes which day your planner weeks start on. Your selected week
+        is saved on this device.
       </p>
+
+      <div className="mt-5 rounded-3xl border border-stone-100 bg-white p-3 shadow-sm">
+        <div>
+          <p className="text-sm font-bold text-stone-900">Week actions</p>
+          <p className="mt-1 text-xs font-semibold leading-relaxed text-stone-500">
+            Copy this week into next week, then jump there to make quick edits.
+          </p>
+        </div>
+
+        <button
+          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#EAF3DE] px-4 text-sm font-bold text-[#5A8D2B] shadow-sm transition active:scale-[0.96]"
+          onClick={onCopyWeek}
+          type="button"
+        >
+          <Repeat2 size={19} />
+          Copy to next week
+        </button>
+
+        {copiedWeekMessage && (
+          <p className="mt-3 rounded-2xl bg-[#F8F2EA] px-3 py-2 text-xs font-bold text-[#5A8D2B]">
+            {copiedWeekMessage}
+          </p>
+        )}
+      </div>
 
       <button
         className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)]"
@@ -884,30 +918,6 @@ function UndoMealToast({ mealName, onUndo }) {
   )
 }
 
-function reorderPlannerDays(days, weekStartDay) {
-  const startIndex = days.findIndex((day) => day.weekday === weekStartDay)
-
-  if (startIndex <= 0) {
-    return days
-  }
-
-  const daysAfterStart = days.slice(startIndex)
-  const wrappedDays = days.slice(0, startIndex).map((day) => ({
-    ...day,
-    date: String(Number(day.date) + 7),
-    isToday: false,
-  }))
-
-  return [...daysAfterStart, ...wrappedDays]
-}
-
-function formatPlannerWeekRange(days) {
-  const firstDay = days[0]
-  const lastDay = days[days.length - 1]
-
-  return `${firstDay.weekday} ${firstDay.date} - ${lastDay.weekday} ${lastDay.date}`
-}
-
 function getWeekStartLabel(weekStartDay) {
   return (
     weekdayOptions.find((day) => day.key === weekStartDay)?.label || 'Monday'
@@ -936,22 +946,37 @@ function getRecipeForMealItem(item, recipes) {
 
 function Planner() {
   const navigate = useNavigate()
-  const [plannedMeals, setPlannedMeals] = useState(() => getPlannedMeals())
+  const [plannerSettings, setPlannerSettings] = useState(() => {
+    const savedSettings = getPlannerSettings()
+    const selectedWeekStartDate =
+      savedSettings.selectedWeekStartDate ||
+      getCurrentWeekKey(savedSettings.weekStartDay)
+
+    return {
+      ...savedSettings,
+      selectedWeekStartDate,
+    }
+  })
+  const [plannedMeals, setPlannedMeals] = useState(() => {
+    const savedSettings = getPlannerSettings()
+    const selectedWeekStartDate =
+      savedSettings.selectedWeekStartDate ||
+      getCurrentWeekKey(savedSettings.weekStartDay)
+
+    return getPlannedMealsForWeek(selectedWeekStartDate)
+  })
   const [weeklyQueueItems, setWeeklyQueueItems] = useState(() =>
     getWeeklyQueueItems(),
   )
   const [removedPlannerMealIds, setRemovedPlannerMealIds] = useState(() =>
     getRemovedPlannerMealIds(),
   )
-  const [plannerSettings, setPlannerSettings] = useState(() =>
-    getPlannerSettings(),
-  )
   const [draftPlannerSettings, setDraftPlannerSettings] = useState(() =>
     getPlannerSettings(),
   )
   const [showAddMealModal, setShowAddMealModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
-  const [comingSoonMessage, setComingSoonMessage] = useState('')
+  const [copiedWeekMessage, setCopiedWeekMessage] = useState('')
   const [activeMealModal, setActiveMealModal] = useState('')
   const [placementSelection, setPlacementSelection] = useState(null)
   const [activeQueueItem, setActiveQueueItem] = useState(null)
@@ -968,10 +993,12 @@ function Planner() {
     plannedServings: sampleRecipes[0].servings,
   }))
   const isEditMode = Boolean(placementSelection)
-  const displayedPlannerDays = reorderPlannerDays(
-    plannerDays,
-    plannerSettings.weekStartDay,
-  )
+  const selectedWeekKey =
+    plannerSettings.selectedWeekStartDate ||
+    getCurrentWeekKey(plannerSettings.weekStartDay)
+  const currentWeekKey = getCurrentWeekKey(plannerSettings.weekStartDay)
+  const displayedPlannerDays = getDisplayDaysForWeek(selectedWeekKey)
+  const showStarterMeals = selectedWeekKey === currentWeekKey
 
   function buildStarterMeal(day, mealSlot, item, index) {
     const matchedRecipe = getRecipeForMealItem(item, availableRecipes)
@@ -990,15 +1017,18 @@ function Planner() {
     const savedMealsForDay = plannedMeals.filter(
       (plannedMeal) => plannedMeal.day === day.weekday,
     )
+    const starterDay = showStarterMeals
+      ? plannerDays.find((plannerDay) => plannerDay.weekday === day.weekday)
+      : null
 
     const meals = {
-      breakfast: day.meals.breakfast
+      breakfast: (starterDay?.meals.breakfast || [])
         .map((item, index) => buildStarterMeal(day, 'breakfast', item, index))
         .filter((item) => !removedPlannerMealIds.includes(item.starterMealId)),
-      lunch: day.meals.lunch
+      lunch: (starterDay?.meals.lunch || [])
         .map((item, index) => buildStarterMeal(day, 'lunch', item, index))
         .filter((item) => !removedPlannerMealIds.includes(item.starterMealId)),
-      dinner: day.meals.dinner
+      dinner: (starterDay?.meals.dinner || [])
         .map((item, index) => buildStarterMeal(day, 'dinner', item, index))
         .filter((item) => !removedPlannerMealIds.includes(item.starterMealId)),
     }
@@ -1111,7 +1141,7 @@ function Planner() {
         }),
     }
 
-    const nextPlannedMeals = savePlannedMeal(plannedMeal)
+    const nextPlannedMeals = savePlannedMeal(plannedMeal, selectedWeekKey)
     setPlannedMeals(nextPlannedMeals)
     setShowAddMealModal(false)
   }
@@ -1159,7 +1189,7 @@ function Planner() {
             }),
         }
 
-    setPlannedMeals(savePlannedMeal(plannedMeal))
+    setPlannedMeals(savePlannedMeal(plannedMeal, selectedWeekKey))
     setWeeklyQueueItems(removeWeeklyQueueItem(queueItem.id))
   }
 
@@ -1187,7 +1217,7 @@ function Planner() {
             }),
         }
 
-    setPlannedMeals(savePlannedMeal(plannedMeal))
+    setPlannedMeals(savePlannedMeal(plannedMeal, selectedWeekKey))
   }
 
   function startPlacementFromQueue(queueItem) {
@@ -1276,15 +1306,73 @@ function Planner() {
     }))
   }
 
-  function savePlannerPreferences() {
-    const savedSettings = savePlannerSettings(draftPlannerSettings)
+  function saveSelectedWeek(nextWeekKey) {
+    const savedSettings = savePlannerSettings({
+      selectedWeekStartDate: nextWeekKey,
+    })
 
     setPlannerSettings(savedSettings)
+    setPlannedMeals(getPlannedMealsForWeek(nextWeekKey))
+    setPlacementSelection(null)
+    setLastRemovedMeal(null)
+  }
+
+  function goToPreviousWeek() {
+    saveSelectedWeek(shiftWeekKey(selectedWeekKey, -1))
+  }
+
+  function goToNextWeek() {
+    saveSelectedWeek(shiftWeekKey(selectedWeekKey, 1))
+  }
+
+  function copyCurrentWeekToNextWeek() {
+    if (plannedMeals.length === 0) {
+      setCopiedWeekMessage('Add planned meals before copying this week.')
+      return
+    }
+
+    const nextWeekKey = shiftWeekKey(selectedWeekKey, 1)
+    const existingNextWeekMeals = getPlannedMealsForWeek(nextWeekKey)
+    const copiedMeals = plannedMeals.map((plannedMeal) => ({
+      ...plannedMeal,
+      id: createLocalId('planned-meal'),
+    }))
+    const nextWeekMeals = savePlannedMealsForWeek(nextWeekKey, [
+      ...copiedMeals,
+      ...existingNextWeekMeals,
+    ])
+    const savedSettings = savePlannerSettings({
+      selectedWeekStartDate: nextWeekKey,
+    })
+
+    setPlannerSettings(savedSettings)
+    setPlannedMeals(nextWeekMeals)
     setShowSettingsModal(false)
+    setCopiedWeekMessage('')
+    setPlacementSelection(null)
+    setLastRemovedMeal(null)
+  }
+
+  function savePlannerPreferences() {
+    const currentSelectedDate = parseDateKey(selectedWeekKey)
+    const nextSelectedWeekStartDate = formatDateKey(
+      getWeekStartDate(currentSelectedDate, draftPlannerSettings.weekStartDay),
+    )
+    const savedSettings = savePlannerSettings({
+      ...draftPlannerSettings,
+      selectedWeekStartDate: nextSelectedWeekStartDate,
+    })
+
+    setPlannerSettings(savedSettings)
+    setPlannedMeals(getPlannedMealsForWeek(nextSelectedWeekStartDate))
+    setShowSettingsModal(false)
+    setPlacementSelection(null)
+    setLastRemovedMeal(null)
   }
 
   function openPlannerSettings() {
     setDraftPlannerSettings(plannerSettings)
+    setCopiedWeekMessage('')
     setShowSettingsModal(true)
   }
 
@@ -1304,7 +1392,7 @@ function Planner() {
       icon: item.icon,
       ...updates,
     }
-    const nextPlannedMeals = savePlannedMeal(plannedMeal)
+    const nextPlannedMeals = savePlannedMeal(plannedMeal, selectedWeekKey)
     const nextRemovedMealIds = saveRemovedPlannerMealIds([
       ...removedPlannerMealIds,
       item.starterMealId,
@@ -1326,10 +1414,13 @@ function Planner() {
         return
       }
 
-      const nextPlannedMeals = updatePlannedMeal({
-        ...existingMeal,
-        ...updates,
-      })
+      const nextPlannedMeals = updatePlannedMeal(
+        {
+          ...existingMeal,
+          ...updates,
+        },
+        selectedWeekKey,
+      )
       setPlannedMeals(nextPlannedMeals)
       closeMealModals()
       return
@@ -1361,7 +1452,10 @@ function Planner() {
 
   function removeMealFromPlanner(item) {
     if (item.plannedMealId) {
-      const nextPlannedMeals = removePlannedMeal(item.plannedMealId)
+      const nextPlannedMeals = removePlannedMealFromWeek(
+        item.plannedMealId,
+        selectedWeekKey,
+      )
       setPlannedMeals(nextPlannedMeals)
       closeMealModals()
       return
@@ -1389,11 +1483,14 @@ function Planner() {
         return
       }
 
-      const nextPlannedMeals = updatePlannedMeal({
-        ...existingMeal,
-        day,
-        mealSlot,
-      })
+      const nextPlannedMeals = updatePlannedMeal(
+        {
+          ...existingMeal,
+          day,
+          mealSlot,
+        },
+        selectedWeekKey,
+      )
       setPlannedMeals(nextPlannedMeals)
       return
     }
@@ -1420,7 +1517,10 @@ function Planner() {
           icon: item.icon,
         }
 
-      const nextPlannedMeals = removePlannedMeal(item.plannedMealId)
+      const nextPlannedMeals = removePlannedMealFromWeek(
+        item.plannedMealId,
+        selectedWeekKey,
+      )
       setPlannedMeals(nextPlannedMeals)
       setLastRemovedMeal({
         type: 'planned',
@@ -1450,12 +1550,12 @@ function Planner() {
     }
 
     if (lastRemovedMeal.type === 'planned') {
-      const plannedMealExists = getPlannedMeals().some(
+      const plannedMealExists = getPlannedMealsForWeek(selectedWeekKey).some(
         (meal) => meal.id === lastRemovedMeal.meal.id,
       )
 
       if (!plannedMealExists) {
-        setPlannedMeals(savePlannedMeal(lastRemovedMeal.meal))
+        setPlannedMeals(savePlannedMeal(lastRemovedMeal.meal, selectedWeekKey))
       }
     }
 
@@ -1545,10 +1645,9 @@ function Planner() {
         days={displayedPlannerDays}
         isEditMode={isEditMode}
         onExitEditMode={() => setPlacementSelection(null)}
+        onNextWeek={goToNextWeek}
         onOpenSettings={openPlannerSettings}
-        onShowComingSoon={() =>
-          setComingSoonMessage(multiWeekComingSoonMessage)
-        }
+        onPreviousWeek={goToPreviousWeek}
       />
 
       {shouldShowPlannerGrid ? (
@@ -1616,6 +1715,8 @@ function Planner() {
 
       {showSettingsModal && (
         <PlannerSettingsModal
+          copiedWeekMessage={copiedWeekMessage}
+          onCopyWeek={copyCurrentWeekToNextWeek}
           onChangeSettings={updateDraftPlannerSettings}
           onClose={() => setShowSettingsModal(false)}
           onSave={savePlannerPreferences}
@@ -1632,11 +1733,6 @@ function Planner() {
         recipes={availableRecipes}
       />
 
-      <ComingSoonSheet
-        message={comingSoonMessage}
-        onClose={() => setComingSoonMessage('')}
-        title="Multi-week planning"
-      />
     </section>
   )
 }

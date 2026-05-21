@@ -276,7 +276,7 @@ function AddRecipe() {
 
         <div className="space-y-5 rounded-3xl border border-stone-100 bg-white/70 p-4 shadow-[0_8px_24px_rgba(30,41,59,0.05)]">
           <TextArea
-            helperText="Add one ingredient per line, starting with the amount where possible. Example: 500g chicken breast"
+            helperText="For best results, add one ingredient per line. Pasted lists also work, but please double-check before saving."
             label="Ingredients"
             name="ingredients"
             onChange={updateRecipe}

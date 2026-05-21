@@ -19,12 +19,14 @@ import {
   deleteManualShoppingItems,
   getClearedShoppingItemIds,
   getManualShoppingItems,
-  getPlannedMeals,
+  getPlannedMealsForWeek,
+  getPlannerSettings,
   getRemovedRecipeIds,
   getSavedRecipes,
   saveClearedShoppingItemIds,
   saveManualShoppingItem,
 } from '../utils/localStorage'
+import { getCurrentWeekKey } from '../utils/plannerWeeks'
 import { getVisibleRecipes } from '../utils/recipeKeys'
 import {
   generateShoppingGroups,
@@ -287,7 +289,14 @@ function Shopping() {
   const [showAddItemModal, setShowAddItemModal] = useState(false)
   const [showOptionsModal, setShowOptionsModal] = useState(false)
   const [errorMessage, setErrorMessage] = useState('')
-  const [plannedMeals] = useState(() => getPlannedMeals())
+  const [plannedMeals] = useState(() => {
+    const plannerSettings = getPlannerSettings()
+    const selectedWeekKey =
+      plannerSettings.selectedWeekStartDate ||
+      getCurrentWeekKey(plannerSettings.weekStartDay)
+
+    return getPlannedMealsForWeek(selectedWeekKey)
+  })
   const [recipes] = useState(() =>
     getVisibleRecipes(getSavedRecipes(), sampleRecipes, getRemovedRecipeIds()),
   )

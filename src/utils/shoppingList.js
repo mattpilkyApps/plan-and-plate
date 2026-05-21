@@ -102,6 +102,16 @@ function formatScaledQuantity(quantity, scale) {
   return String(Math.round(scaledQuantity * 100) / 100)
 }
 
+function getScaledQuantityValue(quantity, scale) {
+  const numericQuantity = Number(quantity)
+
+  if (!quantity || Number.isNaN(numericQuantity)) {
+    return null
+  }
+
+  return numericQuantity * scale
+}
+
 function getServingScale(plannedMeal, recipe) {
   const recipeServings = Number(recipe.servings)
   const plannedServings = Number(plannedMeal.plannedServings || recipe.servings)
@@ -113,13 +123,37 @@ function getServingScale(plannedMeal, recipe) {
   return plannedServings / recipeServings
 }
 
-function getShoppingItemDisplay(ingredient, scale) {
-  const numericQuantity = Number(ingredient.quantity)
+function normalizeIngredientName(name) {
+  return name
+    .toLowerCase()
+    .replace(/[^\w\s]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .replace(/ies$/, 'y')
+    .replace(/oes$/, 'o')
+    .replace(/s$/, '')
+}
 
-  if (!ingredient.quantity || Number.isNaN(numericQuantity)) {
+function formatMergedQuantity(quantity, unit) {
+  if (quantity === null) {
+    return ''
+  }
+
+  const roundedQuantity = Number.isInteger(quantity)
+    ? quantity
+    : Math.round(quantity * 100) / 100
+
+  return [String(roundedQuantity), unit].filter(Boolean).join(' ')
+}
+
+function getShoppingItemDisplay(ingredient, scale) {
+  const scaledQuantity = getScaledQuantityValue(ingredient.quantity, scale)
+
+  if (scaledQuantity === null) {
     return {
       name: ingredient.rawText,
       quantity: '',
+      scaledQuantity: null,
     }
   }
 
@@ -128,6 +162,52 @@ function getShoppingItemDisplay(ingredient, scale) {
     quantity: [formatScaledQuantity(ingredient.quantity, scale), ingredient.unit]
       .filter(Boolean)
       .join(' '),
+    scaledQuantity,
+  }
+}
+
+function addGeneratedItemToGroup(groupedItems, category, item) {
+  if (item.scaledQuantity === null) {
+    groupedItems[category].push(item)
+    return
+  }
+
+  const normalizedUnit = item.unit.toLowerCase()
+  const normalizedName = normalizeIngredientName(item.name)
+  const mergeKey = `${normalizedName}-${normalizedUnit}`
+  const existingItem = groupedItems[category].find(
+    (groupedItem) => groupedItem.mergeKey === mergeKey,
+  )
+
+  if (!existingItem) {
+    groupedItems[category].push({
+      ...item,
+      mergeKey,
+      quantity: formatMergedQuantity(item.scaledQuantity, item.unit),
+    })
+    return
+  }
+
+  existingItem.scaledQuantity += item.scaledQuantity
+  existingItem.quantity = formatMergedQuantity(
+    existingItem.scaledQuantity,
+    existingItem.unit,
+  )
+  existingItem.rawText = `${existingItem.rawText}; ${item.rawText}`
+
+  if (!existingItem.note.includes(item.note)) {
+    existingItem.note = `${existingItem.note}, ${item.note}`
+  }
+}
+
+function cleanShoppingItem(item) {
+  return {
+    id: item.id,
+    isManual: item.isManual,
+    name: item.name,
+    note: item.note,
+    quantity: item.quantity,
+    rawText: item.rawText,
   }
 }
 
@@ -159,11 +239,13 @@ export function generateShoppingGroups(
       const scale = getServingScale(plannedMeal, recipe)
       const displayItem = getShoppingItemDisplay(ingredient, scale)
 
-      groupedItems[category].push({
+      addGeneratedItemToGroup(groupedItems, category, {
         id: itemId,
         isManual: false,
         name: displayItem.name,
         quantity: displayItem.quantity,
+        scaledQuantity: displayItem.scaledQuantity,
+        unit: ingredient.unit || '',
         rawText: ingredient.rawText,
         note: recipe.name,
       })
@@ -188,7 +270,7 @@ export function generateShoppingGroups(
     .map((groupName) => ({
       name: groupName,
       color: groupStyles[groupName],
-      items: groupedItems[groupName],
+      items: groupedItems[groupName].map(cleanShoppingItem),
     }))
     .filter((group) => group.items.length > 0)
 }
