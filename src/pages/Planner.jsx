@@ -188,12 +188,14 @@ function MealCard({
   canPlaceInSlot,
   index,
   isEditMode,
+  isSelected,
   meal,
   item,
   onDeleteMeal,
   onOpenActions,
   onOpenRecipe,
   onPlaceInSlot,
+  onSelectMeal,
   onStartPlacement,
 }) {
   const longPressTimer = useRef(null)
@@ -247,6 +249,10 @@ function MealCard({
     <div
       className={`no-touch-callout relative flex min-h-9 cursor-pointer touch-manipulation select-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
         isEditMode ? 'planner-meal-editing' : ''
+      } ${
+        isSelected
+          ? 'scale-[1.03] ring-2 ring-[#5A8D2B] ring-offset-2 ring-offset-white'
+          : ''
       } ${meal.cardColor}`}
       onClick={(event) => {
         event.stopPropagation()
@@ -256,9 +262,14 @@ function MealCard({
           return
         }
 
+        if (canPlaceInSlot && !isSelected) {
+          onPlaceInSlot(item.day, item.mealSlot)
+          return
+        }
+
         if (isEditMode) {
-          if (canPlaceInSlot) {
-            onPlaceInSlot(item.day, item.mealSlot)
+          if (!isSelected) {
+            onSelectMeal(item)
           }
           return
         }
@@ -296,7 +307,7 @@ function MealCard({
       <p className="line-clamp-2 flex-1 pr-4 text-[0.68rem] font-bold leading-tight text-stone-800">
         {item.name}
       </p>
-      {!isEditMode && (
+      {!isEditMode && !canPlaceInSlot && (
         <button
           aria-label={`Meal actions for ${item.name}`}
           className={`absolute right-0.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ${meal.textColor}`}
@@ -322,11 +333,12 @@ function MealColumn({
   meal,
   items,
   onDeleteMeal,
-  onExitEditMode,
   onOpenActions,
   onOpenRecipe,
   onPlaceMeal,
+  onSelectMeal,
   onStartPlacement,
+  selectedMealId,
   showHeading,
 }) {
   return (
@@ -335,17 +347,15 @@ function MealColumn({
 
       <div
         className={`min-h-10 space-y-1 rounded-2xl transition ${
-          isEditMode ? 'bg-[#EAF3DE]/45 ring-2 ring-[#A8C686]/70' : ''
+          canPlaceInSlot
+            ? 'bg-[#EAF3DE]/60 ring-2 ring-[#A8C686]/80'
+            : isEditMode
+              ? 'bg-stone-50'
+              : ''
         }`}
         onClick={(event) => {
-          if (isEditMode) {
+          if (canPlaceInSlot) {
             event.stopPropagation()
-
-            if (!canPlaceInSlot) {
-              onExitEditMode()
-              return
-            }
-
             onPlaceMeal(day.weekday, meal.key)
           }
         }}
@@ -355,6 +365,7 @@ function MealColumn({
             canPlaceInSlot={canPlaceInSlot}
             index={index}
             isEditMode={isEditMode}
+            isSelected={getMealItemId(item) === selectedMealId}
             item={item}
             key={getMealItemId(item)}
             meal={meal}
@@ -362,6 +373,7 @@ function MealColumn({
             onOpenActions={onOpenActions}
             onOpenRecipe={onOpenRecipe}
             onPlaceInSlot={onPlaceMeal}
+            onSelectMeal={onSelectMeal}
             onStartPlacement={onStartPlacement}
           />
         ))}
@@ -375,31 +387,25 @@ function DayCard({
   day,
   isEditMode,
   onDeleteMeal,
-  onExitEditMode,
   onOpenActions,
   onOpenRecipe,
   onPlaceMeal,
+  onSelectMeal,
   onStartPlacement,
+  selectedMealId,
   showMealHeadings,
 }) {
   return (
     <article
       className="rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)]"
       onClick={(event) => {
-        if (isEditMode) {
+        if (isEditMode || canPlaceInSlot) {
           event.stopPropagation()
-          onExitEditMode()
         }
       }}
     >
       <div
         className="grid grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5"
-        onClick={(event) => {
-          if (isEditMode && event.target === event.currentTarget) {
-            event.stopPropagation()
-            onExitEditMode()
-          }
-        }}
       >
         <div className="pt-1">
           <p className="text-sm font-bold text-[#6D8E3D]">{day.weekday}</p>
@@ -423,11 +429,12 @@ function DayCard({
             meal={meal}
             items={day.meals[meal.key]}
             onDeleteMeal={onDeleteMeal}
-            onExitEditMode={onExitEditMode}
             onOpenActions={onOpenActions}
             onOpenRecipe={onOpenRecipe}
             onPlaceMeal={onPlaceMeal}
+            onSelectMeal={onSelectMeal}
             onStartPlacement={onStartPlacement}
+            selectedMealId={selectedMealId}
             showHeading={showMealHeadings}
           />
         ))}
@@ -979,6 +986,8 @@ function Planner() {
   const [copiedWeekMessage, setCopiedWeekMessage] = useState('')
   const [activeMealModal, setActiveMealModal] = useState('')
   const [placementSelection, setPlacementSelection] = useState(null)
+  const [isPlannerEditMode, setIsPlannerEditMode] = useState(false)
+  const [selectedEditMeal, setSelectedEditMeal] = useState(null)
   const [activeQueueItem, setActiveQueueItem] = useState(null)
   const [lastRemovedMeal, setLastRemovedMeal] = useState(null)
   const [selectedMeal, setSelectedMeal] = useState(null)
@@ -992,7 +1001,7 @@ function Planner() {
     recipeId: sampleRecipes[0].id || sampleRecipes[0].name,
     plannedServings: sampleRecipes[0].servings,
   }))
-  const isEditMode = Boolean(placementSelection)
+  const isEditMode = isPlannerEditMode
   const selectedWeekKey =
     plannerSettings.selectedWeekStartDate ||
     getCurrentWeekKey(plannerSettings.weekStartDay)
@@ -1041,6 +1050,7 @@ function Planner() {
         plannedServings: plannedMeal.plannedServings,
         plannedMealId: plannedMeal.id,
         recipeId: plannedMeal.recipeId,
+        image: plannedMeal.image,
         icon:
           plannedMeal.icon ||
           getMealIcon({
@@ -1083,6 +1093,10 @@ function Planner() {
   }
 
   function openMealActions(item) {
+    if (isPlannerEditMode) {
+      return
+    }
+
     setSelectedMeal(item)
     setServingsChoice(item.plannedServings || 1)
     setActiveMealModal('actions')
@@ -1091,6 +1105,29 @@ function Planner() {
   function closeMealModals() {
     setActiveMealModal('')
     setSelectedMeal(null)
+  }
+
+  function exitPlannerEditMode() {
+    setIsPlannerEditMode(false)
+    setSelectedEditMeal(null)
+  }
+
+  function startPlannerEditMode(item) {
+    setIsPlannerEditMode(true)
+    setSelectedEditMeal(item)
+    setPlacementSelection(null)
+    setActiveMealModal('')
+    setSelectedMeal(null)
+    setLastRemovedMeal(null)
+  }
+
+  function selectMealInEditMode(item) {
+    if (!isPlannerEditMode) {
+      return
+    }
+
+    setSelectedEditMeal(item)
+    setLastRemovedMeal(null)
   }
 
   function updatePlannerChoice(event) {
@@ -1154,6 +1191,7 @@ function Planner() {
       recipeName: recipe.name,
       recipeId: recipe.id || recipe.name,
       plannedServings: Number(plannedServings) || recipe.servings || 1,
+      image: recipe.image,
       icon:
         recipe.icon ||
         getMealIcon({
@@ -1180,6 +1218,7 @@ function Planner() {
           recipeName: queueItem.recipeName,
           recipeId: queueItem.recipeId,
           plannedServings: Number(queueItem.plannedServings) || 1,
+          image: queueItem.image,
           icon:
             queueItem.icon ||
             getMealIcon({
@@ -1209,6 +1248,7 @@ function Planner() {
           recipeName: item.name,
           recipeId: item.recipeId,
           plannedServings: Number(item.plannedServings) || 1,
+          image: item.image,
           icon:
             item.icon ||
             getMealIcon({
@@ -1229,18 +1269,30 @@ function Planner() {
     setLastRemovedMeal(null)
   }
 
-  function startPlacementFromMeal(item, mode = 'delete') {
+  function startPlacementFromMeal(item, mode = 'move') {
+    if (mode === 'move') {
+      startPlannerEditMode(item)
+      return
+    }
+
     setPlacementSelection({
       type: 'meal',
       item,
       mode,
     })
+    exitPlannerEditMode()
     setActiveMealModal('')
     setSelectedMeal(null)
     setLastRemovedMeal(null)
   }
 
   function placeSelectionInSlot(day, mealSlot) {
+    if (selectedEditMeal) {
+      moveMealToSlot(selectedEditMeal, day, mealSlot)
+      setSelectedEditMeal(null)
+      return
+    }
+
     if (!placementSelection) {
       return
     }
@@ -1314,6 +1366,7 @@ function Planner() {
     setPlannerSettings(savedSettings)
     setPlannedMeals(getPlannedMealsForWeek(nextWeekKey))
     setPlacementSelection(null)
+    exitPlannerEditMode()
     setLastRemovedMeal(null)
   }
 
@@ -1350,6 +1403,7 @@ function Planner() {
     setShowSettingsModal(false)
     setCopiedWeekMessage('')
     setPlacementSelection(null)
+    exitPlannerEditMode()
     setLastRemovedMeal(null)
   }
 
@@ -1367,6 +1421,7 @@ function Planner() {
     setPlannedMeals(getPlannedMealsForWeek(nextSelectedWeekStartDate))
     setShowSettingsModal(false)
     setPlacementSelection(null)
+    exitPlannerEditMode()
     setLastRemovedMeal(null)
   }
 
@@ -1380,6 +1435,14 @@ function Planner() {
     return plannedMeals.find((plannedMeal) => plannedMeal.id === item.plannedMealId)
   }
 
+  function isSameMealItem(firstMeal, secondMeal) {
+    if (!firstMeal || !secondMeal) {
+      return false
+    }
+
+    return getMealItemId(firstMeal) === getMealItemId(secondMeal)
+  }
+
   function saveStarterAsPlannedMeal(item, updates) {
     const matchedRecipe = getRecipeForMealItem(item, availableRecipes)
     const plannedMeal = {
@@ -1389,6 +1452,7 @@ function Planner() {
       recipeName: item.name,
       recipeId: matchedRecipe?.id || matchedRecipe?.name || item.recipeId,
       plannedServings: item.plannedServings || matchedRecipe?.servings || 1,
+      image: matchedRecipe?.image || item.image,
       icon: item.icon,
       ...updates,
     }
@@ -1451,6 +1515,10 @@ function Planner() {
   }
 
   function removeMealFromPlanner(item) {
+    if (isSameMealItem(item, selectedEditMeal)) {
+      setSelectedEditMeal(null)
+    }
+
     if (item.plannedMealId) {
       const nextPlannedMeals = removePlannedMealFromWeek(
         item.plannedMealId,
@@ -1504,6 +1572,10 @@ function Planner() {
   }
 
   function deleteMealWithUndo(item) {
+    if (isSameMealItem(item, selectedEditMeal)) {
+      setSelectedEditMeal(null)
+    }
+
     if (item.plannedMealId) {
       const existingMeal = getExistingPlannedMeal(item)
       const mealToRestore =
@@ -1514,6 +1586,7 @@ function Planner() {
           recipeName: item.name,
           recipeId: item.recipeId,
           plannedServings: item.plannedServings,
+          image: item.image,
           icon: item.icon,
         }
 
@@ -1594,7 +1667,13 @@ function Planner() {
   const canPlaceInSlot =
     placementSelection?.type === 'queue' ||
     placementSelection?.mode === 'move' ||
-    placementSelection?.mode === 'duplicate'
+    placementSelection?.mode === 'duplicate' ||
+    Boolean(selectedEditMeal)
+  const selectedEditMealName =
+    selectedEditMeal?.recipeName || selectedEditMeal?.name || ''
+  const selectedEditMealId = selectedEditMeal
+    ? getMealItemId(selectedEditMeal)
+    : ''
 
   return (
     <section
@@ -1604,8 +1683,8 @@ function Planner() {
           setLastRemovedMeal(null)
         }
 
-        if (isEditMode && event.target === event.currentTarget) {
-          setPlacementSelection(null)
+        if (isPlannerEditMode && event.target === event.currentTarget) {
+          exitPlannerEditMode()
         }
       }}
     >
@@ -1616,17 +1695,43 @@ function Planner() {
         weekStartLabel={weekStartLabel}
       />
 
-      <WeeklyQueueSection
-        activeQueueItem={
-          placementSelection?.type === 'queue' ? placementSelection.item : null
-        }
-        items={weeklyQueueItems}
-        onOpenActions={setActiveQueueItem}
-        onSelectItem={startPlacementFromQueue}
-        recipes={availableRecipes}
-      />
+      <div
+        className={`transition ${
+          isPlannerEditMode ? 'pointer-events-none opacity-45' : ''
+        }`}
+      >
+        <WeeklyQueueSection
+          activeQueueItem={
+            placementSelection?.type === 'queue' ? placementSelection.item : null
+          }
+          items={weeklyQueueItems}
+          onOpenActions={setActiveQueueItem}
+          onSelectItem={startPlacementFromQueue}
+          recipes={availableRecipes}
+        />
+      </div>
 
-      {placementSelection && (
+      {isPlannerEditMode && (
+        <div className="sticky top-3 z-10 mt-3 flex items-center justify-between gap-3 rounded-3xl border border-[#A8C686]/60 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-[0_10px_22px_rgba(90,141,43,0.16)]">
+          <div>
+            <p className="text-sm font-bold">Editing planner</p>
+            <p className="mt-0.5 text-xs font-semibold leading-tight">
+              {selectedEditMealName
+                ? `Selected: ${selectedEditMealName}. Tap a slot to move it.`
+                : 'Tap a meal to select it, then tap a destination slot.'}
+            </p>
+          </div>
+          <button
+            className="rounded-full bg-white px-4 py-2 text-xs font-bold shadow-sm transition active:scale-[0.96]"
+            onClick={exitPlannerEditMode}
+            type="button"
+          >
+            Done
+          </button>
+        </div>
+      )}
+
+      {placementSelection && !isPlannerEditMode && (
         <div className="mt-3 flex items-center justify-between gap-3 rounded-3xl border border-[#A8C686]/60 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-sm">
           <p className="text-sm font-bold">
             Tap a planner slot to place {placementSelection.item.recipeName || placementSelection.item.name}.
@@ -1643,8 +1748,8 @@ function Planner() {
 
       <WeekControls
         days={displayedPlannerDays}
-        isEditMode={isEditMode}
-        onExitEditMode={() => setPlacementSelection(null)}
+        isEditMode={isPlannerEditMode}
+        onExitEditMode={exitPlannerEditMode}
         onNextWeek={goToNextWeek}
         onOpenSettings={openPlannerSettings}
         onPreviousWeek={goToPreviousWeek}
@@ -1659,11 +1764,12 @@ function Planner() {
               isEditMode={isEditMode}
               key={day.weekday}
               onDeleteMeal={deleteMealWithUndo}
-              onExitEditMode={() => setPlacementSelection(null)}
               onOpenActions={openMealActions}
               onOpenRecipe={openMealRecipe}
               onPlaceMeal={placeSelectionInSlot}
+              onSelectMeal={selectMealInEditMode}
               onStartPlacement={startPlacementFromMeal}
+              selectedMealId={selectedEditMealId}
               showMealHeadings={index === 0}
             />
           ))}
