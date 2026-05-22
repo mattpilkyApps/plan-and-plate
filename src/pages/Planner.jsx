@@ -16,7 +16,7 @@ import {
   Users,
   X,
 } from 'lucide-react'
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import FloatingActionButton from '../components/FloatingActionButton'
@@ -115,56 +115,71 @@ function PlannerHeader({
 }
 
 function WeekControls({
+  canEditPlanner,
   days,
   isEditMode,
   onExitEditMode,
   onNextWeek,
   onOpenSettings,
   onPreviousWeek,
+  onStartEditMode,
 }) {
   const firstDay = days[0]
   const lastDay = days[days.length - 1]
 
   return (
-    <div className="mt-4 flex items-center justify-between">
-      {isEditMode ? (
+    <div className="mt-4 space-y-3">
+      <div className="flex items-center justify-between">
+        {isEditMode ? (
+          <button
+            className="flex h-12 items-center justify-center rounded-2xl bg-[#5A8D2B] px-5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(90,141,43,0.24)] transition active:scale-[0.96]"
+            onClick={onExitEditMode}
+            type="button"
+          >
+            Done
+          </button>
+        ) : (
+          <button
+            aria-label="Previous week"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
+            onClick={onPreviousWeek}
+            type="button"
+          >
+            <ChevronLeft size={26} />
+          </button>
+        )}
+
         <button
-          className="flex h-12 items-center justify-center rounded-2xl bg-[#5A8D2B] px-5 text-sm font-bold text-white shadow-[0_10px_20px_rgba(90,141,43,0.24)] transition active:scale-[0.96]"
-          onClick={onExitEditMode}
+          className="flex items-center gap-2 text-lg font-bold tracking-tight text-stone-900"
+          onClick={isEditMode ? onExitEditMode : onOpenSettings}
           type="button"
         >
-          Done
+          <span>
+            {firstDay.dayName} {firstDay.date} - {lastDay.dayName} {lastDay.date}
+          </span>
+          <ChevronDown size={20} />
         </button>
-      ) : (
+
         <button
-          aria-label="Previous week"
-          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
-          onClick={onPreviousWeek}
+          aria-label="Next week"
+          className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-[#5A8D2B] shadow-sm"
+          onClick={onNextWeek}
           type="button"
         >
-          <ChevronLeft size={26} />
+          <ChevronRight size={26} />
+        </button>
+      </div>
+
+      {!isEditMode && canEditPlanner && (
+        <button
+          className="ml-auto flex h-10 items-center gap-2 rounded-2xl border border-[#DDE8CC] bg-white px-4 text-sm font-bold text-[#5A8D2B] shadow-sm transition active:scale-[0.96]"
+          onClick={onStartEditMode}
+          type="button"
+        >
+          <MoveRight size={17} />
+          Edit planner
         </button>
       )}
-
-      <button
-        className="flex items-center gap-2 text-lg font-bold tracking-tight text-stone-900"
-        onClick={isEditMode ? onExitEditMode : onOpenSettings}
-        type="button"
-      >
-        <span>
-          {firstDay.dayName} {firstDay.date} - {lastDay.dayName} {lastDay.date}
-        </span>
-        <ChevronDown size={20} />
-      </button>
-
-      <button
-        aria-label="Next week"
-        className="flex h-12 w-12 items-center justify-center rounded-2xl border border-stone-100 bg-white text-[#5A8D2B] shadow-sm"
-        onClick={onNextWeek}
-        type="button"
-      >
-        <ChevronRight size={26} />
-      </button>
     </div>
   )
 }
@@ -196,44 +211,7 @@ function MealCard({
   onOpenRecipe,
   onPlaceInSlot,
   onSelectMeal,
-  onStartPlacement,
 }) {
-  const longPressTimer = useRef(null)
-  const pointerStart = useRef({ x: 0, y: 0 })
-  const ignoreNextClick = useRef(false)
-
-  function clearLongPressTimer() {
-    if (longPressTimer.current) {
-      window.clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
-  }
-
-  function handlePointerDown(event) {
-    if (isEditMode) {
-      return
-    }
-
-    pointerStart.current = {
-      x: event.clientX,
-      y: event.clientY,
-    }
-    clearLongPressTimer()
-    longPressTimer.current = window.setTimeout(() => {
-      ignoreNextClick.current = true
-      onStartPlacement(item)
-    }, 425)
-  }
-
-  function handlePointerMove(event) {
-    const xDistance = Math.abs(event.clientX - pointerStart.current.x)
-    const yDistance = Math.abs(event.clientY - pointerStart.current.y)
-
-    if (xDistance > 12 || yDistance > 12) {
-      clearLongPressTimer()
-    }
-  }
-
   function handleKeyDown(event) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault()
@@ -257,11 +235,6 @@ function MealCard({
       onClick={(event) => {
         event.stopPropagation()
 
-        if (ignoreNextClick.current) {
-          ignoreNextClick.current = false
-          return
-        }
-
         if (canPlaceInSlot && !isSelected) {
           onPlaceInSlot(item.day, item.mealSlot)
           return
@@ -278,11 +251,6 @@ function MealCard({
       }}
       onContextMenu={(event) => event.preventDefault()}
       onKeyDown={handleKeyDown}
-      onPointerCancel={clearLongPressTimer}
-      onPointerDown={handlePointerDown}
-      onPointerLeave={clearLongPressTimer}
-      onPointerMove={handlePointerMove}
-      onPointerUp={clearLongPressTimer}
       role="button"
       style={{
         animationDelay: `${index * 70}ms`,
@@ -337,7 +305,6 @@ function MealColumn({
   onOpenRecipe,
   onPlaceMeal,
   onSelectMeal,
-  onStartPlacement,
   selectedMealId,
   showHeading,
 }) {
@@ -374,7 +341,6 @@ function MealColumn({
             onOpenRecipe={onOpenRecipe}
             onPlaceInSlot={onPlaceMeal}
             onSelectMeal={onSelectMeal}
-            onStartPlacement={onStartPlacement}
           />
         ))}
       </div>
@@ -391,7 +357,6 @@ function DayCard({
   onOpenRecipe,
   onPlaceMeal,
   onSelectMeal,
-  onStartPlacement,
   selectedMealId,
   showMealHeadings,
 }) {
@@ -433,7 +398,6 @@ function DayCard({
             onOpenRecipe={onOpenRecipe}
             onPlaceMeal={onPlaceMeal}
             onSelectMeal={onSelectMeal}
-            onStartPlacement={onStartPlacement}
             selectedMealId={selectedMealId}
             showHeading={showMealHeadings}
           />
@@ -1114,7 +1078,7 @@ function Planner() {
 
   function startPlannerEditMode(item) {
     setIsPlannerEditMode(true)
-    setSelectedEditMeal(item)
+    setSelectedEditMeal(item || null)
     setPlacementSelection(null)
     setActiveMealModal('')
     setSelectedMeal(null)
@@ -1747,12 +1711,14 @@ function Planner() {
       )}
 
       <WeekControls
+        canEditPlanner={plannedMealCount > 0}
         days={displayedPlannerDays}
         isEditMode={isPlannerEditMode}
         onExitEditMode={exitPlannerEditMode}
         onNextWeek={goToNextWeek}
         onOpenSettings={openPlannerSettings}
         onPreviousWeek={goToPreviousWeek}
+        onStartEditMode={() => startPlannerEditMode()}
       />
 
       {shouldShowPlannerGrid ? (
@@ -1768,7 +1734,6 @@ function Planner() {
               onOpenRecipe={openMealRecipe}
               onPlaceMeal={placeSelectionInSlot}
               onSelectMeal={selectMealInEditMode}
-              onStartPlacement={startPlacementFromMeal}
               selectedMealId={selectedEditMealId}
               showMealHeadings={index === 0}
             />
