@@ -299,7 +299,7 @@ function syncWeeklyQueueForRecipe(recipe) {
       ...item,
       recipeName: recipe.name,
       icon: recipe.icon || item.icon,
-      image: recipe.image || item.image,
+      image: recipe.image,
       mealType: recipe.mealType || item.mealType,
     }
   })
@@ -325,6 +325,7 @@ function syncPlannedMealsForRecipe(recipe) {
       ...plannedMeal,
       recipeName: recipe.name,
       icon: recipe.icon || plannedMeal.icon,
+      image: recipe.image,
     }
   })
 
@@ -343,6 +344,7 @@ function syncPlannedMealsForRecipe(recipe) {
           ...plannedMeal,
           recipeName: recipe.name,
           icon: recipe.icon || plannedMeal.icon,
+          image: recipe.image,
         }
       }),
     ]),

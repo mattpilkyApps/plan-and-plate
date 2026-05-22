@@ -64,6 +64,24 @@ function SmallPill({ icon: Icon, children, className }) {
   )
 }
 
+function RecipeThumbnail({ recipe, icon: Icon }) {
+  if (recipe.image) {
+    return (
+      <img
+        src={recipe.image}
+        alt=""
+        className="h-32 w-32 shrink-0 rounded-2xl object-cover"
+      />
+    )
+  }
+
+  return (
+    <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B]">
+      <Icon size={42} />
+    </div>
+  )
+}
+
 function RecipeCard({
   addedRecipeId,
   onAddToWeek,
@@ -84,11 +102,7 @@ function RecipeCard({
       className="flex cursor-pointer gap-4 rounded-3xl border border-stone-100 bg-white p-3 text-left shadow-[0_8px_24px_rgba(30,41,59,0.05)] transition hover:scale-[1.005]"
       onClick={() => onOpenRecipe(recipe)}
     >
-      <img
-        src={recipe.image}
-        alt=""
-        className="h-32 w-32 shrink-0 rounded-2xl object-cover"
-      />
+      <RecipeThumbnail icon={MealIcon} recipe={recipe} />
 
       <div className="min-w-0 flex-1 py-1">
         <div className="flex items-start justify-between gap-2">

@@ -48,6 +48,26 @@ function DetailSection({ children, title }) {
   )
 }
 
+function RecipeHeroImage({ recipe, icon }) {
+  if (recipe.image) {
+    return (
+      <img
+        alt=""
+        className="mt-5 h-64 w-full rounded-[2rem] object-cover shadow-[0_12px_30px_rgba(30,41,59,0.08)]"
+        src={recipe.image}
+      />
+    )
+  }
+
+  return (
+    <div className="mt-5 flex h-64 w-full items-center justify-center rounded-[2rem] bg-[#EAF3DE] text-[#5A8D2B] shadow-[0_12px_30px_rgba(30,41,59,0.08)]">
+      <span className="text-6xl" aria-hidden="true">
+        {icon}
+      </span>
+    </div>
+  )
+}
+
 function getIngredientLines(recipe) {
   if (recipe.ingredients) {
     return recipe.ingredients
@@ -146,6 +166,10 @@ function RecipeDetail() {
   const servings = recipe.servings || 1
   const ingredients = getIngredientLines(recipe)
   const method = recipe.method || recipe.instructions || ''
+  const HeroIcon = getMealIcon({
+    mealType: category,
+    name: recipe.name,
+  })
 
   function addRecipeToWeek() {
     setWasJustAdded(true)
@@ -208,11 +232,7 @@ function RecipeDetail() {
         </div>
       </header>
 
-      <img
-        alt=""
-        className="mt-5 h-64 w-full rounded-[2rem] object-cover shadow-[0_12px_30px_rgba(30,41,59,0.08)]"
-        src={recipe.image}
-      />
+      <RecipeHeroImage icon={HeroIcon} recipe={recipe} />
 
       <div className="mt-5">
         <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
