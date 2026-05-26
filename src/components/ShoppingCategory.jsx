@@ -1,11 +1,16 @@
 import {
   Apple,
+  Beef,
   ChevronUp,
-  Fish,
-  Milk,
+  CookingPot,
+  Croissant,
+  Egg,
+  Leaf,
   MoreVertical,
   Package,
   Snowflake,
+  Soup,
+  Wheat,
 } from 'lucide-react'
 import { useState } from 'react'
 
@@ -16,24 +21,49 @@ const categoryStyles = {
     countClass: 'bg-green-50 text-[#5A8D2B]',
   },
   red: {
-    Icon: Fish,
+    Icon: Beef,
     iconClass: 'bg-red-50 text-red-600',
     countClass: 'bg-red-50 text-red-600',
   },
   amber: {
-    Icon: Milk,
+    Icon: Egg,
     iconClass: 'bg-amber-50 text-amber-600',
     countClass: 'bg-amber-50 text-amber-700',
+  },
+  orange: {
+    Icon: Croissant,
+    iconClass: 'bg-orange-50 text-orange-600',
+    countClass: 'bg-orange-50 text-orange-700',
   },
   violet: {
     Icon: Package,
     iconClass: 'bg-violet-50 text-violet-600',
     countClass: 'bg-violet-50 text-violet-600',
   },
+  lime: {
+    Icon: Leaf,
+    iconClass: 'bg-lime-50 text-lime-700',
+    countClass: 'bg-lime-50 text-lime-700',
+  },
+  rose: {
+    Icon: Soup,
+    iconClass: 'bg-rose-50 text-rose-600',
+    countClass: 'bg-rose-50 text-rose-600',
+  },
+  yellow: {
+    Icon: CookingPot,
+    iconClass: 'bg-yellow-50 text-yellow-700',
+    countClass: 'bg-yellow-50 text-yellow-700',
+  },
   blue: {
     Icon: Snowflake,
     iconClass: 'bg-blue-50 text-blue-600',
     countClass: 'bg-blue-50 text-blue-600',
+  },
+  stone: {
+    Icon: Wheat,
+    iconClass: 'bg-stone-100 text-stone-600',
+    countClass: 'bg-stone-100 text-stone-600',
   },
 }
 
@@ -49,7 +79,7 @@ function ShoppingItem({
     <div className="flex items-start gap-3 border-t border-stone-100 px-4 py-3">
       <input
         checked={isChecked}
-        className="mt-1 h-5 w-5 rounded border-stone-300 accent-[#5A8D2B]"
+        className="mt-1 h-5 w-5 shrink-0 rounded border-stone-300 accent-[#5A8D2B]"
         onChange={() => onToggleItem(item.id)}
         type="checkbox"
       />
@@ -66,12 +96,15 @@ function ShoppingItem({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="whitespace-nowrap text-sm font-semibold text-stone-700">
-          {item.quantity}
-        </span>
+        {item.quantity && (
+          <span className="whitespace-nowrap rounded-full bg-[#F8F2EA] px-2.5 py-1 text-sm font-bold text-stone-700">
+            {item.quantity}
+          </span>
+        )}
         {item.isManual && (
           <button
-            className="rounded-full p-1 text-stone-500"
+            aria-label={`Remove ${item.name}`}
+            className="rounded-full p-1 text-stone-500 transition active:scale-95"
             onClick={() => onRemoveManualItem(item.id)}
             title="Remove manual item"
             type="button"
@@ -90,7 +123,7 @@ function ShoppingCategory({
   onRemoveManualItem,
   onToggleItem,
 }) {
-  const style = categoryStyles[group.color]
+  const style = categoryStyles[group.color] || categoryStyles.stone
   const Icon = style.Icon
   const [isOpen, setIsOpen] = useState(true)
 
@@ -107,7 +140,7 @@ function ShoppingCategory({
           <Icon size={22} />
         </span>
 
-        <h2 className="flex-1 text-xl font-bold tracking-tight text-stone-900">
+        <h2 className="min-w-0 flex-1 text-lg font-bold tracking-tight text-stone-900">
           {group.name}
         </h2>
 
