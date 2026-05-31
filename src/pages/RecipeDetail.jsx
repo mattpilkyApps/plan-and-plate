@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock,
   Pencil,
+  Star,
   Trash2,
   Users,
   X,
@@ -22,9 +23,13 @@ import {
 import {
   createLocalId,
   deleteSavedRecipe,
+  getRecipeMetadata,
+  getRecipeStats,
   getRemovedRecipeIds,
   getSavedRecipes,
+  markRecipeUsed,
   saveWeeklyQueueItem,
+  toggleRecipeFavourite,
 } from '../utils/localStorage'
 
 function InfoPill({ icon: Icon, label, value }) {
@@ -143,6 +148,7 @@ function RecipeDetail() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [successMessage, setSuccessMessage] = useState('')
   const [wasJustAdded, setWasJustAdded] = useState(false)
+  const [recipeMetadata, setRecipeMetadata] = useState(() => getRecipeMetadata())
 
   if (!recipe) {
     return (
@@ -166,10 +172,16 @@ function RecipeDetail() {
   const servings = recipe.servings || 1
   const ingredients = getIngredientLines(recipe)
   const method = recipe.method || recipe.instructions || ''
+  const recipeId = getRecipeId(recipe)
+  const recipeStats = getRecipeStats(recipeId, recipeMetadata)
   const HeroIcon = getMealIcon({
     mealType: category,
     name: recipe.name,
   })
+
+  function toggleFavourite() {
+    setRecipeMetadata(toggleRecipeFavourite(recipeId))
+  }
 
   function addRecipeToWeek() {
     setWasJustAdded(true)
@@ -178,7 +190,7 @@ function RecipeDetail() {
     const queueItem = {
       id: createLocalId('weekly-queue'),
       recipeName: recipe.name,
-      recipeId: recipe.id || recipe.name,
+      recipeId,
       plannedServings: servings,
       icon:
         recipe.icon ||
@@ -188,9 +200,14 @@ function RecipeDetail() {
         }),
       image: recipe.image,
       mealType: category,
+      usageTracked: true,
     }
     const queueItems = saveWeeklyQueueItem(queueItem)
     const itemWasSaved = queueItems.some((item) => item.id === queueItem.id)
+
+    if (itemWasSaved) {
+      setRecipeMetadata(markRecipeUsed(recipeId))
+    }
 
     setSuccessMessage(
       itemWasSaved
@@ -238,9 +255,28 @@ function RecipeDetail() {
         <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
           {category}
         </p>
-        <h1 className="mt-2 text-[2.25rem] font-bold leading-none tracking-tight text-stone-900">
-          {recipe.name}
-        </h1>
+        <div className="mt-2 flex items-start justify-between gap-3">
+          <h1 className="text-[2.25rem] font-bold leading-none tracking-tight text-stone-900">
+            {recipe.name}
+          </h1>
+          <button
+            aria-label={
+              recipeStats.favourite
+                ? `Remove ${recipe.name} from favourites`
+                : `Add ${recipe.name} to favourites`
+            }
+            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ${
+              recipeStats.favourite ? 'text-amber-500' : 'text-stone-400'
+            }`}
+            onClick={toggleFavourite}
+            type="button"
+          >
+            <Star
+              fill={recipeStats.favourite ? 'currentColor' : 'none'}
+              size={24}
+            />
+          </button>
+        </div>
         {recipe.description && (
           <p className="mt-3 text-base leading-relaxed text-stone-500">
             {recipe.description}

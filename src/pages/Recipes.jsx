@@ -9,6 +9,7 @@ import {
   Moon,
   Pencil,
   Search,
+  Star,
   Sun,
   Sunrise,
   Trash2,
@@ -27,13 +28,19 @@ import { getRecipeId, getRecipeKey, getVisibleRecipes } from '../utils/recipeKey
 import {
   createLocalId,
   deleteSavedRecipe,
+  getFavouriteRecipes,
+  getRecipeMetadata,
   getRemovedRecipeIds,
   getSavedRecipes,
+  markRecipeUsed,
   saveWeeklyQueueItem,
+  toggleRecipeFavourite,
+  withRecipeStatsList,
 } from '../utils/localStorage'
 
 const categoryFilters = [
-  { label: 'All', Icon: Bookmark },
+  { label: 'All Recipes', Icon: Bookmark },
+  { label: 'Favourites', Icon: Star },
   { label: 'Breakfast', Icon: Sun },
   { label: 'Lunch', Icon: Sunrise },
   { label: 'Dinner', Icon: Moon },
@@ -85,22 +92,22 @@ function SearchAndFilter({ onOpenFilter, onSearchChange, searchTerm }) {
   )
 }
 
-function CategoryChips({ onSelectCategory, selectedCategory }) {
+function RecipeTabs({ onSelectTab, selectedTab }) {
   return (
     <div className="no-scrollbar -mx-4 mt-5 overflow-x-auto px-4 pb-1">
       <div className="flex w-max gap-3">
         {categoryFilters.map((category) => {
           const Icon = category.Icon
-          const isActive = category.label === selectedCategory
+          const isActive = category.label === selectedTab
 
           return (
             <button
               key={category.label}
-              onClick={() => onSelectCategory(category.label)}
-              className={`flex h-12 items-center gap-2 rounded-2xl px-4 text-base font-bold shadow-sm transition ${
+              onClick={() => onSelectTab(category.label)}
+              className={`flex h-12 items-center gap-2 rounded-2xl border px-4 text-base font-bold shadow-sm transition active:scale-[0.98] ${
                 isActive
-                  ? 'bg-[#EAF3DE] text-[#5A8D2B]'
-                  : 'bg-[#FBF6EE] text-stone-800'
+                  ? 'border-[#D7E8C3] bg-white text-[#5A8D2B] shadow-[0_10px_24px_rgba(90,141,43,0.12)]'
+                  : 'border-stone-100 bg-[#FBF6EE] text-stone-800'
               }`}
               type="button"
             >
@@ -250,7 +257,8 @@ function Recipes() {
   const [recipeToDelete, setRecipeToDelete] = useState(null)
   const [comingSoonMessage, setComingSoonMessage] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState('All')
+  const [selectedTab, setSelectedTab] = useState('All Recipes')
+  const [recipeMetadata, setRecipeMetadata] = useState(() => getRecipeMetadata())
   const [successMessage, setSuccessMessage] = useState(
     location.state?.successMessage || '',
   )
@@ -261,7 +269,11 @@ function Recipes() {
     sampleRecipes,
     removedRecipeIds,
   )
-  const filteredRecipes = allRecipes.filter((recipe) => {
+  const recipesWithStats = withRecipeStatsList(allRecipes, recipeMetadata)
+  const favouriteRecipes = getFavouriteRecipes(recipesWithStats, recipeMetadata)
+  const recipesForSelectedTab =
+    selectedTab === 'Favourites' ? favouriteRecipes : recipesWithStats
+  const filteredRecipes = recipesForSelectedTab.filter((recipe) => {
     const searchableText = [
       recipe.name,
       recipe.mealType,
@@ -273,10 +285,16 @@ function Recipes() {
 
     const matchesSearch = searchableText.includes(searchTerm.trim().toLowerCase())
     const matchesCategory =
-      selectedCategory === 'All' || recipe.mealType === selectedCategory
+      selectedTab === 'All Recipes' ||
+      selectedTab === 'Favourites' ||
+      recipe.mealType === selectedTab
 
     return matchesSearch && matchesCategory
   })
+
+  function toggleFavourite(recipe) {
+    setRecipeMetadata(toggleRecipeFavourite(getRecipeId(recipe)))
+  }
 
   function addRecipeToWeek(recipe) {
     const recipeId = recipe.id || recipe.name
@@ -301,9 +319,14 @@ function Recipes() {
         }),
       image: recipe.image,
       mealType: recipe.mealType,
+      usageTracked: true,
     }
     const queueItems = saveWeeklyQueueItem(queueItem)
     const itemWasSaved = queueItems.some((item) => item.id === queueItem.id)
+
+    if (itemWasSaved) {
+      setRecipeMetadata(markRecipeUsed(recipeId))
+    }
 
     setSuccessMessage(
       itemWasSaved
@@ -344,9 +367,9 @@ function Recipes() {
         onSearchChange={(event) => setSearchTerm(event.target.value)}
         searchTerm={searchTerm}
       />
-      <CategoryChips
-        onSelectCategory={setSelectedCategory}
-        selectedCategory={selectedCategory}
+      <RecipeTabs
+        onSelectTab={setSelectedTab}
+        selectedTab={selectedTab}
       />
 
       {successMessage && (
@@ -359,7 +382,9 @@ function Recipes() {
       {filteredRecipes.length === 0 ? (
         <div className="mt-5">
           <EmptyState icon={BookOpenText} title="No recipes found">
-            {allRecipes.length === 0
+            {selectedTab === 'Favourites'
+              ? 'Favourite recipes to find them quickly later.'
+              : allRecipes.length === 0
               ? 'Add your first recipe to start planning meals.'
               : 'Try another search or add a new recipe.'}
           </EmptyState>
@@ -369,10 +394,12 @@ function Recipes() {
           {filteredRecipes.map((recipe) => (
             <RecipeCard
               addedRecipeId={addedRecipeId}
+              isFavourite={recipe.favourite}
               key={recipe.id || recipe.name}
               onAddToWeek={addRecipeToWeek}
               onOpenActions={openRecipeActions}
               onOpenRecipe={openRecipeDetail}
+              onToggleFavourite={toggleFavourite}
               recipe={recipe}
             />
           ))}

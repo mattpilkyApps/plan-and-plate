@@ -397,3 +397,124 @@ Phone testing found two small Shopping List V2 issues:
 ### Notes or follow-up
 
 - Same-name different-unit combining is display-only. It does not try to convert tablespoons into grams.
+
+## 2026-05-31 - Recipe Library Favourites And Usage Tracking
+
+### Why
+
+The recipe library needs better retention foundations before adding future recipe sorting or recently used views. Users should be able to mark recipes as favourites now, and the app should quietly track recipe usage for future milestones.
+
+### What changed
+
+- Added a separate recipe metadata store in localStorage for favourites and usage stats.
+- Recipes can now be favourited or unfavourited from recipe cards.
+- Recipe detail pages now have a favourite star beside the recipe title.
+- The Recipes page now shows a Favourite Recipes strip when favourites exist.
+- Added a lightweight All Recipes / Favourites toggle.
+- Search and meal category chips still work with the favourites view.
+- Added a friendly empty state when the favourites view has no matching recipes.
+- Usage tracking now records `timesUsed` and `lastUsed` when a recipe is added to Meals This Week, added directly to the planner, or duplicated as a planned meal.
+- Queued recipes are marked as already tracked so placing them into the planner does not double count usage.
+
+### Main files touched
+
+- `src/utils/localStorage.js`
+- `src/pages/Recipes.jsx`
+- `src/pages/RecipeDetail.jsx`
+- `src/pages/Planner.jsx`
+- `src/components/RecipeCard.jsx`
+
+### Testing
+
+- `npm run lint`
+- `npm run build`
+- Manual browser or phone checks should confirm favourites, filters, Add to Week, planner placement, and usage tracking.
+
+### Notes or follow-up
+
+- Recently Used, Most Used, favourites-first sorting, recipe collections, accounts, backend sync, and AI were intentionally not added.
+- Usage stats are local to the browser and device because the MVP is still localStorage-only.
+
+## 2026-05-31 - Recipe Library Premium Favourites Navigation
+
+### Why
+
+Phone testing showed the Recipes page had two competing recipe navigation controls: the original category row and a separate All Recipes / Favourites toggle. This made the page feel less polished.
+
+### What changed
+
+- Removed the separate All Recipes / Favourites segmented toggle.
+- Moved Favourites into the main horizontal recipe chip row.
+- Made Favourites the default tab when opening Recipes.
+- Kept All, Breakfast, Lunch, Dinner, and Snacks in the same row.
+- Removed the separate Favourite Recipes card strip to avoid duplicate recipe display.
+- Kept search working across Favourites, All, and meal tabs.
+- Kept favourite star behaviour on recipe cards.
+- Improved chip styling so the active recipe tab feels more deliberate and premium.
+
+### Main files touched
+
+- `src/pages/Recipes.jsx`
+- `docs/PLAN_AND_PLATE_DEVELOPER_LOG.md`
+
+### Testing
+
+- `npm run lint`
+- `npm run build`
+- Manual phone checks should confirm the Recipes page opens on Favourites, All works, meal tabs work, and no duplicate recipe navigation remains.
+
+### Notes or follow-up
+
+- Favourites intentionally remains the default even when there are no favourites yet.
+
+## 2026-05-31 - Recipe Tab Default And Order Adjustment
+
+### Why
+
+Phone review showed the Recipes tab should open on the full library, with All Recipes as the first visible chip and Favourites next to it.
+
+### What changed
+
+- Made All Recipes the default selected Recipes tab.
+- Moved All Recipes to the first chip position.
+- Moved Favourites to the second chip position.
+
+### Main files touched
+
+- `src/pages/Recipes.jsx`
+- `docs/PLAN_AND_PLATE_DEVELOPER_LOG.md`
+
+### Testing
+
+- `npm run lint`
+- `npm run build`
+
+## 2026-05-31 - Planner Meal Card Photo Thumbnails
+
+### Why
+
+Meals added from recipe cards should feel connected to the recipe library. The planner grid was still showing generic icons, even when the recipe had a photo.
+
+### What changed
+
+- Planner meal cards now show a compact recipe photo thumbnail when `item.image` exists.
+- Meals without photos still use the existing icon fallback.
+- Recipe names stay separate from the image so they remain readable.
+- The three-dot meal action button stays fixed on the right.
+- Direct planner add now stores the selected recipe image so those planned meals can show thumbnails too.
+- Weekly Queue thumbnails were left unchanged because they already used recipe images.
+
+### Main files touched
+
+- `src/components/planner/PlannerDayCard.jsx`
+- `src/pages/Planner.jsx`
+- `docs/PLAN_AND_PLATE_DEVELOPER_LOG.md`
+
+### Testing
+
+- `npm run lint`
+- `npm run build`
+
+### Notes or follow-up
+
+- This uses compact thumbnails only. Full-card background photos were intentionally avoided to keep planner names and actions readable.

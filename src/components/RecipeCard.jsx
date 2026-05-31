@@ -84,9 +84,11 @@ function RecipeThumbnail({ recipe, icon: Icon }) {
 
 function RecipeCard({
   addedRecipeId,
+  isFavourite,
   onAddToWeek,
   onOpenActions,
   onOpenRecipe,
+  onToggleFavourite,
   recipe,
 }) {
   const mealStyle = mealStyles[recipe.mealType] || mealStyles.Dinner
@@ -123,17 +125,36 @@ function RecipeCard({
             </div>
           </div>
 
-          <button
-            aria-label={`Recipe actions for ${recipe.name}`}
-            className="rounded-full p-1 text-stone-700"
-            onClick={(event) => {
-              event.stopPropagation()
-              onOpenActions(recipe)
-            }}
-            type="button"
-          >
-            <MoreVertical size={22} />
-          </button>
+          <div className="flex shrink-0 gap-1">
+            <button
+              aria-label={
+                isFavourite
+                  ? `Remove ${recipe.name} from favourites`
+                  : `Add ${recipe.name} to favourites`
+              }
+              className={`rounded-full p-1.5 ${
+                isFavourite ? 'text-amber-500' : 'text-stone-400'
+              }`}
+              onClick={(event) => {
+                event.stopPropagation()
+                onToggleFavourite(recipe)
+              }}
+              type="button"
+            >
+              <Star fill={isFavourite ? 'currentColor' : 'none'} size={22} />
+            </button>
+            <button
+              aria-label={`Recipe actions for ${recipe.name}`}
+              className="rounded-full p-1.5 text-stone-700"
+              onClick={(event) => {
+                event.stopPropagation()
+                onOpenActions(recipe)
+              }}
+              type="button"
+            >
+              <MoreVertical size={22} />
+            </button>
+          </div>
         </div>
 
         <p className="mt-3 line-clamp-2 text-[0.95rem] leading-relaxed text-stone-600">

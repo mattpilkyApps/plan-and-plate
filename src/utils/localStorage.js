@@ -7,10 +7,17 @@ const MANUAL_SHOPPING_ITEMS_KEY = 'plan-and-plate-manual-shopping-items'
 const REMOVED_PLANNER_MEALS_KEY = 'plan-and-plate-removed-planner-meals'
 const REMOVED_RECIPES_KEY = 'plan-and-plate-removed-recipes'
 const PLANNER_SETTINGS_KEY = 'plan-and-plate-planner-settings'
+const RECIPE_METADATA_KEY = 'plan-and-plate-recipe-metadata'
 
 const defaultPlannerSettings = {
   weekStartDay: 'MON',
   selectedWeekStartDate: '',
+}
+
+const defaultRecipeStats = {
+  favourite: false,
+  timesUsed: 0,
+  lastUsed: '',
 }
 
 function readFromStorage(key, fallbackValue) {
@@ -52,6 +59,81 @@ export function createLocalId(prefix) {
 
 export function getSavedRecipes() {
   return readFromStorage(SAVED_RECIPES_KEY, [])
+}
+
+function getRecipeStorageId(recipe) {
+  return recipe?.id || recipe?.name || ''
+}
+
+export function getRecipeMetadata() {
+  return readFromStorage(RECIPE_METADATA_KEY, {})
+}
+
+export function getRecipeStats(recipeId, metadata = getRecipeMetadata()) {
+  return {
+    ...defaultRecipeStats,
+    ...(metadata[recipeId] || {}),
+  }
+}
+
+export function isRecipeFavourite(recipeId, metadata = getRecipeMetadata()) {
+  return getRecipeStats(recipeId, metadata).favourite
+}
+
+export function toggleRecipeFavourite(recipeId) {
+  const metadata = getRecipeMetadata()
+  const currentStats = getRecipeStats(recipeId, metadata)
+  const nextMetadata = {
+    ...metadata,
+    [recipeId]: {
+      ...currentStats,
+      favourite: !currentStats.favourite,
+    },
+  }
+  const didSave = writeToStorage(RECIPE_METADATA_KEY, nextMetadata)
+
+  if (!didSave) {
+    return metadata
+  }
+
+  return nextMetadata
+}
+
+export function markRecipeUsed(recipeId) {
+  const metadata = getRecipeMetadata()
+  const currentStats = getRecipeStats(recipeId, metadata)
+  const nextMetadata = {
+    ...metadata,
+    [recipeId]: {
+      ...currentStats,
+      timesUsed: (Number(currentStats.timesUsed) || 0) + 1,
+      lastUsed: new Date().toISOString(),
+    },
+  }
+  const didSave = writeToStorage(RECIPE_METADATA_KEY, nextMetadata)
+
+  if (!didSave) {
+    return metadata
+  }
+
+  return nextMetadata
+}
+
+export function withRecipeStats(recipe, metadata = getRecipeMetadata()) {
+  return {
+    ...recipe,
+    ...getRecipeStats(getRecipeStorageId(recipe), metadata),
+  }
+}
+
+export function withRecipeStatsList(recipes, metadata = getRecipeMetadata()) {
+  return recipes.map((recipe) => withRecipeStats(recipe, metadata))
+}
+
+export function getFavouriteRecipes(recipes, metadata = getRecipeMetadata()) {
+  return recipes.filter((recipe) =>
+    isRecipeFavourite(getRecipeStorageId(recipe), metadata),
+  )
 }
 
 export function saveRecipe(recipe) {

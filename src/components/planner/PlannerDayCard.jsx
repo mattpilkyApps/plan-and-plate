@@ -38,7 +38,7 @@ function MealCard({
 
   return (
     <div
-      className={`no-touch-callout relative flex min-h-9 cursor-pointer touch-manipulation select-none items-center gap-1 rounded-xl px-1.5 py-1 shadow-sm transition active:scale-[0.98] ${
+      className={`no-touch-callout relative flex min-h-10 cursor-pointer touch-manipulation select-none items-center gap-1.5 rounded-xl bg-white/72 px-1.5 py-1 shadow-sm ring-1 ring-white/70 transition active:scale-[0.98] ${
         isEditMode ? 'planner-meal-editing' : ''
       } ${
         isSelected
@@ -84,8 +84,18 @@ function MealCard({
           <X size={12} strokeWidth={3} />
         </button>
       )}
-      <span className="text-sm leading-none">{item.icon}</span>
-      <p className="line-clamp-2 flex-1 pr-4 text-[0.68rem] font-bold leading-tight text-stone-800">
+      {item.image ? (
+        <img
+          alt=""
+          className="h-8 w-8 shrink-0 rounded-lg object-cover shadow-sm"
+          src={item.image}
+        />
+      ) : (
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/75 text-sm leading-none shadow-sm">
+          {item.icon}
+        </span>
+      )}
+      <p className="line-clamp-2 min-w-0 flex-1 pr-5 text-[0.68rem] font-bold leading-tight text-stone-800">
         {item.name}
       </p>
       {!isEditMode && !canPlaceInSlot && (

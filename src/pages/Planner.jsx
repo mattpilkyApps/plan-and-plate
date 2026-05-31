@@ -30,6 +30,7 @@ import {
   getSavedRecipes,
   getWeeklyQueueItems,
   duplicateWeeklyQueueItem,
+  markRecipeUsed,
   removePlannedMealFromWeek,
   removeWeeklyQueueItem,
   savePlannerSettings,
@@ -294,6 +295,7 @@ function Planner() {
       recipeId: selectedRecipe.id || selectedRecipe.name,
       plannedServings:
         Number(plannerChoice.plannedServings) || selectedRecipe.servings || 1,
+      image: selectedRecipe.image,
       icon:
         selectedRecipe.icon ||
         getMealIcon({
@@ -304,6 +306,14 @@ function Planner() {
     }
 
     const nextPlannedMeals = savePlannedMeal(plannedMeal, selectedWeekKey)
+    const itemWasSaved = nextPlannedMeals.some(
+      (meal) => meal.id === plannedMeal.id,
+    )
+
+    if (itemWasSaved) {
+      markRecipeUsed(plannedMeal.recipeId)
+    }
+
     setPlannedMeals(nextPlannedMeals)
     setShowAddMealModal(false)
   }
@@ -353,7 +363,20 @@ function Planner() {
             }),
         }
 
-    setPlannedMeals(savePlannedMeal(plannedMeal, selectedWeekKey))
+    const trackedPlannedMeal = {
+      ...plannedMeal,
+      usageTracked: true,
+    }
+    const nextPlannedMeals = savePlannedMeal(trackedPlannedMeal, selectedWeekKey)
+    const itemWasSaved = nextPlannedMeals.some(
+      (meal) => meal.id === trackedPlannedMeal.id,
+    )
+
+    if (itemWasSaved && !queueItem.usageTracked) {
+      markRecipeUsed(trackedPlannedMeal.recipeId)
+    }
+
+    setPlannedMeals(nextPlannedMeals)
     setWeeklyQueueItems(removeWeeklyQueueItem(queueItem.id))
   }
 
@@ -382,7 +405,16 @@ function Planner() {
             }),
         }
 
-    setPlannedMeals(savePlannedMeal(plannedMeal, selectedWeekKey))
+    const nextPlannedMeals = savePlannedMeal(plannedMeal, selectedWeekKey)
+    const itemWasSaved = nextPlannedMeals.some(
+      (meal) => meal.id === plannedMeal.id,
+    )
+
+    if (itemWasSaved && plannedMeal.recipeId) {
+      markRecipeUsed(plannedMeal.recipeId)
+    }
+
+    setPlannedMeals(nextPlannedMeals)
   }
 
   function startPlacementFromQueue(queueItem) {
