@@ -11,9 +11,45 @@
     <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <title>Plan & Plate</title>
+    <style>
+      html,
+      body,
+      #root {
+        min-height: 100%;
+      }
+
+      body {
+        margin: 0;
+        background: #faf8f3;
+      }
+
+      .app-launch-screen {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 32px;
+        box-sizing: border-box;
+        background: #faf8f3;
+      }
+
+      .app-launch-brand {
+        width: min(78vw, 420px);
+        height: auto;
+        display: block;
+        filter: drop-shadow(0 12px 28px rgba(90, 141, 43, 0.12));
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div class="app-launch-screen" aria-label="Plan & Plate loading">
+        <img
+          class="app-launch-brand"
+          src="/brand/plan-plate-wordmark.png"
+          alt="Plan & Plate"
+        />
+      </div>
+    </div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

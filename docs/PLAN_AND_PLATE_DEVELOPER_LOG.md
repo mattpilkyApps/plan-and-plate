@@ -611,3 +611,33 @@ The app needed to feel smoother and more premium on mobile, without adding anoth
 
 - `FloatingActionButton.jsx` remains in the repo but is not currently used by the main app tabs.
 - The implementation intentionally stays dependency-free and uses CSS/Tailwind plus small shared React primitives.
+
+## 2026-06-01 - App Icon and Launch Branding
+
+### Why
+
+The installed phone app needed to use the new Plan & Plate logo, and the app should show the Plan & Plate wordmark during the first loading moment after launch.
+
+### What changed
+
+- Generated new install icons from the provided Plan & Plate logo artwork.
+- Replaced the PWA icon files used by Android install, iOS home screen, and browser favicon.
+- Added brand assets under `public/brand`.
+- Added a lightweight first-paint launch screen in `index.html` that shows the Plan & Plate wordmark before React finishes loading.
+
+### Main files touched
+
+- `index.html`
+- `public/icons/*`
+- `public/brand/plan-plate-app-icon.png`
+- `public/brand/plan-plate-wordmark.png`
+- `docs/PLAN_AND_PLATE_DEVELOPER_LOG.md`
+
+### Testing
+
+- `npm.cmd run lint`
+- `npm.cmd run build`
+
+### Notes or follow-up
+
+- Existing installs may need to remove and re-add the app to the phone home screen before the new icon appears.
