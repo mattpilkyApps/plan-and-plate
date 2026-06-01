@@ -19,7 +19,7 @@ function BottomNav() {
               key={item.path}
               to={item.path}
               className={({ isActive }) =>
-                `flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-2 py-1 text-xs font-semibold transition active:scale-[0.98] ${
+                `premium-press flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-2 py-1 text-xs font-semibold ${
                   isActive
                     ? 'text-[#5A8D2B]'
                     : 'text-stone-400 hover:text-[#5A8D2B]'
@@ -29,8 +29,10 @@ function BottomNav() {
               {({ isActive }) => (
                 <>
                   <span
-                    className={`rounded-xl p-1.5 ${
-                      isActive ? 'bg-[#EAF3DE]' : 'bg-transparent'
+                    className={`premium-transition rounded-xl p-1.5 ${
+                      isActive
+                        ? 'scale-105 bg-[#EAF3DE] shadow-sm'
+                        : 'scale-100 bg-transparent'
                     }`}
                   >
                     <Icon size={21} strokeWidth={2} />

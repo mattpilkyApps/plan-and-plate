@@ -2,12 +2,10 @@ import { CalendarDays } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
-import FloatingActionButton from '../components/FloatingActionButton'
 import PlannerDayCard from '../components/planner/PlannerDayCard'
 import PlannerHeader from '../components/planner/PlannerHeader'
 import {
   MealActionsModal,
-  PlannerAddMealModal,
   PlannerSettingsModal,
   QueueActionsSheet,
   ServingsModal,
@@ -15,6 +13,7 @@ import {
 } from '../components/planner/PlannerSheets'
 import WeekControls from '../components/planner/WeekControls'
 import WeeklyQueueSection from '../components/planner/WeeklyQueueSection'
+import Pressable from '../components/ui/Pressable'
 import {
   getMealItemId,
   getQueueRecipe,
@@ -107,7 +106,6 @@ function Planner() {
   const [draftPlannerSettings, setDraftPlannerSettings] = useState(() =>
     getPlannerSettings(),
   )
-  const [showAddMealModal, setShowAddMealModal] = useState(false)
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [copiedWeekMessage, setCopiedWeekMessage] = useState('')
   const [activeMealModal, setActiveMealModal] = useState('')
@@ -121,12 +119,6 @@ function Planner() {
   const [availableRecipes] = useState(() =>
     getVisibleRecipes(getSavedRecipes(), sampleRecipes, getRemovedRecipeIds()),
   )
-  const [plannerChoice, setPlannerChoice] = useState(() => ({
-    day: plannerDays[0].weekday,
-    mealSlot: 'dinner',
-    recipeId: sampleRecipes[0].id || sampleRecipes[0].name,
-    plannedServings: sampleRecipes[0].servings,
-  }))
   const isEditMode = isPlannerEditMode
   const selectedWeekKey =
     plannerSettings.selectedWeekStartDate ||
@@ -202,22 +194,6 @@ function Planner() {
   const weekRange = formatPlannerWeekRange(displayedPlannerDays)
   const weekStartLabel = getWeekStartLabel(plannerSettings.weekStartDay)
 
-  function openAddMealModal() {
-    const firstRecipe = availableRecipes[0]
-
-    if (!firstRecipe) {
-      return
-    }
-
-    setPlannerChoice({
-      day: displayedPlannerDays[0].weekday,
-      mealSlot: 'dinner',
-      recipeId: firstRecipe.id || firstRecipe.name,
-      plannedServings: firstRecipe.servings || 1,
-    })
-    setShowAddMealModal(true)
-  }
-
   function openMealActions(item) {
     if (isPlannerEditMode) {
       return
@@ -254,68 +230,6 @@ function Planner() {
 
     setSelectedEditMeal(item)
     setLastRemovedMeal(null)
-  }
-
-  function updatePlannerChoice(event) {
-    const { name, value } = event.target
-
-    if (name === 'recipeId') {
-      const selectedRecipe = availableRecipes.find(
-        (recipe) => (recipe.id || recipe.name) === value,
-      )
-
-      setPlannerChoice((currentChoice) => ({
-        ...currentChoice,
-        recipeId: value,
-        plannedServings: selectedRecipe?.servings || 1,
-      }))
-      return
-    }
-
-    setPlannerChoice((currentChoice) => ({
-      ...currentChoice,
-      [name]: value,
-    }))
-  }
-
-  function saveMealFromPlanner() {
-    const selectedRecipe = availableRecipes.find(
-      (recipe) => (recipe.id || recipe.name) === plannerChoice.recipeId,
-    )
-
-    if (!selectedRecipe) {
-      return
-    }
-
-    const plannedMeal = {
-      id: createLocalId('planned-meal'),
-      day: plannerChoice.day,
-      mealSlot: plannerChoice.mealSlot,
-      recipeName: selectedRecipe.name,
-      recipeId: selectedRecipe.id || selectedRecipe.name,
-      plannedServings:
-        Number(plannerChoice.plannedServings) || selectedRecipe.servings || 1,
-      image: selectedRecipe.image,
-      icon:
-        selectedRecipe.icon ||
-        getMealIcon({
-          mealSlot: plannerChoice.mealSlot,
-          mealType: selectedRecipe.mealType,
-          name: selectedRecipe.name,
-        }),
-    }
-
-    const nextPlannedMeals = savePlannedMeal(plannedMeal, selectedWeekKey)
-    const itemWasSaved = nextPlannedMeals.some(
-      (meal) => meal.id === plannedMeal.id,
-    )
-
-    if (itemWasSaved) {
-      markRecipeUsed(plannedMeal.recipeId)
-    }
-
-    setPlannedMeals(nextPlannedMeals)
-    setShowAddMealModal(false)
   }
 
   function createPlannedMealFromRecipe(recipe, day, mealSlot, plannedServings) {
@@ -885,17 +799,18 @@ function Planner() {
       </div>
 
       {placementSelection && !isPlannerEditMode && (
-        <div className="mt-2.5 flex items-center justify-between gap-3 rounded-3xl border border-[#A8C686]/60 bg-[#EAF3DE] px-4 py-2.5 text-[#5A8D2B] shadow-sm">
+        <div className="toast-motion-centered mt-2.5 flex items-center justify-between gap-3 rounded-3xl border border-[#A8C686]/60 bg-[#EAF3DE] px-4 py-2.5 text-[#5A8D2B] shadow-sm">
           <p className="text-sm font-bold">
             Tap a planner slot to place {placementSelection.item.recipeName || placementSelection.item.name}.
           </p>
-          <button
-            className="rounded-full bg-white px-3 py-1.5 text-xs font-bold shadow-sm"
+          <Pressable
+            className="shrink-0 rounded-full px-3 py-1.5 text-xs"
             onClick={() => setPlacementSelection(null)}
-            type="button"
+            size="sm"
+            variant="surface"
           >
             Cancel
-          </button>
+          </Pressable>
         </div>
       )}
 
@@ -925,23 +840,10 @@ function Planner() {
         </div>
       )}
 
-      <FloatingActionButton label="Add meal" onClick={openAddMealModal} />
-
       <UndoMealToast
         mealName={lastRemovedMeal?.mealName}
         onUndo={undoLastRemovedMeal}
       />
-
-      {showAddMealModal && (
-        <PlannerAddMealModal
-          choice={plannerChoice}
-          days={displayedPlannerDays}
-          onChangeChoice={updatePlannerChoice}
-          onClose={() => setShowAddMealModal(false)}
-          onSave={saveMealFromPlanner}
-          recipes={availableRecipes}
-        />
-      )}
 
       <MealActionsModal
         canViewRecipe={Boolean(selectedMealRecipe)}

@@ -518,3 +518,96 @@ Meals added from recipe cards should feel connected to the recipe library. The p
 ### Notes or follow-up
 
 - This uses compact thumbnails only. Full-card background photos were intentionally avoided to keep planner names and actions readable.
+
+## 2026-06-01 - Recipe Library UX Milestone 2 Sort Recipes Sheet
+
+### Why
+
+The Recipes page had a Filter button that still opened a placeholder message. The app needed a useful, simple sorting flow without adding more visible clutter or unfinished cuisine UI.
+
+### What changed
+
+- Converted the existing Filter button into a Sort Recipes bottom sheet.
+- Added sort options:
+  - Recently Used
+  - Recently Added
+  - A-Z
+  - Z-A
+  - Favourites First
+- Persisted the selected sort option in localStorage.
+- Moved recipe chip filtering, search filtering, cuisine-ready filtering, and sorting into helper functions.
+- Kept the existing visible chip row:
+  - All Recipes
+  - Favourites
+  - Breakfast
+  - Lunch
+  - Dinner
+  - Snacks
+- Sorting now works after chip filtering and search.
+- New saved recipes now get `createdAt` so Recently Added can work for future recipes.
+- Existing recipes without `createdAt` still display safely.
+- Prepared helper support for optional future `cuisine` filtering.
+- Cuisine UI was intentionally not exposed.
+
+### Main files touched
+
+- `src/pages/Recipes.jsx`
+- `src/pages/AddRecipe.jsx`
+- `src/utils/localStorage.js`
+- `src/utils/recipeFilters.js`
+- `docs/PLAN_AND_PLATE_DEVELOPER_LOG.md`
+
+### Testing
+
+- `npm run lint`
+- `npm run build`
+- Manual phone checks should confirm the Filter button opens Sort Recipes, sort options work with chips/search, and no cuisine UI appears.
+
+### Notes or follow-up
+
+- Recently Used is a sort option only. It is not a separate section.
+- Recently Added can only use `createdAt` for newly saved recipes or any older recipes that already have date metadata.
+
+## 2026-06-01 - Premium Mobile UX Polish
+
+### Why
+
+The app needed to feel smoother and more premium on mobile, without adding another animation dependency or hiding core content behind floating controls.
+
+### What changed
+
+- Added shared motion utilities for page entry, sheet entry, toasts, card entry, press feedback, drop-zone pulse, and reduced-motion support.
+- Added reusable UI primitives:
+  - `Pressable`
+  - `BottomSheet`
+  - `StatusToast`
+- Reworked sheets and action buttons across Planner, Recipes, Shopping, Add Recipe, and Recipe Detail to use the shared primitives.
+- Moved planner action/settings sheets to the top of the viewport so they appear immediately when opened on mobile.
+- Improved planner edit/drop-zone visuals so animated drop zones fill the open day/meal column area.
+- Fixed the weekly queue active highlight clipping by adding vertical room in the horizontal scroll lane.
+- Removed fixed floating add buttons from Planner, Recipes, and Shopping.
+- Moved `Add Recipe` into the Recipes header action area, replacing the decorative recipe book icon.
+- Added a top `Add Item` action on Shopping next to `Clear checked`.
+- Removed the direct planner floating add-meal flow because weekly queue placement is now the intended route.
+
+### Main files touched
+
+- `src/index.css`
+- `src/components/ui/*`
+- `src/components/planner/*`
+- `src/pages/Planner.jsx`
+- `src/pages/Recipes.jsx`
+- `src/pages/Shopping.jsx`
+- `src/pages/AddRecipe.jsx`
+- `src/pages/RecipeDetail.jsx`
+
+### Testing
+
+- `npm.cmd run lint`
+- `npm.cmd run build`
+- Phone testing should confirm planner sheets open at the top, planner edit text remains readable, queue highlights are not clipped, and recipe/shopping add actions are visible near the top.
+
+### Notes or follow-up
+
+- `FloatingActionButton.jsx` remains in the repo but is not currently used by the main app tabs.
+- The implementation intentionally stays dependency-free and uses CSS/Tailwind plus small shared React primitives.

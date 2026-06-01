@@ -70,7 +70,7 @@ function RecipeThumbnail({ recipe, icon: Icon }) {
       <img
         src={recipe.image}
         alt=""
-        className="h-32 w-32 shrink-0 rounded-2xl object-cover"
+        className="h-32 w-32 shrink-0 rounded-2xl object-cover premium-transition group-hover:scale-[1.025]"
       />
     )
   }
@@ -101,7 +101,7 @@ function RecipeCard({
 
   return (
     <article
-      className="flex cursor-pointer gap-4 rounded-3xl border border-stone-100 bg-white p-3 text-left shadow-[0_8px_24px_rgba(30,41,59,0.05)] transition hover:scale-[1.005]"
+      className="group flex cursor-pointer gap-4 rounded-3xl border border-stone-100 bg-white p-3 text-left shadow-[0_8px_24px_rgba(30,41,59,0.05)] premium-transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(30,41,59,0.08)] active:translate-y-0 active:scale-[0.99]"
       onClick={() => onOpenRecipe(recipe)}
     >
       <RecipeThumbnail icon={MealIcon} recipe={recipe} />
@@ -132,7 +132,7 @@ function RecipeCard({
                   ? `Remove ${recipe.name} from favourites`
                   : `Add ${recipe.name} to favourites`
               }
-              className={`rounded-full p-1.5 ${
+              className={`premium-press rounded-full p-1.5 ${
                 isFavourite ? 'text-amber-500' : 'text-stone-400'
               }`}
               onClick={(event) => {
@@ -141,11 +141,15 @@ function RecipeCard({
               }}
               type="button"
             >
-              <Star fill={isFavourite ? 'currentColor' : 'none'} size={22} />
+              <Star
+                className={isFavourite ? 'pop-in' : ''}
+                fill={isFavourite ? 'currentColor' : 'none'}
+                size={22}
+              />
             </button>
             <button
               aria-label={`Recipe actions for ${recipe.name}`}
-              className="rounded-full p-1.5 text-stone-700"
+              className="premium-press rounded-full p-1.5 text-stone-700"
               onClick={(event) => {
                 event.stopPropagation()
                 onOpenActions(recipe)
@@ -171,10 +175,10 @@ function RecipeCard({
         </div>
 
         <button
-          className={`mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-sm font-bold transition active:scale-[0.96] ${
+          className={`premium-press mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-sm font-bold ${
             wasJustAdded
               ? 'bg-[#5A8D2B] text-white shadow-[0_10px_20px_rgba(90,141,43,0.22)]'
-              : 'bg-[#EAF3DE] text-[#5A8D2B] hover:scale-[1.01]'
+              : 'bg-[#EAF3DE] text-[#5A8D2B]'
           }`}
           onClick={(event) => {
             event.stopPropagation()

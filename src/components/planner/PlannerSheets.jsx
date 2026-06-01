@@ -6,58 +6,25 @@ import {
   Repeat2,
   Trash2,
   Users,
-  X,
 } from 'lucide-react'
+import BottomSheet from '../ui/BottomSheet'
+import Pressable from '../ui/Pressable'
+import StatusToast from '../ui/StatusToast'
 import { getQueueDisplay, weekdayOptions } from './plannerUiHelpers'
-
-function BottomSheet({ children }) {
-  return (
-    <div className="fixed inset-0 z-20 flex items-end bg-stone-900/25 px-4 pb-4">
-      <div className="mx-auto w-full max-w-[430px] rounded-3xl bg-[#FAF8F3] p-4 shadow-[0_18px_50px_rgba(30,41,59,0.25)]">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function SheetHeader({ eyebrow, onClose, title }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0">
-        <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 line-clamp-2 text-2xl font-bold tracking-tight text-stone-900">
-          {title}
-        </h2>
-      </div>
-
-      <button
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white text-stone-700 shadow-sm"
-        onClick={onClose}
-        type="button"
-      >
-        <X size={22} />
-      </button>
-    </div>
-  )
-}
 
 function MealActionButton({ children, icon: Icon, isDanger, onClick }) {
   return (
-    <button
-      className={`flex h-12 w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left text-base font-bold shadow-sm ${
-        isDanger ? 'text-red-600' : 'text-stone-800'
-      }`}
+    <Pressable
+      className="w-full justify-start text-left"
       onClick={onClick}
-      type="button"
+      variant={isDanger ? 'danger' : 'surface'}
     >
       <Icon
         className={isDanger ? 'text-red-600' : 'text-[#5A8D2B]'}
         size={21}
       />
       {children}
-    </button>
+    </Pressable>
   )
 }
 
@@ -70,9 +37,7 @@ export function PlannerAddMealModal({
   recipes,
 }) {
   return (
-    <BottomSheet>
-      <SheetHeader eyebrow="Add meal" onClose={onClose} title="Choose a recipe" />
-
+    <BottomSheet eyebrow="Add meal" onClose={onClose} title="Choose a recipe">
       <div className="mt-5 grid gap-4">
         <label>
           <span className="text-sm font-bold text-stone-700">
@@ -140,14 +105,15 @@ export function PlannerAddMealModal({
         </label>
       </div>
 
-      <button
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)]"
+      <Pressable
+        className="mt-5 w-full"
         onClick={onSave}
-        type="button"
+        size="lg"
+        variant="primary"
       >
         <Plus size={22} />
         Add to Planner
-      </button>
+      </Pressable>
     </BottomSheet>
   )
 }
@@ -167,13 +133,12 @@ export function QueueActionsSheet({
   const display = getQueueDisplay(item, recipes)
 
   return (
-    <BottomSheet>
-      <SheetHeader
-        eyebrow="Queue actions"
-        onClose={onClose}
-        title={display.name}
-      />
-
+    <BottomSheet
+      eyebrow="Queue actions"
+      onClose={onClose}
+      placement="top"
+      title={display.name}
+    >
       <div className="mt-5 grid gap-3">
         <MealActionButton icon={MoveRight} onClick={onPlace}>
           Place into planner
@@ -204,13 +169,12 @@ export function MealActionsModal({
   }
 
   return (
-    <BottomSheet>
-      <SheetHeader
-        eyebrow="Meal actions"
-        onClose={onClose}
-        title={meal.name}
-      />
-
+    <BottomSheet
+      eyebrow="Meal actions"
+      onClose={onClose}
+      placement="top"
+      title={meal.name}
+    >
       <div className="mt-5 grid gap-3">
         <MealActionButton
           icon={BookOpen}
@@ -247,13 +211,12 @@ export function ServingsModal({
   }
 
   return (
-    <BottomSheet>
-      <SheetHeader
-        eyebrow="Change servings"
-        onClose={onClose}
-        title={meal.name}
-      />
-
+    <BottomSheet
+      eyebrow="Change servings"
+      onClose={onClose}
+      placement="top"
+      title={meal.name}
+    >
       <label className="mt-5 block">
         <span className="text-sm font-bold text-stone-700">
           Servings needed
@@ -267,14 +230,15 @@ export function ServingsModal({
         />
       </label>
 
-      <button
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)]"
+      <Pressable
+        className="mt-5 w-full"
         onClick={onSave}
-        type="button"
+        size="lg"
+        variant="primary"
       >
         <Users size={21} />
         Save Servings
-      </button>
+      </Pressable>
     </BottomSheet>
   )
 }
@@ -288,13 +252,12 @@ export function PlannerSettingsModal({
   settings,
 }) {
   return (
-    <BottomSheet>
-      <SheetHeader
-        eyebrow="Planner settings"
-        onClose={onClose}
-        title="Week setup"
-      />
-
+    <BottomSheet
+      eyebrow="Planner settings"
+      onClose={onClose}
+      placement="top"
+      title="Week setup"
+    >
       <label className="mt-5 block">
         <span className="text-sm font-bold text-stone-700">
           Planner week starts on
@@ -326,14 +289,14 @@ export function PlannerSettingsModal({
           </p>
         </div>
 
-        <button
-          className="mt-3 flex h-12 w-full items-center justify-center gap-2 rounded-2xl bg-[#EAF3DE] px-4 text-sm font-bold text-[#5A8D2B] shadow-sm transition active:scale-[0.96]"
+        <Pressable
+          className="mt-3 w-full text-sm"
           onClick={onCopyWeek}
-          type="button"
+          variant="secondary"
         >
           <Repeat2 size={19} />
           Copy to next week
-        </button>
+        </Pressable>
 
         {copiedWeekMessage && (
           <p className="mt-3 rounded-2xl bg-[#F8F2EA] px-3 py-2 text-xs font-bold text-[#5A8D2B]">
@@ -342,14 +305,15 @@ export function PlannerSettingsModal({
         )}
       </div>
 
-      <button
-        className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)]"
+      <Pressable
+        className="mt-5 w-full"
         onClick={onSave}
-        type="button"
+        size="lg"
+        variant="primary"
       >
         <CalendarDays size={21} />
         Save Settings
-      </button>
+      </Pressable>
     </BottomSheet>
   )
 }
@@ -360,20 +324,14 @@ export function UndoMealToast({ mealName, onUndo }) {
   }
 
   return (
-    <div className="fixed bottom-[9.25rem] left-4 right-4 z-20 mx-auto flex max-w-[430px] items-center justify-between gap-3 rounded-3xl bg-stone-900 px-4 py-3 text-white shadow-[0_14px_34px_rgba(30,41,59,0.25)]">
-      <div>
-        <p className="text-sm font-bold">Meal removed</p>
-        <p className="line-clamp-1 text-xs font-medium text-stone-300">
-          {mealName}
-        </p>
-      </div>
-      <button
-        className="rounded-full bg-white px-4 py-2 text-sm font-bold text-[#5A8D2B] transition active:scale-[0.96]"
-        onClick={onUndo}
-        type="button"
-      >
-        Undo
-      </button>
-    </div>
+    <StatusToast
+      actionLabel="Undo"
+      message={mealName}
+      onAction={onUndo}
+      positionClassName="bottom-[9.25rem]"
+      show={Boolean(mealName)}
+      title="Meal removed"
+      tone="dark"
+    />
   )
 }

@@ -38,7 +38,7 @@ function MealCard({
 
   return (
     <div
-      className={`no-touch-callout relative flex min-h-10 cursor-pointer touch-manipulation select-none items-center gap-1.5 rounded-xl bg-white/72 px-1.5 py-1 shadow-sm ring-1 ring-white/70 transition active:scale-[0.98] ${
+      className={`no-touch-callout premium-press relative flex min-h-10 cursor-pointer select-none items-center gap-1.5 rounded-xl bg-white/72 px-1.5 py-1 shadow-sm ring-1 ring-white/70 hover:shadow-md ${
         isEditMode ? 'planner-meal-editing' : ''
       } ${
         isSelected
@@ -73,7 +73,7 @@ function MealCard({
       {isEditMode && (
         <button
           aria-label={`Remove ${item.name}`}
-          className="absolute -left-1.5 -top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-[0_6px_12px_rgba(239,68,68,0.28)] ring-2 ring-white"
+          className="premium-press absolute -left-1.5 -top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-[0_6px_12px_rgba(239,68,68,0.28)] ring-2 ring-white"
           onClick={(event) => {
             event.stopPropagation()
             onDeleteMeal(item)
@@ -101,7 +101,7 @@ function MealCard({
       {!isEditMode && !canPlaceInSlot && (
         <button
           aria-label={`Meal actions for ${item.name}`}
-          className={`absolute right-0.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ${meal.textColor}`}
+          className={`premium-press absolute right-0.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ${meal.textColor}`}
           onClick={(event) => {
             event.stopPropagation()
             onOpenActions(item)
@@ -132,13 +132,13 @@ function MealColumn({
   showHeading,
 }) {
   return (
-    <div className="min-w-0">
+    <div className="flex min-w-0 flex-col self-stretch">
       {showHeading && <MealHeading meal={meal} />}
 
       <div
-        className={`min-h-10 space-y-1 rounded-2xl transition ${
+        className={`flex min-h-10 flex-1 flex-col gap-1 rounded-2xl premium-transition ${
           canPlaceInSlot
-            ? 'bg-[#EAF3DE]/60 ring-2 ring-[#A8C686]/80'
+            ? 'drop-slot-pulse bg-[#EAF3DE]/60 ring-2 ring-[#A8C686]/80'
             : isEditMode
               ? 'bg-stone-50'
               : ''
@@ -185,7 +185,7 @@ function PlannerDayCard({
 }) {
   return (
     <article
-      className="rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)]"
+      className="card-enter rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)] premium-transition hover:shadow-[0_12px_28px_rgba(30,41,59,0.07)]"
       onClick={(event) => {
         if (isEditMode || canPlaceInSlot) {
           event.stopPropagation()
@@ -193,7 +193,7 @@ function PlannerDayCard({
       }}
     >
       <div
-        className="grid grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5"
+        className="grid items-stretch grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5"
       >
         <div className="pt-1">
           <p className="text-sm font-bold text-[#6D8E3D]">{day.weekday}</p>

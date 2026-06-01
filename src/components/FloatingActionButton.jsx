@@ -15,7 +15,7 @@ function ButtonContent({ label }) {
 }
 
 function sharedClasses() {
-  return 'group fixed bottom-[6.4rem] right-0 z-10 flex h-16 translate-x-5 items-center gap-2 rounded-l-full border border-green-100 bg-white/95 py-2 pl-2 pr-7 shadow-[0_12px_28px_rgba(30,41,59,0.12)] backdrop-blur transition-all duration-300 hover:translate-x-0 hover:pr-5 active:scale-[0.98] focus-visible:translate-x-0 focus-visible:pr-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#EAF3DE]'
+  return 'premium-press group fixed bottom-[6.4rem] right-0 z-10 flex h-16 translate-x-5 items-center gap-2 rounded-l-full border border-green-100 bg-white/95 py-2 pl-2 pr-7 shadow-[0_12px_28px_rgba(30,41,59,0.12)] backdrop-blur hover:translate-x-0 hover:pr-5 focus-visible:translate-x-0 focus-visible:pr-5 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[#EAF3DE]'
 }
 
 function FloatingActionButton({ label, onClick, to }) {

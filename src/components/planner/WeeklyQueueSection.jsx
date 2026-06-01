@@ -26,7 +26,7 @@ function WeeklyQueueSection({
         </span>
       </div>
 
-      <div className="no-scrollbar -mx-3 mt-3 overflow-x-auto px-3 pb-1">
+      <div className="no-scrollbar -mx-3 mt-3 overflow-x-auto px-3 pb-2 pt-1.5">
         <div className="flex w-max gap-2.5">
           {items.map((item) => {
             const display = getQueueDisplay(item, recipes)
@@ -34,7 +34,7 @@ function WeeklyQueueSection({
 
             return (
               <article
-                className={`no-touch-callout relative flex w-40 shrink-0 items-center gap-2 rounded-2xl border bg-[#FAF8F3] p-2 text-left shadow-sm transition active:scale-[0.98] ${
+                className={`no-touch-callout premium-press relative flex w-40 shrink-0 items-center gap-2 rounded-2xl border bg-[#FAF8F3] p-2 text-left shadow-sm ${
                   isActive
                     ? 'border-[#A8C686] ring-2 ring-[#EAF3DE]'
                     : 'border-stone-100'
@@ -70,7 +70,7 @@ function WeeklyQueueSection({
 
                 <button
                   aria-label={`Queue actions for ${display.name}`}
-                  className="flex h-8 w-6 shrink-0 items-center justify-center text-stone-500"
+                  className="premium-press flex h-8 w-6 shrink-0 items-center justify-center text-stone-500"
                   onClick={() => onOpenActions(item)}
                   type="button"
                 >

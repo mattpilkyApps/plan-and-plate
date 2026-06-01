@@ -5,13 +5,13 @@ import {
   Plus,
   ShoppingCart,
   Trash2,
-  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import EmptyState from '../components/EmptyState'
-import FloatingActionButton from '../components/FloatingActionButton'
 import ScreenHeader from '../components/ScreenHeader'
 import ShoppingCategory from '../components/ShoppingCategory'
+import BottomSheet from '../components/ui/BottomSheet'
+import Pressable from '../components/ui/Pressable'
 import { recipes as sampleRecipes } from '../data/sampleData'
 import {
   createLocalId,
@@ -51,7 +51,7 @@ function ShoppingHeader({ checkedItems, onOpenOptions, totalItems }) {
         </span>
         <button
           aria-label="Shopping options"
-          className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#F8F2EA] text-stone-600 shadow-sm transition active:scale-[0.96]"
+          className="premium-press flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#F8F2EA] text-stone-600 shadow-sm"
           onClick={onOpenOptions}
           type="button"
         >
@@ -78,50 +78,29 @@ function ShoppingOptionsSheet({
   onClose,
 }) {
   return (
-    <div className="fixed inset-0 z-20 flex items-end bg-stone-900/25 px-4 pb-4">
-      <div className="mx-auto w-full max-w-[430px] rounded-3xl bg-[#FAF8F3] p-4 shadow-[0_18px_50px_rgba(30,41,59,0.25)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
-              Shopping options
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">
-              Manage list
-            </h2>
-          </div>
-
-          <button
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-stone-700 shadow-sm"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={22} />
-          </button>
-        </div>
-
+    <BottomSheet eyebrow="Shopping options" onClose={onClose} title="Manage list">
         <div className="mt-5 grid gap-3">
-          <button
-            className="flex h-12 items-center gap-3 rounded-2xl bg-white px-4 text-base font-bold text-[#5A8D2B] shadow-sm disabled:text-stone-300"
+          <Pressable
+            className="w-full justify-start"
             disabled={checkedItems === 0}
             onClick={onClearChecked}
-            type="button"
+            variant="surface"
           >
             <CheckCircle2 size={21} />
             Clear checked
-          </button>
+          </Pressable>
 
-          <button
-            className="flex h-12 items-center gap-3 rounded-2xl bg-white px-4 text-base font-bold text-red-600 shadow-sm disabled:text-stone-300"
+          <Pressable
+            className="w-full justify-start"
             disabled={manualItemsCount === 0}
             onClick={onClearManualItems}
-            type="button"
+            variant="danger"
           >
             <Trash2 size={21} />
             Clear manual items
-          </button>
+          </Pressable>
         </div>
-      </div>
-    </div>
+    </BottomSheet>
   )
 }
 
@@ -149,18 +128,28 @@ function ShoppingSummary({ totalItems, checkedItems }) {
   )
 }
 
-function ShoppingActions({ checkedItems, onClearChecked }) {
+function ShoppingActions({ checkedItems, onAddItem, onClearChecked }) {
   return (
-    <div className="mt-5 flex items-center justify-end">
-      <button
-        className="flex h-12 items-center gap-2 rounded-2xl border border-stone-100 bg-white px-4 font-bold text-[#5A8D2B] shadow-sm disabled:text-stone-300"
+    <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+      <Pressable
+        className="min-w-0"
+        onClick={onAddItem}
+        size="lg"
+        variant="primary"
+      >
+        <Plus size={21} />
+        Add Item
+      </Pressable>
+
+      <Pressable
+        className="h-14 whitespace-nowrap px-3 text-sm"
         disabled={checkedItems === 0}
         onClick={onClearChecked}
-        type="button"
+        variant="surface"
       >
         <CheckCircle2 size={20} />
         Clear checked
-      </button>
+      </Pressable>
     </div>
   )
 }
@@ -188,27 +177,7 @@ function AddManualItemModal({
   onSave,
 }) {
   return (
-    <div className="fixed inset-0 z-20 flex items-end bg-stone-900/25 px-4 pb-4">
-      <div className="mx-auto w-full max-w-[430px] rounded-3xl bg-[#FAF8F3] p-4 shadow-[0_18px_50px_rgba(30,41,59,0.25)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
-              Manual item
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">
-              Add shopping item
-            </h2>
-          </div>
-
-          <button
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-stone-700 shadow-sm"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={22} />
-          </button>
-        </div>
-
+    <BottomSheet eyebrow="Manual item" onClose={onClose} title="Add shopping item">
         {errorMessage && (
           <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
             {errorMessage}
@@ -264,16 +233,16 @@ function AddManualItemModal({
           />
         </div>
 
-        <button
-          className="mt-5 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)]"
+        <Pressable
+          className="mt-5 w-full"
           onClick={onSave}
-          type="button"
+          size="lg"
+          variant="primary"
         >
           <Plus size={22} />
           Add Item
-        </button>
-      </div>
-    </div>
+        </Pressable>
+    </BottomSheet>
   )
 }
 
@@ -421,6 +390,7 @@ function Shopping() {
       <ShoppingSummary totalItems={totalItems} checkedItems={checkedItems} />
       <ShoppingActions
         checkedItems={checkedItems}
+        onAddItem={openAddItemModal}
         onClearChecked={clearCheckedItems}
       />
 
@@ -444,8 +414,6 @@ function Shopping() {
           ))}
         </div>
       )}
-
-      <FloatingActionButton label="Add item" onClick={openAddItemModal} />
 
       {showAddItemModal && (
         <AddManualItemModal

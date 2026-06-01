@@ -33,9 +33,19 @@ function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
-      <div className="min-h-screen bg-[#FAF8F3] px-4 pb-24 pt-8 text-stone-900">
-        <main className="mx-auto max-w-[430px]">
-          <Routes>
+      <AppShell />
+    </BrowserRouter>
+  )
+}
+
+function AppShell() {
+  const location = useLocation()
+
+  return (
+    <div className="min-h-screen bg-[#FAF8F3] px-4 pb-24 pt-8 text-stone-900">
+      <main className="mx-auto max-w-[430px]">
+        <div className="page-motion" key={location.pathname}>
+          <Routes location={location}>
             <Route path="/" element={<Navigate to="/planner" replace />} />
             <Route path="/planner" element={<Planner />} />
             <Route path="/recipes" element={<Recipes />} />
@@ -44,11 +54,11 @@ function App() {
             <Route path="/recipes/:recipeKey" element={<RecipeDetail />} />
             <Route path="/shopping" element={<Shopping />} />
           </Routes>
-        </main>
+        </div>
+      </main>
 
-        <BottomNav />
-      </div>
-    </BrowserRouter>
+      <BottomNav />
+    </div>
   )
 }
 

@@ -76,10 +76,14 @@ function ShoppingItem({
   const isChecked = checkedItemIds.includes(item.id)
 
   return (
-    <div className="flex items-start gap-3 border-t border-stone-100 px-4 py-3">
+    <div
+      className={`premium-transition flex items-start gap-3 border-t border-stone-100 px-4 py-3 ${
+        isChecked ? 'bg-stone-50/65' : 'bg-white'
+      }`}
+    >
       <input
         checked={isChecked}
-        className="mt-1 h-5 w-5 shrink-0 rounded border-stone-300 accent-[#5A8D2B]"
+        className="mt-1 h-5 w-5 shrink-0 rounded border-stone-300 accent-[#5A8D2B] premium-transition checked:scale-105"
         onChange={() => onToggleItem(item.id)}
         type="checkbox"
       />
@@ -104,7 +108,7 @@ function ShoppingItem({
         {item.isManual && (
           <button
             aria-label={`Remove ${item.name}`}
-            className="rounded-full p-1 text-stone-500 transition active:scale-95"
+            className="premium-press rounded-full p-1 text-stone-500"
             onClick={() => onRemoveManualItem(item.id)}
             title="Remove manual item"
             type="button"
@@ -128,9 +132,9 @@ function ShoppingCategory({
   const [isOpen, setIsOpen] = useState(true)
 
   return (
-    <article className="overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-[0_8px_24px_rgba(30,41,59,0.05)]">
+    <article className="card-enter overflow-hidden rounded-3xl border border-stone-100 bg-white shadow-[0_8px_24px_rgba(30,41,59,0.05)]">
       <button
-        className="flex w-full items-center gap-3 px-4 py-4 text-left"
+        className="premium-press flex w-full items-center gap-3 px-4 py-4 text-left"
         onClick={() => setIsOpen((currentValue) => !currentValue)}
         type="button"
       >
@@ -158,8 +162,12 @@ function ShoppingCategory({
         />
       </button>
 
-      {isOpen && (
-        <div>
+      <div
+        className={`grid premium-transition ${
+          isOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+        }`}
+      >
+        <div className="overflow-hidden">
           {group.items.map((item) => (
             <ShoppingItem
               checkedItemIds={checkedItemIds}
@@ -170,7 +178,7 @@ function ShoppingCategory({
             />
           ))}
         </div>
-      )}
+      </div>
     </article>
   )
 }

@@ -3,6 +3,7 @@ import {
   BookOpen,
   Bookmark,
   CalendarPlus,
+  Check,
   CheckCircle2,
   Filter,
   BookOpenText,
@@ -13,26 +14,34 @@ import {
   Sun,
   Sunrise,
   Trash2,
-  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import ComingSoonSheet from '../components/ComingSoonSheet'
 import EmptyState from '../components/EmptyState'
-import FloatingActionButton from '../components/FloatingActionButton'
 import RecipeCard from '../components/RecipeCard'
 import ScreenHeader from '../components/ScreenHeader'
+import BottomSheet from '../components/ui/BottomSheet'
+import Pressable from '../components/ui/Pressable'
+import StatusToast from '../components/ui/StatusToast'
 import { recipes as sampleRecipes } from '../data/sampleData'
 import { getMealIcon } from '../utils/mealIcons'
+import {
+  filterRecipesByChip,
+  filterRecipesByCuisine,
+  filterRecipesBySearch,
+  recipeSortOptions,
+  sortRecipes,
+} from '../utils/recipeFilters'
 import { getRecipeId, getRecipeKey, getVisibleRecipes } from '../utils/recipeKeys'
 import {
   createLocalId,
   deleteSavedRecipe,
-  getFavouriteRecipes,
   getRecipeMetadata,
+  getRecipeSortOption,
   getRemovedRecipeIds,
   getSavedRecipes,
   markRecipeUsed,
+  saveRecipeSortOption,
   saveWeeklyQueueItem,
   toggleRecipeFavourite,
   withRecipeStatsList,
@@ -47,16 +56,18 @@ const categoryFilters = [
   { label: 'Snacks', Icon: Apple },
 ]
 
-const filterComingSoonMessage =
-  'More recipe filters are coming soon. For now, use search and the category chips.'
-
 function RecipesHeader({ recipeCount }) {
   return (
     <ScreenHeader
       actions={
-        <span className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm">
-          <BookOpen size={25} />
-        </span>
+        <Pressable
+          className="h-[3.25rem] px-3 text-sm shadow-sm"
+          to="/recipes/add"
+          variant="primary"
+        >
+          <CalendarPlus size={19} />
+          <span>Add</span>
+        </Pressable>
       }
       eyebrow="Recipe Library"
       stats={[{ label: `${recipeCount} recipes`, icon: BookOpenText }]}
@@ -80,14 +91,14 @@ function SearchAndFilter({ onOpenFilter, onSearchChange, searchTerm }) {
         />
       </label>
 
-      <button
-        className="flex h-14 items-center gap-2 rounded-2xl border border-stone-100 bg-white px-4 font-bold text-[#5A8D2B] shadow-sm"
+      <Pressable
+        className="h-14 px-4"
         onClick={onOpenFilter}
-        type="button"
+        variant="surface"
       >
         <Filter size={20} />
         <span>Filter</span>
-      </button>
+      </Pressable>
     </div>
   )
 }
@@ -104,7 +115,7 @@ function RecipeTabs({ onSelectTab, selectedTab }) {
             <button
               key={category.label}
               onClick={() => onSelectTab(category.label)}
-              className={`flex h-12 items-center gap-2 rounded-2xl border px-4 text-base font-bold shadow-sm transition active:scale-[0.98] ${
+              className={`premium-press flex h-12 items-center gap-2 rounded-2xl border px-4 text-base font-bold shadow-sm ${
                 isActive
                   ? 'border-[#D7E8C3] bg-white text-[#5A8D2B] shadow-[0_10px_24px_rgba(90,141,43,0.12)]'
                   : 'border-stone-100 bg-[#FBF6EE] text-stone-800'
@@ -124,54 +135,59 @@ function RecipeTabs({ onSelectTab, selectedTab }) {
   )
 }
 
-function BottomSheet({ children }) {
-  return (
-    <div className="fixed inset-0 z-20 flex items-end bg-stone-900/25 px-4 pb-4">
-      <div className="mx-auto w-full max-w-[430px] rounded-3xl bg-[#FAF8F3] p-4 shadow-[0_18px_50px_rgba(30,41,59,0.25)]">
-        {children}
-      </div>
-    </div>
-  )
-}
-
-function SheetHeader({ eyebrow, onClose, title }) {
-  return (
-    <div className="flex items-start justify-between gap-4">
-      <div>
-        <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
-          {eyebrow}
-        </p>
-        <h2 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">
-          {title}
-        </h2>
-      </div>
-
-      <button
-        className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-stone-700 shadow-sm"
-        onClick={onClose}
-        type="button"
-      >
-        <X size={22} />
-      </button>
-    </div>
-  )
-}
-
 function RecipeActionButton({ children, icon: Icon, isDanger, onClick }) {
   return (
-    <button
-      className={`flex h-12 w-full items-center gap-3 rounded-2xl bg-white px-4 py-3 text-left text-base font-bold shadow-sm ${
-        isDanger ? 'text-red-600' : 'text-stone-800'
-      }`}
+    <Pressable
+      className="w-full justify-start text-left"
       onClick={onClick}
-      type="button"
+      variant={isDanger ? 'danger' : 'surface'}
     >
       <Icon
         className={isDanger ? 'text-red-600' : 'text-[#5A8D2B]'}
         size={21}
       />
       {children}
-    </button>
+    </Pressable>
+  )
+}
+
+function SortRecipesSheet({ onClose, onSelectSort, selectedSort }) {
+  return (
+    <BottomSheet eyebrow="Recipe filters" onClose={onClose} title="Sort Recipes">
+      <div className="mt-5 grid gap-3">
+        {recipeSortOptions.map((sortOption) => {
+          const isSelected = selectedSort === sortOption
+
+          return (
+            <button
+              className={`premium-press flex min-h-14 items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm ${
+                isSelected
+                  ? 'border-[#D7E8C3] bg-[#EAF3DE] text-[#5A8D2B]'
+                  : 'border-stone-100 bg-white text-stone-800'
+              }`}
+              key={sortOption}
+              onClick={() => onSelectSort(sortOption)}
+              type="button"
+            >
+              <span>
+                <span className="block text-base font-bold">{sortOption}</span>
+                {sortOption === 'Recently Used' && (
+                  <span className="mt-0.5 block text-xs font-semibold text-stone-500">
+                    Meals you have planned most recently.
+                  </span>
+                )}
+              </span>
+
+              {isSelected && (
+                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#5A8D2B] shadow-sm">
+                  <Check size={18} strokeWidth={3} />
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </BottomSheet>
   )
 }
 
@@ -188,13 +204,7 @@ function RecipeActionsSheet({
   }
 
   return (
-    <BottomSheet>
-      <SheetHeader
-        eyebrow="Recipe actions"
-        onClose={onClose}
-        title={recipe.name}
-      />
-
+    <BottomSheet eyebrow="Recipe actions" onClose={onClose} title={recipe.name}>
       <div className="mt-5 grid gap-3">
         <RecipeActionButton icon={BookOpen} onClick={onView}>
           View recipe
@@ -219,28 +229,30 @@ function DeleteRecipeSheet({ onCancel, onDelete, recipe }) {
   }
 
   return (
-    <BottomSheet>
-      <SheetHeader eyebrow="Delete recipe" onClose={onCancel} title={recipe.name} />
+    <BottomSheet
+      eyebrow="Delete recipe"
+      onClose={onCancel}
+      title={recipe.name}
+      tone="danger"
+    >
 
       <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold leading-relaxed text-red-600">
         This will remove the recipe and any linked planned meals.
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <button
-          className="h-12 rounded-2xl border border-stone-100 bg-white px-4 text-base font-bold text-stone-700 shadow-sm"
+        <Pressable
           onClick={onCancel}
-          type="button"
+          variant="surface"
         >
           Cancel
-        </button>
-        <button
-          className="h-12 rounded-2xl bg-red-600 px-4 text-base font-bold text-white shadow-[0_12px_24px_rgba(220,38,38,0.22)]"
+        </Pressable>
+        <Pressable
           onClick={onDelete}
-          type="button"
+          variant="dangerSolid"
         >
           Delete
-        </button>
+        </Pressable>
       </div>
     </BottomSheet>
   )
@@ -255,9 +267,10 @@ function Recipes() {
   )
   const [recipeForActions, setRecipeForActions] = useState(null)
   const [recipeToDelete, setRecipeToDelete] = useState(null)
-  const [comingSoonMessage, setComingSoonMessage] = useState('')
+  const [showSortSheet, setShowSortSheet] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTab, setSelectedTab] = useState('All Recipes')
+  const [selectedSort, setSelectedSort] = useState(() => getRecipeSortOption())
   const [recipeMetadata, setRecipeMetadata] = useState(() => getRecipeMetadata())
   const [successMessage, setSuccessMessage] = useState(
     location.state?.successMessage || '',
@@ -270,30 +283,18 @@ function Recipes() {
     removedRecipeIds,
   )
   const recipesWithStats = withRecipeStatsList(allRecipes, recipeMetadata)
-  const favouriteRecipes = getFavouriteRecipes(recipesWithStats, recipeMetadata)
-  const recipesForSelectedTab =
-    selectedTab === 'Favourites' ? favouriteRecipes : recipesWithStats
-  const filteredRecipes = recipesForSelectedTab.filter((recipe) => {
-    const searchableText = [
-      recipe.name,
-      recipe.mealType,
-      recipe.description,
-      ...(recipe.badges || []),
-    ]
-      .join(' ')
-      .toLowerCase()
-
-    const matchesSearch = searchableText.includes(searchTerm.trim().toLowerCase())
-    const matchesCategory =
-      selectedTab === 'All Recipes' ||
-      selectedTab === 'Favourites' ||
-      recipe.mealType === selectedTab
-
-    return matchesSearch && matchesCategory
-  })
+  const chipFilteredRecipes = filterRecipesByChip(recipesWithStats, selectedTab)
+  const searchedRecipes = filterRecipesBySearch(chipFilteredRecipes, searchTerm)
+  const cuisineReadyRecipes = filterRecipesByCuisine(searchedRecipes, '')
+  const filteredRecipes = sortRecipes(cuisineReadyRecipes, selectedSort)
 
   function toggleFavourite(recipe) {
     setRecipeMetadata(toggleRecipeFavourite(getRecipeId(recipe)))
+  }
+
+  function updateSelectedSort(sortOption) {
+    setSelectedSort(saveRecipeSortOption(sortOption))
+    setShowSortSheet(false)
   }
 
   function addRecipeToWeek(recipe) {
@@ -363,7 +364,7 @@ function Recipes() {
     <section className="relative">
       <RecipesHeader recipeCount={filteredRecipes.length} />
       <SearchAndFilter
-        onOpenFilter={() => setComingSoonMessage(filterComingSoonMessage)}
+        onOpenFilter={() => setShowSortSheet(true)}
         onSearchChange={(event) => setSearchTerm(event.target.value)}
         searchTerm={searchTerm}
       />
@@ -372,12 +373,11 @@ function Recipes() {
         selectedTab={selectedTab}
       />
 
-      {successMessage && (
-        <div className="fixed bottom-[6.25rem] left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 items-center gap-3 rounded-3xl border border-green-100 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-[0_14px_34px_rgba(30,41,59,0.16)]">
-          <CheckCircle2 size={22} />
-          <p className="font-bold">{successMessage}</p>
-        </div>
-      )}
+      <StatusToast
+        icon={CheckCircle2}
+        message={successMessage}
+        show={Boolean(successMessage)}
+      />
 
       {filteredRecipes.length === 0 ? (
         <div className="mt-5">
@@ -391,22 +391,25 @@ function Recipes() {
         </div>
       ) : (
         <div className="mt-5 grid gap-3">
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard
-              addedRecipeId={addedRecipeId}
-              isFavourite={recipe.favourite}
+          {filteredRecipes.map((recipe, index) => (
+            <div
+              className="card-enter"
               key={recipe.id || recipe.name}
-              onAddToWeek={addRecipeToWeek}
-              onOpenActions={openRecipeActions}
-              onOpenRecipe={openRecipeDetail}
-              onToggleFavourite={toggleFavourite}
-              recipe={recipe}
-            />
+              style={{ animationDelay: `${Math.min(index, 8) * 35}ms` }}
+            >
+              <RecipeCard
+                addedRecipeId={addedRecipeId}
+                isFavourite={recipe.favourite}
+                onAddToWeek={addRecipeToWeek}
+                onOpenActions={openRecipeActions}
+                onOpenRecipe={openRecipeDetail}
+                onToggleFavourite={toggleFavourite}
+                recipe={recipe}
+              />
+            </div>
           ))}
         </div>
       )}
-
-      <FloatingActionButton label="Add recipe" to="/recipes/add" />
 
       <RecipeActionsSheet
         onAddToWeek={() => addRecipeToWeek(recipeForActions)}
@@ -426,11 +429,13 @@ function Recipes() {
         recipe={recipeToDelete}
       />
 
-      <ComingSoonSheet
-        message={comingSoonMessage}
-        onClose={() => setComingSoonMessage('')}
-        title="Recipe filters"
-      />
+      {showSortSheet && (
+        <SortRecipesSheet
+          onClose={() => setShowSortSheet(false)}
+          onSelectSort={updateSelectedSort}
+          selectedSort={selectedSort}
+        />
+      )}
     </section>
   )
 }

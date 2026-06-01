@@ -8,6 +8,8 @@ const REMOVED_PLANNER_MEALS_KEY = 'plan-and-plate-removed-planner-meals'
 const REMOVED_RECIPES_KEY = 'plan-and-plate-removed-recipes'
 const PLANNER_SETTINGS_KEY = 'plan-and-plate-planner-settings'
 const RECIPE_METADATA_KEY = 'plan-and-plate-recipe-metadata'
+const RECIPE_SORT_KEY = 'plan-and-plate-recipe-sort'
+const DEFAULT_RECIPE_SORT = 'Recently Added'
 
 const defaultPlannerSettings = {
   weekStartDay: 'MON',
@@ -134,6 +136,20 @@ export function getFavouriteRecipes(recipes, metadata = getRecipeMetadata()) {
   return recipes.filter((recipe) =>
     isRecipeFavourite(getRecipeStorageId(recipe), metadata),
   )
+}
+
+export function getRecipeSortOption() {
+  return readFromStorage(RECIPE_SORT_KEY, DEFAULT_RECIPE_SORT)
+}
+
+export function saveRecipeSortOption(sortOption) {
+  const didSave = writeToStorage(RECIPE_SORT_KEY, sortOption)
+
+  if (!didSave) {
+    return getRecipeSortOption()
+  }
+
+  return sortOption
 }
 
 export function saveRecipe(recipe) {

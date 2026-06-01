@@ -7,11 +7,13 @@ import {
   Star,
   Trash2,
   Users,
-  X,
 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
+import BottomSheet from '../components/ui/BottomSheet'
+import Pressable from '../components/ui/Pressable'
+import StatusToast from '../components/ui/StatusToast'
 import { recipes as sampleRecipes } from '../data/sampleData'
 import { getMealIcon } from '../utils/mealIcons'
 import {
@@ -58,14 +60,14 @@ function RecipeHeroImage({ recipe, icon }) {
     return (
       <img
         alt=""
-        className="mt-5 h-64 w-full rounded-[2rem] object-cover shadow-[0_12px_30px_rgba(30,41,59,0.08)]"
+        className="card-enter mt-5 h-64 w-full rounded-[2rem] object-cover shadow-[0_12px_30px_rgba(30,41,59,0.08)]"
         src={recipe.image}
       />
     )
   }
 
   return (
-    <div className="mt-5 flex h-64 w-full items-center justify-center rounded-[2rem] bg-[#EAF3DE] text-[#5A8D2B] shadow-[0_12px_30px_rgba(30,41,59,0.08)]">
+    <div className="card-enter mt-5 flex h-64 w-full items-center justify-center rounded-[2rem] bg-[#EAF3DE] text-[#5A8D2B] shadow-[0_12px_30px_rgba(30,41,59,0.08)]">
       <span className="text-6xl" aria-hidden="true">
         {icon}
       </span>
@@ -88,50 +90,32 @@ function getIngredientLines(recipe) {
 
 function DeleteRecipeModal({ onCancel, onDelete, recipeName }) {
   return (
-    <div className="fixed inset-0 z-20 flex items-end bg-stone-900/25 px-4 pb-4">
-      <div className="mx-auto w-full max-w-[430px] rounded-3xl bg-[#FAF8F3] p-4 shadow-[0_18px_50px_rgba(30,41,59,0.25)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-red-600">
-              Delete recipe
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">
-              Remove {recipeName}?
-            </h2>
-          </div>
-
-          <button
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-stone-700 shadow-sm"
-            onClick={onCancel}
-            type="button"
-          >
-            <X size={22} />
-          </button>
-        </div>
-
+    <BottomSheet
+      eyebrow="Delete recipe"
+      onClose={onCancel}
+      title={`Remove ${recipeName}?`}
+      tone="danger"
+    >
         <p className="mt-4 text-sm font-medium leading-relaxed text-stone-500">
           This will also remove the recipe from your planner so your shopping
           list stays accurate.
         </p>
 
         <div className="mt-5 grid grid-cols-2 gap-3">
-          <button
-            className="h-12 rounded-2xl border border-stone-100 bg-white px-4 py-3 text-base font-bold text-stone-700 shadow-sm"
+          <Pressable
             onClick={onCancel}
-            type="button"
+            variant="surface"
           >
             Cancel
-          </button>
-          <button
-            className="h-12 rounded-2xl bg-red-600 px-4 py-3 text-base font-bold text-white shadow-[0_12px_24px_rgba(220,38,38,0.22)]"
+          </Pressable>
+          <Pressable
             onClick={onDelete}
-            type="button"
+            variant="dangerSolid"
           >
             Delete
-          </button>
+          </Pressable>
         </div>
-      </div>
-    </div>
+    </BottomSheet>
   )
 }
 
@@ -154,7 +138,7 @@ function RecipeDetail() {
     return (
       <section>
         <Link
-          className="mb-5 flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
+          className="premium-press mb-5 flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
           to="/recipes"
         >
           <ArrowLeft size={25} />
@@ -232,7 +216,7 @@ function RecipeDetail() {
     <section className="pb-6">
       <header className="flex items-center justify-between gap-3">
         <Link
-          className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
+          className="premium-press flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
           to="/recipes"
         >
           <ArrowLeft size={25} />
@@ -240,7 +224,7 @@ function RecipeDetail() {
 
         <div className="flex gap-3">
           <Link
-            className="flex h-[3.25rem] items-center gap-2 rounded-2xl bg-[#EAF3DE] px-4 text-sm font-bold text-[#5A8D2B] shadow-sm"
+            className="premium-press flex h-[3.25rem] items-center gap-2 rounded-2xl bg-[#EAF3DE] px-4 text-sm font-bold text-[#5A8D2B] shadow-sm"
             to={`/recipes/${getRecipeKey(recipe)}/edit`}
           >
             <Pencil size={18} />
@@ -267,11 +251,12 @@ function RecipeDetail() {
             }
             className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ${
               recipeStats.favourite ? 'text-amber-500' : 'text-stone-400'
-            }`}
+            } premium-press`}
             onClick={toggleFavourite}
             type="button"
           >
             <Star
+              className={recipeStats.favourite ? 'pop-in' : ''}
               fill={recipeStats.favourite ? 'currentColor' : 'none'}
               size={24}
             />
@@ -284,12 +269,11 @@ function RecipeDetail() {
         )}
       </div>
 
-      {successMessage && (
-        <div className="fixed bottom-[6.25rem] left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 items-center gap-3 rounded-3xl border border-green-100 bg-[#EAF3DE] px-4 py-3 text-[#5A8D2B] shadow-[0_14px_34px_rgba(30,41,59,0.16)]">
-          <CheckCircle2 size={22} />
-          <p className="font-bold">{successMessage}</p>
-        </div>
-      )}
+      <StatusToast
+        icon={CheckCircle2}
+        message={successMessage}
+        show={Boolean(successMessage)}
+      />
 
       <div className="mt-5 grid grid-cols-3 gap-3">
         <InfoPill icon={Clock} label="Prep" value={prepTime} />
@@ -338,7 +322,7 @@ function RecipeDetail() {
         )}
 
         <button
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 text-base font-bold text-red-600 shadow-sm"
+          className="premium-press flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-red-100 bg-red-50 text-base font-bold text-red-600 shadow-sm"
           onClick={() => setShowDeleteConfirm(true)}
           type="button"
         >
@@ -348,10 +332,10 @@ function RecipeDetail() {
       </div>
 
       <button
-        className={`sticky bottom-[6.4rem] mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-white transition active:scale-[0.96] ${
+        className={`premium-press sticky bottom-[6.4rem] mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl text-base font-bold text-white ${
           wasJustAdded
             ? 'bg-[#466F22] shadow-[0_16px_28px_rgba(70,111,34,0.28)]'
-            : 'bg-[#5A8D2B] shadow-[0_12px_24px_rgba(90,141,43,0.3)] hover:scale-[1.01]'
+            : 'bg-[#5A8D2B] shadow-[0_12px_24px_rgba(90,141,43,0.3)]'
         }`}
         onClick={addRecipeToWeek}
         type="button"

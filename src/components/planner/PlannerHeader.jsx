@@ -1,5 +1,6 @@
 import { BookOpen, CalendarDays, SlidersHorizontal } from 'lucide-react'
 import ScreenHeader from '../ScreenHeader'
+import Pressable from '../ui/Pressable'
 
 function PlannerHeader({
   mealCount,
@@ -10,14 +11,14 @@ function PlannerHeader({
   return (
     <ScreenHeader
       actions={
-        <button
+        <Pressable
           aria-label="Planner settings"
-          className="flex h-[3.05rem] w-[3.05rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm transition active:scale-[0.96]"
           onClick={onOpenSettings}
-          type="button"
+          size="iconLg"
+          variant="secondary"
         >
           <SlidersHorizontal size={25} />
-        </button>
+        </Pressable>
       }
       eyebrow="This week"
       stats={[

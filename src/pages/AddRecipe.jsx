@@ -5,11 +5,12 @@ import {
   Clock,
   ImagePlus,
   Save,
-  X,
 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
+import BottomSheet from '../components/ui/BottomSheet'
+import Pressable from '../components/ui/Pressable'
 import { recipes as sampleRecipes } from '../data/sampleData'
 import {
   createLocalId,
@@ -178,27 +179,13 @@ function FormSection({ children, description, title }) {
 
 function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
   return (
-    <div className="fixed inset-0 z-30 flex items-end bg-stone-900/25 px-4 pb-4">
-      <div className="mx-auto max-h-[92vh] w-full max-w-[430px] overflow-y-auto rounded-3xl bg-[#FAF8F3] p-4 shadow-[0_18px_50px_rgba(30,41,59,0.25)]">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-bold uppercase tracking-wide text-[#5A8D2B]">
-              Paste Recipe
-            </p>
-            <h2 className="mt-1 text-2xl font-bold tracking-tight text-stone-900">
-              Import from text
-            </h2>
-          </div>
-
-          <button
-            className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-stone-700 shadow-sm transition active:scale-95"
-            onClick={onClose}
-            type="button"
-          >
-            <X size={22} />
-          </button>
-        </div>
-
+    <BottomSheet
+      eyebrow="Paste Recipe"
+      onClose={onClose}
+      panelClassName="max-h-[92vh] overflow-y-auto"
+      title="Import from text"
+      zIndex="z-30"
+    >
         <p className="mt-4 rounded-2xl bg-[#EAF3DE] px-4 py-3 text-sm font-semibold leading-relaxed text-[#5A8D2B]">
           Paste a recipe here, even if it includes extra page text. Plan & Plate
           will automatically clean the ingredients into one measurement format
@@ -213,24 +200,21 @@ function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
         />
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <button
-            className="h-12 rounded-2xl border border-stone-100 bg-white px-4 text-base font-bold text-stone-700 shadow-sm transition active:scale-[0.98]"
+          <Pressable
             onClick={onClose}
-            type="button"
+            variant="surface"
           >
             Cancel
-          </button>
-          <button
-            className="h-12 rounded-2xl bg-[#5A8D2B] px-4 text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.25)] transition active:scale-[0.98] disabled:bg-stone-300 disabled:shadow-none"
+          </Pressable>
+          <Pressable
             disabled={!pasteText.trim()}
             onClick={onImport}
-            type="button"
+            variant="primary"
           >
             Fill form
-          </button>
+          </Pressable>
         </div>
-      </div>
-    </div>
+    </BottomSheet>
   )
 }
 
@@ -593,6 +577,7 @@ function AddRecipe() {
 
   function handleSaveRecipe(event) {
     event.preventDefault()
+    const savedAt = new Date().toISOString()
 
     const recipeToSave = {
       id: recipeToEdit ? getRecipeId(recipeToEdit) : createLocalId('recipe'),
@@ -610,6 +595,10 @@ function AddRecipe() {
       badges: recipeToEdit?.badges || ['Saved Recipe'],
       icon: getMealIcon({ mealType: recipe.category, name: recipe.name }),
       image: recipe.image,
+      createdAt: recipeToEdit?.createdAt || savedAt,
+      updatedAt: isEditing ? savedAt : '',
+      ...(recipeToEdit?.cuisine ? { cuisine: recipeToEdit.cuisine } : {}),
+      ...(recipeToEdit?.tags ? { tags: recipeToEdit.tags } : {}),
     }
 
     const nextSavedRecipes = isEditing
@@ -643,7 +632,7 @@ function AddRecipe() {
     return (
       <section>
         <Link
-          className="mb-5 flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
+          className="premium-press mb-5 flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
           to="/recipes"
         >
           <ArrowLeft size={25} />
@@ -659,7 +648,7 @@ function AddRecipe() {
     <section className="pb-6">
       <header className="flex items-center justify-between gap-4">
         <Link
-          className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm transition active:scale-95"
+          className="premium-press flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
           to={isEditing ? `/recipes/${getRecipeKey(recipeToEdit)}` : '/recipes'}
         >
           <ArrowLeft size={25} />
@@ -677,14 +666,15 @@ function AddRecipe() {
         </div>
       </header>
 
-      <button
-        className="mt-6 flex h-14 w-full items-center justify-center gap-2 rounded-2xl border border-green-100 bg-[#EAF3DE] px-4 py-3 text-base font-bold text-[#5A8D2B] shadow-sm transition active:scale-[0.98]"
+      <Pressable
+        className="mt-6 w-full"
         onClick={() => setShowPasteSheet(true)}
-        type="button"
+        size="lg"
+        variant="secondary"
       >
         <ClipboardPaste size={20} />
         Paste Recipe
-      </button>
+      </Pressable>
 
       {(errorMessage || successMessage) && (
         <div
@@ -692,7 +682,7 @@ function AddRecipe() {
             errorMessage
               ? 'border-red-100 bg-red-50 text-red-600'
               : 'border-green-100 bg-[#EAF3DE] text-[#5A8D2B]'
-          }`}
+          } toast-motion-centered`}
         >
           <CheckCircle2 size={22} />
           <p className="font-bold">{errorMessage || successMessage}</p>
@@ -771,7 +761,7 @@ function AddRecipe() {
                 src={recipe.image}
               />
               <div className="grid grid-cols-2 gap-3 p-3">
-                <label className="flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#EAF3DE] px-4 text-sm font-bold text-[#5A8D2B] transition active:scale-[0.98]">
+                <label className="premium-press flex h-12 cursor-pointer items-center justify-center gap-2 rounded-2xl bg-[#EAF3DE] px-4 text-sm font-bold text-[#5A8D2B]">
                   <ImagePlus size={18} />
                   Replace
                   <input
@@ -782,7 +772,7 @@ function AddRecipe() {
                   />
                 </label>
                 <button
-                  className="h-12 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-bold text-red-600 transition active:scale-[0.98]"
+                  className="premium-press h-12 rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-bold text-red-600"
                   onClick={removeImage}
                   type="button"
                 >
@@ -791,7 +781,7 @@ function AddRecipe() {
               </div>
             </div>
           ) : (
-            <label className="flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-green-200 bg-[#F8F2EA] px-4 py-6 text-center transition active:scale-[0.99]">
+            <label className="premium-press flex min-h-40 cursor-pointer flex-col items-center justify-center rounded-3xl border border-dashed border-green-200 bg-[#F8F2EA] px-4 py-6 text-center">
               <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B]">
                 <ImagePlus size={26} />
               </span>
@@ -860,13 +850,16 @@ function AddRecipe() {
           />
         </FormSection>
 
-        <button
-          className="sticky bottom-[6.4rem] flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#5A8D2B] text-base font-bold text-white shadow-[0_12px_24px_rgba(90,141,43,0.3)] transition active:scale-[0.98]"
+        <Pressable
+          as="button"
+          className="sticky bottom-[6.4rem] w-full"
+          size="lg"
           type="submit"
+          variant="primary"
         >
           <Save size={21} />
           {isEditing ? 'Update Recipe' : 'Save Recipe'}
-        </button>
+        </Pressable>
       </form>
 
       {showPasteSheet && (
