@@ -25,7 +25,7 @@ function StatusToast({
   const isDark = tone === 'dark'
 
   return (
-    <div
+    <div role="status" aria-live="polite"
       className={`toast-motion fixed left-1/2 z-30 flex w-[calc(100%-2rem)] max-w-[430px] -translate-x-1/2 items-center justify-between gap-3 rounded-3xl border px-4 py-3 shadow-[0_14px_34px_rgba(30,41,59,0.16)] ${positionClassName} ${toneClasses[tone]} ${className}`}
     >
       <div className="flex min-w-0 items-center gap-3">

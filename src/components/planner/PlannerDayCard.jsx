@@ -1,233 +1,27 @@
-import { MoreVertical, X } from 'lucide-react'
-import { getMealItemId, mealTypes } from './plannerUiHelpers'
-
-function MealHeading({ meal }) {
-  const Icon = meal.Icon
-
-  return (
-    <div className="mb-1.5 hidden items-center gap-1.5 pl-1 text-sm font-bold text-stone-900 min-[390px]:flex">
-      <Icon className={meal.textColor} size={18} />
-      <span>{meal.label}</span>
-    </div>
-  )
-}
-
-function MealCard({
-  canPlaceInSlot,
-  index,
-  isEditMode,
-  isSelected,
-  meal,
-  item,
-  onDeleteMeal,
-  onOpenActions,
-  onOpenRecipe,
-  onPlaceInSlot,
-  onSelectMeal,
-}) {
-  function handleKeyDown(event) {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault()
-      if (isEditMode) {
-        return
-      }
-
-      onOpenRecipe(item)
-    }
-  }
-
-  return (
-    <div
-      className={`no-touch-callout premium-press relative flex min-h-10 cursor-pointer select-none items-center gap-1.5 rounded-xl bg-white/72 px-1.5 py-1 shadow-sm ring-1 ring-white/70 hover:shadow-md ${
-        isEditMode ? 'planner-meal-editing' : ''
-      } ${
-        isSelected
-          ? 'scale-[1.03] ring-2 ring-[#5A8D2B] ring-offset-2 ring-offset-white'
-          : ''
-      } ${meal.cardColor}`}
-      onClick={(event) => {
-        event.stopPropagation()
-
-        if (canPlaceInSlot && !isSelected) {
-          onPlaceInSlot(item.day, item.mealSlot)
-          return
-        }
-
-        if (isEditMode) {
-          if (!isSelected) {
-            onSelectMeal(item)
-          }
-          return
-        }
-
-        onOpenRecipe(item)
-      }}
-      onContextMenu={(event) => event.preventDefault()}
-      onKeyDown={handleKeyDown}
-      role="button"
-      style={{
-        animationDelay: `${index * 70}ms`,
-      }}
-      tabIndex={0}
-    >
-      {isEditMode && (
-        <button
-          aria-label={`Remove ${item.name}`}
-          className="premium-press absolute -left-1.5 -top-2 z-10 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-[0_6px_12px_rgba(239,68,68,0.28)] ring-2 ring-white"
-          onClick={(event) => {
-            event.stopPropagation()
-            onDeleteMeal(item)
-          }}
-          onPointerDown={(event) => event.stopPropagation()}
-          type="button"
-        >
-          <X size={12} strokeWidth={3} />
-        </button>
-      )}
-      {item.image ? (
-        <img
-          alt=""
-          className="h-8 w-8 shrink-0 rounded-lg object-cover shadow-sm"
-          src={item.image}
-        />
-      ) : (
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-white/75 text-sm leading-none shadow-sm">
-          {item.icon}
-        </span>
-      )}
-      <p className="line-clamp-2 min-w-0 flex-1 pr-5 text-[0.68rem] font-bold leading-tight text-stone-800">
-        {item.name}
-      </p>
-      {!isEditMode && !canPlaceInSlot && (
-        <button
-          aria-label={`Meal actions for ${item.name}`}
-          className={`premium-press absolute right-0.5 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center ${meal.textColor}`}
-          onClick={(event) => {
-            event.stopPropagation()
-            onOpenActions(item)
-          }}
-          onPointerDown={(event) => event.stopPropagation()}
-          title="Meal actions"
-          type="button"
-        >
-          <MoreVertical size={16} />
-        </button>
-      )}
-    </div>
-  )
-}
-
-function MealColumn({
-  canPlaceInSlot,
-  day,
-  isEditMode,
-  meal,
-  items,
-  onDeleteMeal,
-  onOpenActions,
-  onOpenRecipe,
-  onPlaceMeal,
-  onSelectMeal,
-  selectedMealId,
-  showHeading,
-}) {
-  return (
-    <div className="flex min-w-0 flex-col self-stretch">
-      {showHeading && <MealHeading meal={meal} />}
-
-      <div
-        className={`flex min-h-10 flex-1 flex-col gap-1 rounded-2xl premium-transition ${
-          canPlaceInSlot
-            ? 'drop-slot-pulse bg-[#EAF3DE]/60 ring-2 ring-[#A8C686]/80'
-            : isEditMode
-              ? 'bg-stone-50'
-              : ''
-        }`}
-        onClick={(event) => {
-          if (canPlaceInSlot) {
-            event.stopPropagation()
-            onPlaceMeal(day.weekday, meal.key)
-          }
-        }}
-      >
-        {items.map((item, index) => (
-          <MealCard
-            canPlaceInSlot={canPlaceInSlot}
-            index={index}
-            isEditMode={isEditMode}
-            isSelected={getMealItemId(item) === selectedMealId}
-            item={item}
-            key={getMealItemId(item)}
-            meal={meal}
-            onDeleteMeal={onDeleteMeal}
-            onOpenActions={onOpenActions}
-            onOpenRecipe={onOpenRecipe}
-            onPlaceInSlot={onPlaceMeal}
-            onSelectMeal={onSelectMeal}
-          />
-        ))}
+import { Clock, MoreVertical, Plus, Users, PencilLine } from 'lucide-react'
+import RecipeImage from '../RecipeImage'
+const labels = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' }
+export default function PlannerDayCard({ day, meals, recipes, view, onAdd, onActions, onView }) {
+  const slots = view === 'dinners' ? ['dinner'] : ['breakfast','lunch','dinner']
+  return <section className={`planner-day ${day.isToday ? 'planner-today' : ''}`} aria-label={`${day.dayName} ${day.date}`}>
+    <div className="day-label"><strong>{day.dayName}</strong><span>{new Date(`${day.dateKey}T12:00:00`).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span>{day.isToday && <i aria-label="Today" />}</div>
+    <div className="day-slots">{slots.map((slot) => {
+      const items = meals.filter((meal) => meal.dateKey === day.dateKey && meal.mealSlot === slot)
+      return <div className={`meal-slot meal-slot-${slot} ${view === 'all' ? 'slot-detailed' : ''}`} key={slot}>
+        {view === 'all' && <span className="slot-label">{labels[slot]}</span>}
+        {items.map((meal) => {
+          const recipe = recipes.find((recipe) => (recipe.id || recipe.name) === meal.recipeId)
+          return <div className="planned-meal" key={meal.id}>
+            <button className="meal-main" aria-label={recipe ? `View ${meal.recipeName} recipe` : `Edit ${meal.recipeName}`} onClick={() => recipe ? onView(recipe) : onActions(meal)}>
+              {recipe ? <RecipeImage recipe={recipe} className="recipe-thumb" /> : <span className="simple-meal-icon"><PencilLine size={21} strokeWidth={1.3} /></span>}
+              <span className="meal-copy"><strong>{meal.recipeName}</strong><span className="meal-meta">{recipe ? <><Clock size={11} />{recipe.time || recipe.cookTime || recipe.prepTime || 'Recipe'}<span><Users size={11} />{meal.plannedServings || recipe.servings}</span></> : <><PencilLine size={11} />Simple meal<span><Users size={11} />{meal.plannedServings || 4}</span></>}</span></span>
+            </button>
+            <button className="meal-more icon-button" aria-label={`Actions for ${meal.recipeName}`} onClick={() => onActions(meal)}><MoreVertical size={18} /></button>
+          </div>
+        })}
+        {items.length === 0 ? <button className="empty-meal" onClick={() => onAdd(day, slot)} aria-label={`Add ${slot} for ${day.dayName} ${day.date}`}><span className="empty-plus"><Plus size={20} strokeWidth={1.5} /></span><span>Add {slot}</span></button>
+        : view === 'all' && <button className="add-another" aria-label={`Add another ${slot} for ${day.dayName}`} onClick={() => onAdd(day, slot)}><Plus size={15} /></button>}
       </div>
-    </div>
-  )
+    })}</div>
+  </section>
 }
-
-function PlannerDayCard({
-  canPlaceInSlot,
-  day,
-  isEditMode,
-  onDeleteMeal,
-  onOpenActions,
-  onOpenRecipe,
-  onPlaceMeal,
-  onSelectMeal,
-  selectedMealId,
-  showMealHeadings,
-}) {
-  return (
-    <article
-      className="card-enter rounded-3xl border border-stone-100 bg-white p-2 shadow-[0_8px_24px_rgba(30,41,59,0.05)] premium-transition hover:shadow-[0_12px_28px_rgba(30,41,59,0.07)]"
-      onClick={(event) => {
-        if (isEditMode || canPlaceInSlot) {
-          event.stopPropagation()
-        }
-      }}
-    >
-      <div
-        className="grid items-stretch grid-cols-[3.35rem_repeat(3,minmax(0,1fr))] gap-1.5"
-      >
-        <div className="pt-1">
-          <p className="text-sm font-bold text-[#6D8E3D]">{day.weekday}</p>
-          <p className="text-[2.15rem] font-bold leading-none tracking-tight text-stone-900">
-            {day.date}
-          </p>
-          {day.isToday && (
-            <div className="mt-2 flex items-center gap-1">
-              <span className="text-sm font-bold text-[#6D8E3D]">Today</span>
-              <span className="h-2 w-2 rounded-full bg-[#6D8E3D]" />
-            </div>
-          )}
-        </div>
-
-        {mealTypes.map((meal) => (
-          <MealColumn
-            canPlaceInSlot={canPlaceInSlot}
-            day={day}
-            isEditMode={isEditMode}
-            key={meal.key}
-            meal={meal}
-            items={day.meals[meal.key]}
-            onDeleteMeal={onDeleteMeal}
-            onOpenActions={onOpenActions}
-            onOpenRecipe={onOpenRecipe}
-            onPlaceMeal={onPlaceMeal}
-            onSelectMeal={onSelectMeal}
-            selectedMealId={selectedMealId}
-            showHeading={showMealHeadings}
-          />
-        ))}
-      </div>
-    </article>
-  )
-}
-
-export default PlannerDayCard

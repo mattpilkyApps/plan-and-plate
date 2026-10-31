@@ -1,3 +1,6 @@
+import { getCurrentWeekKey } from './plannerWeeks.js'
+import { datedMeals, mealsInWeek, replaceWeekMeals } from './plannerData.js'
+
 const SAVED_RECIPES_KEY = 'plan-and-plate-recipes'
 const PLANNED_MEALS_KEY = 'plan-and-plate-planned-meals'
 const PLANNED_MEALS_BY_WEEK_KEY = 'plan-and-plate-planned-meals-by-week'
@@ -47,6 +50,7 @@ function writeToStorage(key, value) {
     window.localStorage.setItem(key, JSON.stringify(value))
     return true
   } catch {
+    window.dispatchEvent?.(new Event('plan-and-plate-storage-error'))
     return false
   }
 }
@@ -232,10 +236,18 @@ function getPlannedMealsByWeek() {
 }
 
 export function savePlannedMealsForWeek(weekKey, plannedMeals) {
-  const plannedMealsByWeek = getPlannedMealsByWeek()
-  const nextPlannedMealsByWeek = {
-    ...plannedMealsByWeek,
-    [weekKey]: plannedMeals,
+  const plannedMealsByWeek = getCompatiblePlanBuckets()
+  // A single atomic write preserves dates outside this visible week, including
+  // records in overlapping legacy buckets after a week-start preference change.
+  const nextPlannedMealsByWeek = replaceWeekMeals(plannedMealsByWeek, weekKey, plannedMeals)
+  const backupKey = 'plan-and-plate-plans-before-v2'
+  try {
+    if (!window.localStorage.getItem(backupKey)) {
+      window.localStorage.setItem(backupKey, JSON.stringify(plannedMealsByWeek))
+    }
+  } catch {
+    window.dispatchEvent?.(new Event('plan-and-plate-storage-error'))
+    return getPlannedMealsForWeek(weekKey)
   }
   const didSave = writeToStorage(
     PLANNED_MEALS_BY_WEEK_KEY,
@@ -246,27 +258,22 @@ export function savePlannedMealsForWeek(weekKey, plannedMeals) {
     return getPlannedMealsForWeek(weekKey)
   }
 
-  return plannedMeals
+  return mealsInWeek(nextPlannedMealsByWeek, weekKey)
+}
+
+function getCompatiblePlanBuckets() {
+  const plannedMealsByWeek = getPlannedMealsByWeek()
+  if (Object.keys(plannedMealsByWeek).length > 0) {
+    return plannedMealsByWeek
+  }
+  const settings = getPlannerSettings()
+  const anchor = settings.selectedWeekStartDate || getCurrentWeekKey(settings.weekStartDay)
+  return { [anchor]: datedMeals(getPlannedMeals(), anchor) }
 }
 
 export function getPlannedMealsForWeek(weekKey) {
-  if (!weekKey) {
-    return getPlannedMeals()
-  }
-
-  const plannedMealsByWeek = getPlannedMealsByWeek()
-
-  if (Object.keys(plannedMealsByWeek).length > 0) {
-    return plannedMealsByWeek[weekKey] || []
-  }
-
-  const oldPlannedMeals = getPlannedMeals()
-
-  if (oldPlannedMeals.length === 0) {
-    return []
-  }
-
-  return savePlannedMealsForWeek(weekKey, oldPlannedMeals)
+  if (!weekKey) return getPlannedMeals()
+  return mealsInWeek(getCompatiblePlanBuckets(), weekKey)
 }
 
 export function savePlannedMeal(plannedMeal, weekKey) {
@@ -488,6 +495,20 @@ export function getManualShoppingItems() {
   return readFromStorage(MANUAL_SHOPPING_ITEMS_KEY, [])
 }
 
+export function updateManualShoppingItem(updatedItem) {
+  const items = getManualShoppingItems()
+  const next = items.map((item) => item.id === updatedItem.id ? updatedItem : item)
+  return writeToStorage(MANUAL_SHOPPING_ITEMS_KEY, next) ? next : items
+}
+
+export function getCheckedShoppingItemIds() {
+  return readFromStorage('plan-and-plate-checked-shopping-items', [])
+}
+
+export function saveCheckedShoppingItemIds(ids) {
+  return writeToStorage('plan-and-plate-checked-shopping-items', ids) ? ids : getCheckedShoppingItemIds()
+}
+
 export function saveManualShoppingItem(item) {
   const manualItems = getManualShoppingItems()
   const nextManualItems = [item, ...manualItems]
@@ -548,6 +569,14 @@ export function getPlannerSettings() {
 }
 
 export function savePlannerSettings(settings) {
+  // The legacy single-week fallback must be anchored before a navigation or
+  // preference write changes its reference week. The old key is never deleted.
+  if (getPlannedMeals().length && Object.keys(getPlannedMealsByWeek()).length === 0) {
+    const current = getPlannerSettings()
+    const anchor = current.selectedWeekStartDate || getCurrentWeekKey(current.weekStartDay)
+    savePlannedMealsForWeek(anchor, datedMeals(getPlannedMeals(), anchor))
+    if (Object.keys(getPlannedMealsByWeek()).length === 0) return current
+  }
   const nextSettings = {
     ...getPlannerSettings(),
     ...settings,
