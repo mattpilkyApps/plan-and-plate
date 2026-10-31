@@ -82,8 +82,6 @@ export default function MealEntrySheet({
             {mode !== 'quick' && <Search size={18} />}
             <input
               className={mode === 'quick' ? 'input' : ''}
-              autoFocus
-              data-autofocus
               placeholder={
                 mode === 'quick'
                   ? 'e.g. Chicken fajitas'
