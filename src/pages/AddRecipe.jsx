@@ -20,10 +20,9 @@ import {
   updateSavedRecipe,
 } from '../utils/localStorage'
 import { getMealIcon } from '../utils/mealIcons'
+import { parsePastedRecipe } from '../utils/recipeImport'
 import {
   formatIngredientForSingleUnit,
-  isInstructionLikeIngredientLine,
-  isRejectedIngredientLine,
   parseIngredients,
 } from '../utils/ingredientParser'
 import {
@@ -50,7 +49,9 @@ const initialRecipe = {
 }
 
 function recipeHasDraftContent(recipe) {
-  return Object.values(recipe).some((value) => String(value || '').trim())
+  return Object.entries(recipe).some(
+    ([key, value]) => key !== 'category' && String(value || '').trim(),
+  )
 }
 
 function getAddRecipeDraft() {
@@ -107,7 +108,14 @@ function getRecipeFormValues(recipe) {
   }
 }
 
-function TextInput({ label, name, value, onChange, placeholder, type = 'text' }) {
+function TextInput({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+}) {
   return (
     <label className="block">
       <span className="text-sm font-bold text-stone-700">{label}</span>
@@ -115,12 +123,6 @@ function TextInput({ label, name, value, onChange, placeholder, type = 'text' })
         className="mt-2 h-14 w-full rounded-2xl border border-stone-100 bg-white px-4 text-base font-medium text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
         name={name}
         onChange={onChange}
-        onFocus={(event) =>
-          event.currentTarget.scrollIntoView({
-            block: 'center',
-            behavior: 'smooth',
-          })
-        }
         placeholder={placeholder}
         type={type}
         value={value}
@@ -186,249 +188,36 @@ function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
       title="Import from text"
       zIndex="z-30"
     >
-        <p className="mt-4 rounded-2xl bg-[#EAF3DE] px-4 py-3 text-sm font-semibold leading-relaxed text-[#5A8D2B]">
-          Paste a recipe here, even if it includes extra page text. Plan & Plate
-          will automatically clean the ingredients into one measurement format
-          and fill the form.
-        </p>
+      <p className="mt-4 rounded-2xl bg-[#EAF3DE] px-4 py-3 text-sm font-semibold leading-relaxed text-[#5A8D2B]">
+        Paste a recipe here, even if it includes extra page text. Plan & Plate
+        will automatically clean the ingredients into one measurement format and
+        fill the form.
+      </p>
 
-        <textarea
-          className="mt-4 h-[48vh] max-h-[24rem] w-full touch-pan-y resize-none overflow-y-auto overscroll-contain rounded-2xl border border-stone-100 bg-white px-4 py-4 text-base font-medium leading-relaxed text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
-          onChange={onPasteTextChange}
-          placeholder={'Serves 4\nPrep time: 15 mins\nCook time: 30 mins\n\nIngredients\n500g chicken breast\n400ml coconut milk\n\nMethod\nCook everything gently until done.'}
-          value={pasteText}
-        />
+      <textarea
+        aria-label="Pasted recipe text"
+        className="mt-4 h-[48vh] max-h-[24rem] w-full touch-pan-y resize-none overflow-y-auto overscroll-contain rounded-2xl border border-stone-100 bg-white px-4 py-4 text-base font-medium leading-relaxed text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
+        onChange={onPasteTextChange}
+        placeholder={
+          'Serves 4\nPrep time: 15 mins\nCook time: 30 mins\n\nIngredients\n500g chicken breast\n400ml coconut milk\n\nMethod\nCook everything gently until done.'
+        }
+        value={pasteText}
+      />
 
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <Pressable
-            onClick={onClose}
-            variant="surface"
-          >
-            Cancel
-          </Pressable>
-          <Pressable
-            disabled={!pasteText.trim()}
-            onClick={onImport}
-            variant="primary"
-          >
-            Fill form
-          </Pressable>
-        </div>
+      <div className="mt-4 grid grid-cols-2 gap-3">
+        <Pressable onClick={onClose} variant="surface">
+          Cancel
+        </Pressable>
+        <Pressable
+          disabled={!pasteText.trim()}
+          onClick={onImport}
+          variant="primary"
+        >
+          Fill form
+        </Pressable>
+      </div>
     </BottomSheet>
   )
-}
-
-function cleanRecipePageLine(line) {
-  return line
-    .replace(/^[\s\-*\u2022]+/, '')
-    .replace(/\s+/g, ' ')
-    .trim()
-}
-
-function getRecipePageHeading(line) {
-  return line.replace(/:$/, '').trim().toLowerCase()
-}
-
-function isRecipePageMetaLine(line) {
-  return /^(serves|servings|yield|prep time|cook time|total time)\b|^(prep|cook)\s*:/i.test(
-    line,
-  )
-}
-
-function isRecipePageNoiseLine(line) {
-  const cleanLine = getRecipePageHeading(line)
-
-  return [
-    /^advertisement$/,
-    /^skip to/,
-    /^jump to recipe/,
-    /^print recipe/,
-    /^print$/,
-    /^pin recipe/,
-    /^save recipe/,
-    /^shopping list$/,
-    /^share$/,
-    /^subscribe/,
-    /^newsletter/,
-    /^sign up/,
-    /^log in/,
-    /^privacy policy/,
-    /^terms/,
-    /^all rights reserved/,
-    /^rating/,
-    /^\d+(\.\d+)? from \d+ votes/,
-    /^course\b/,
-    /^cuisine\b/,
-    /^keyword\b/,
-    /^author\b/,
-    /^calories\b/,
-    /^cook(?:'|\u2019)?s notes?$/,
-  ].some((pattern) => pattern.test(cleanLine))
-}
-
-function isRecipePageIngredientsHeading(line) {
-  const cleanLine = getRecipePageHeading(line)
-
-  return cleanLine.length < 60 && /^ingredients?\b/.test(cleanLine)
-}
-
-function isRecipePageMethodHeading(line) {
-  const cleanLine = getRecipePageHeading(line)
-
-  return (
-    cleanLine.length < 60 &&
-    /^(method|instructions|directions|preparation|steps)\b/.test(cleanLine)
-  )
-}
-
-function isRecipePageStopHeading(line) {
-  const cleanLine = getRecipePageHeading(line)
-
-  return (
-    cleanLine.length < 80 &&
-    /^(nutrition|nutritional information|method|instructions|directions|notes|tips|recipe tips|equipment|storage|make ahead|freezing|substitutions|variations|faq|frequently asked questions|comments|reviews|video|more recipes|you may also like)\b/.test(
-      cleanLine,
-    )
-  )
-}
-
-function isRecipePageIngredientSubheading(line) {
-  return /^for\s+(the\s+)?/i.test(line.trim()) && line.length < 70
-}
-
-function isRecipePageLikelyIngredient(line) {
-  return /^(\d|[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e]|one|two|three|four|five|six|seven|eight|nine|ten)\b/i.test(
-    line,
-  )
-}
-
-function isRecipePageUsefulIngredient(line) {
-  return (
-    isRecipePageLikelyIngredient(line) ||
-    line.length < 120
-  )
-}
-
-function shouldKeepDetectedIngredient(line) {
-  if (isRejectedIngredientLine(line)) {
-    return false
-  }
-
-  if (
-    isInstructionLikeIngredientLine(line) &&
-    !isRecipePageLikelyIngredient(line)
-  ) {
-    return false
-  }
-
-  return true
-}
-
-function getRecipePageTime(line, label) {
-  const match = line.match(
-    new RegExp(`^${label}(?:\\s*time)?\\s*:?\\s*(.+)$`, 'i'),
-  )
-
-  if (!match) {
-    return ''
-  }
-
-  return match[1].trim()
-}
-
-function parsePastedRecipe(text) {
-  if (!text.trim()) {
-    return {
-      servings: '',
-      prepTime: '',
-      cookTime: '',
-      ingredients: '',
-      method: '',
-    }
-  }
-
-  const lines = text
-    .replace(/\r/g, '\n')
-    .split('\n')
-    .map(cleanRecipePageLine)
-    .filter(Boolean)
-  let servings = ''
-  let prepTime = ''
-  let cookTime = ''
-  let activeSection = ''
-  const ingredientLines = []
-  const methodLines = []
-
-  lines.forEach((line) => {
-    const cleanLine = line.replace(/:$/, '').trim()
-    const lowerLine = cleanLine.toLowerCase()
-
-    if (isRecipePageNoiseLine(cleanLine)) {
-      return
-    }
-
-    if (isRecipePageIngredientsHeading(cleanLine)) {
-      activeSection = 'ingredients'
-      return
-    }
-
-    if (isRecipePageMethodHeading(cleanLine)) {
-      activeSection = 'method'
-      return
-    }
-
-    if (isRecipePageStopHeading(cleanLine)) {
-      activeSection = 'ignore'
-      return
-    }
-
-    const servingsMatch = line.match(
-      /\b(?:serves|servings|yield)\s*:?\s*(\d+)/i,
-    )
-
-    if (servingsMatch && !servings) {
-      servings = servingsMatch[1]
-      return
-    }
-
-    if (activeSection !== 'method' && lowerLine.startsWith('prep') && !prepTime) {
-      prepTime = getRecipePageTime(line, 'prep')
-      return
-    }
-
-    if (activeSection !== 'method' && lowerLine.startsWith('cook') && !cookTime) {
-      cookTime = getRecipePageTime(line, 'cook')
-      return
-    }
-
-    if (
-      activeSection === 'ingredients' &&
-      !isRecipePageMetaLine(line) &&
-      !isRecipePageIngredientSubheading(line) &&
-      shouldKeepDetectedIngredient(line) &&
-      isRecipePageUsefulIngredient(line)
-    ) {
-      ingredientLines.push(line)
-      return
-    }
-
-    if (activeSection === 'method' && !isRecipePageMetaLine(line)) {
-      methodLines.push(line)
-      return
-    }
-
-    if (!activeSection && isRecipePageLikelyIngredient(line)) {
-      ingredientLines.push(line)
-    }
-  })
-
-  return {
-    servings,
-    prepTime,
-    cookTime,
-    ingredients: ingredientLines.join('\n'),
-    method: methodLines.join('\n'),
-  }
 }
 
 function resizeRecipeImage(file) {
@@ -471,9 +260,7 @@ function AddRecipe() {
     sampleRecipes,
     getRemovedRecipeIds(),
   )
-  const recipeToEdit = recipeKey
-    ? findRecipeByKey(allRecipes, recipeKey)
-    : null
+  const recipeToEdit = recipeKey ? findRecipeByKey(allRecipes, recipeKey) : null
   const isEditing = Boolean(recipeKey && recipeToEdit)
   const [recipe, setRecipe] = useState(() => {
     if (isEditing) {
@@ -482,6 +269,9 @@ function AddRecipe() {
 
     return getAddRecipeDraft() || initialRecipe
   })
+  const [restoredDraft] = useState(
+    () => !isEditing && Boolean(getAddRecipeDraft()),
+  )
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [pasteText, setPasteText] = useState('')
@@ -564,6 +354,9 @@ function AddRecipe() {
 
     setRecipe((currentRecipe) => ({
       ...currentRecipe,
+      servings: parsedRecipe.servings || currentRecipe.servings,
+      prepTime: parsedRecipe.prepTime || currentRecipe.prepTime,
+      cookTime: parsedRecipe.cookTime || currentRecipe.cookTime,
       ingredients: formattedIngredients || currentRecipe.ingredients,
       method: parsedRecipe.method || currentRecipe.method,
     }))
@@ -577,14 +370,25 @@ function AddRecipe() {
 
   function handleSaveRecipe(event) {
     event.preventDefault()
+    if (!recipe.name.trim()) {
+      setErrorMessage('Give your recipe a name before saving.')
+      return
+    }
+    if (
+      recipe.servings &&
+      (Number(recipe.servings) < 1 || Number(recipe.servings) > 100)
+    ) {
+      setErrorMessage('Choose between 1 and 100 servings.')
+      return
+    }
     const savedAt = new Date().toISOString()
 
     const recipeToSave = {
       id: recipeToEdit ? getRecipeId(recipeToEdit) : createLocalId('recipe'),
-      name: recipe.name || 'Untitled Recipe',
+      name: recipe.name.trim(),
       mealType: recipe.category,
       prepTime: recipe.prepTime,
-      time: recipe.prepTime || recipe.cookTime || 'Not set',
+      time: recipe.cookTime || recipe.prepTime || 'Not set',
       cookTime: recipe.cookTime,
       servings: recipe.servings || '1',
       description: recipe.notes || 'A locally saved recipe.',
@@ -604,7 +408,6 @@ function AddRecipe() {
     const nextSavedRecipes = isEditing
       ? updateSavedRecipe(recipeToSave)
       : saveRecipeToStorage(recipeToSave)
-    console.log(isEditing ? 'Updated recipe:' : 'New recipe:', recipeToSave)
 
     const recipeWasSaved = nextSavedRecipes.some(
       (savedRecipe) =>
@@ -645,7 +448,7 @@ function AddRecipe() {
   }
 
   return (
-    <section className="pb-6">
+    <section className="recipe-form pb-6">
       <header className="flex items-center justify-between gap-4">
         <Link
           className="premium-press flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
@@ -666,6 +469,11 @@ function AddRecipe() {
         </div>
       </header>
 
+      {restoredDraft && (
+        <p className="helper mt-4" role="status">
+          Your unfinished recipe has been restored. Pick up where you left off.
+        </p>
+      )}
       <Pressable
         className="mt-6 w-full"
         onClick={() => setShowPasteSheet(true)}
@@ -766,7 +574,7 @@ function AddRecipe() {
                   Replace
                   <input
                     accept="image/*"
-                    className="hidden"
+                    className="sr-only"
                     onChange={handleImageChange}
                     type="file"
                   />
@@ -793,7 +601,7 @@ function AddRecipe() {
               </span>
               <input
                 accept="image/*"
-                className="hidden"
+                className="sr-only"
                 onChange={handleImageChange}
                 type="file"
               />
@@ -853,6 +661,7 @@ function AddRecipe() {
         <Pressable
           as="button"
           className="sticky bottom-[6.4rem] w-full"
+          disabled={isProcessingImage}
           size="lg"
           type="submit"
           variant="primary"

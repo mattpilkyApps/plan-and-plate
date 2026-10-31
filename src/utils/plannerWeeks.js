@@ -82,3 +82,17 @@ export function formatPlannerWeekRange(days) {
 
   return `${firstDay.dayName} ${firstDay.date} - ${lastDay.dayName} ${lastDay.date}`
 }
+
+// Keep the user near the week they were viewing when its boundary changes.
+export function reanchorWeek(
+  weekKey,
+  oldStartDay,
+  newStartDay,
+  today = new Date(),
+) {
+  const isCurrent =
+    weekKey === formatDateKey(getWeekStartDate(today, oldStartDay))
+  const anchor = isCurrent ? new Date(today) : parseDateKey(weekKey)
+  if (!isCurrent) anchor.setDate(anchor.getDate() + 3)
+  return formatDateKey(getWeekStartDate(anchor, newStartDay))
+}

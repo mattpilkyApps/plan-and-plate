@@ -1,88 +1,6 @@
-import {
-  CalendarPlus,
-  Clock,
-  Flame,
-  Leaf,
-  Moon,
-  MoreVertical,
-  Star,
-  Sun,
-  Sunrise,
-  User,
-} from 'lucide-react'
-
-const mealStyles = {
-  Breakfast: {
-    Icon: Sun,
-    className: 'bg-amber-50 text-amber-600',
-  },
-  Lunch: {
-    Icon: Sunrise,
-    className: 'bg-orange-50 text-orange-500',
-  },
-  Dinner: {
-    Icon: Moon,
-    className: 'bg-violet-50 text-violet-500',
-  },
-  Snacks: {
-    Icon: Leaf,
-    className: 'bg-green-50 text-green-700',
-  },
-}
-
-const badgeStyles = {
-  'Family Favourite': {
-    Icon: Star,
-    className: 'bg-amber-50 text-amber-700',
-  },
-  'Medium Spice': {
-    Icon: Flame,
-    className: 'bg-red-50 text-red-600',
-  },
-  Vegetarian: {
-    Icon: Leaf,
-    className: 'bg-green-50 text-green-700',
-  },
-  'High Protein': {
-    Icon: User,
-    className: 'bg-blue-50 text-blue-700',
-  },
-  'Saved Recipe': {
-    Icon: Star,
-    className: 'bg-green-50 text-[#5A8D2B]',
-  },
-}
-
-function SmallPill({ icon: Icon, children, className }) {
-  return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-xl px-2.5 py-1 text-xs font-bold ${className}`}
-    >
-      <Icon size={14} />
-      {children}
-    </span>
-  )
-}
-
-function RecipeThumbnail({ recipe, icon: Icon }) {
-  if (recipe.image) {
-    return (
-      <img
-        src={recipe.image}
-        alt=""
-        className="h-32 w-32 shrink-0 rounded-2xl object-cover premium-transition group-hover:scale-[1.025]"
-      />
-    )
-  }
-
-  return (
-    <div className="flex h-32 w-32 shrink-0 items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B]">
-      <Icon size={42} />
-    </div>
-  )
-}
-
-function RecipeCard({
+import { Clock, Users, Heart, MoreHorizontal, Plus, Check } from 'lucide-react'
+import RecipeImage from './RecipeImage'
+export default function RecipeCard({
   addedRecipeId,
   isFavourite,
   onAddToWeek,
@@ -91,107 +9,68 @@ function RecipeCard({
   onToggleFavourite,
   recipe,
 }) {
-  const mealStyle = mealStyles[recipe.mealType] || mealStyles.Dinner
-  const MealIcon = mealStyle.Icon
-  const firstBadge = recipe.badges?.[0] || 'Saved Recipe'
-  const badgeStyle = badgeStyles[firstBadge] || badgeStyles['Saved Recipe']
-  const BadgeIcon = badgeStyle.Icon
-  const recipeId = recipe.id || recipe.name
-  const wasJustAdded = addedRecipeId === recipeId
-
+  const added = addedRecipeId === (recipe.id || recipe.name)
   return (
-    <article
-      className="group flex cursor-pointer gap-4 rounded-3xl border border-stone-100 bg-white p-3 text-left shadow-[0_8px_24px_rgba(30,41,59,0.05)] premium-transition hover:-translate-y-0.5 hover:shadow-[0_14px_30px_rgba(30,41,59,0.08)] active:translate-y-0 active:scale-[0.99]"
-      onClick={() => onOpenRecipe(recipe)}
-    >
-      <RecipeThumbnail icon={MealIcon} recipe={recipe} />
-
-      <div className="min-w-0 flex-1 py-1">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <h2 className="line-clamp-2 text-xl font-bold leading-tight tracking-tight text-stone-900">
-              {recipe.name}
-            </h2>
-
-            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm">
-              <SmallPill icon={MealIcon} className={mealStyle.className}>
-                {recipe.mealType}
-              </SmallPill>
-              <span className="text-stone-300">-</span>
-              <span className="inline-flex items-center gap-1 font-semibold text-[#5A8D2B]">
-                <User size={15} />
-                Serves {recipe.servings}
-              </span>
-            </div>
-          </div>
-
-          <div className="flex shrink-0 gap-1">
-            <button
-              aria-label={
-                isFavourite
-                  ? `Remove ${recipe.name} from favourites`
-                  : `Add ${recipe.name} to favourites`
-              }
-              className={`premium-press rounded-full p-1.5 ${
-                isFavourite ? 'text-amber-500' : 'text-stone-400'
-              }`}
-              onClick={(event) => {
-                event.stopPropagation()
-                onToggleFavourite(recipe)
-              }}
-              type="button"
-            >
-              <Star
-                className={isFavourite ? 'pop-in' : ''}
-                fill={isFavourite ? 'currentColor' : 'none'}
-                size={22}
-              />
-            </button>
-            <button
-              aria-label={`Recipe actions for ${recipe.name}`}
-              className="premium-press rounded-full p-1.5 text-stone-700"
-              onClick={(event) => {
-                event.stopPropagation()
-                onOpenActions(recipe)
-              }}
-              type="button"
-            >
-              <MoreVertical size={22} />
-            </button>
-          </div>
-        </div>
-
-        <p className="mt-3 line-clamp-2 text-[0.95rem] leading-relaxed text-stone-600">
-          {recipe.description}
-        </p>
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          <SmallPill icon={Clock} className="bg-green-50 text-[#5A8D2B]">
-            {recipe.time}
-          </SmallPill>
-          <SmallPill icon={BadgeIcon} className={badgeStyle.className}>
-            {firstBadge}
-          </SmallPill>
-        </div>
-
+    <article className="recipe-card">
+      <div className="recipe-card-top">
         <button
-          className={`premium-press mt-3 flex h-10 w-full items-center justify-center gap-2 rounded-2xl text-sm font-bold ${
-            wasJustAdded
-              ? 'bg-[#5A8D2B] text-white shadow-[0_10px_20px_rgba(90,141,43,0.22)]'
-              : 'bg-[#EAF3DE] text-[#5A8D2B]'
-          }`}
-          onClick={(event) => {
-            event.stopPropagation()
-            onAddToWeek(recipe)
-          }}
-          type="button"
+          className="recipe-photo-button"
+          aria-label={`View ${recipe.name}`}
+          onClick={() => onOpenRecipe(recipe)}
         >
-          <CalendarPlus size={18} />
-          {wasJustAdded ? 'Added' : 'Add to Week'}
+          <RecipeImage recipe={recipe} />
         </button>
+        <button
+          className={`favourite-button ${isFavourite ? 'is-favourite' : ''}`}
+          aria-label={`${isFavourite ? 'Remove' : 'Add'} ${recipe.name} ${isFavourite ? 'from' : 'to'} favourites`}
+          aria-pressed={isFavourite}
+          onClick={() => onToggleFavourite(recipe)}
+        >
+          <Heart
+            size={19}
+            strokeWidth={1.8}
+            fill={isFavourite ? 'currentColor' : 'none'}
+          />
+        </button>
+        <span className="recipe-type">{recipe.mealType || 'Recipe'}</span>
+      </div>
+      <div className="recipe-card-body">
+        <button
+          className="recipe-card-name"
+          onClick={() => onOpenRecipe(recipe)}
+        >
+          {recipe.name}
+        </button>
+        <div className="recipe-card-meta">
+          <span>
+            <Clock size={12} />
+            {recipe.time ||
+              recipe.cookTime ||
+              recipe.prepTime ||
+              'Time not set'}
+          </span>
+          <span>
+            <Users size={12} />
+            {recipe.servings || 1}
+          </span>
+        </div>
+        <div className="recipe-card-actions">
+          <button
+            className="add-week-button"
+            onClick={() => onAddToWeek(recipe)}
+          >
+            {added ? <Check size={15} /> : <Plus size={15} />}
+            {added ? 'Added' : 'Add to week'}
+          </button>
+          <button
+            className="icon-button"
+            aria-label={`Recipe options for ${recipe.name}`}
+            onClick={() => onOpenActions(recipe)}
+          >
+            <MoreHorizontal size={19} />
+          </button>
+        </div>
       </div>
     </article>
   )
 }
-
-export default RecipeCard

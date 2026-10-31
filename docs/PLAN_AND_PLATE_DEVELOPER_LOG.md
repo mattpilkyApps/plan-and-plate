@@ -641,3 +641,27 @@ The installed phone app needed to use the new Plan & Plate logo, and the app sho
 ### Notes or follow-up
 
 - Existing installs may need to remove and re-add the app to the phone home screen before the new icon appears.
+
+## 2026-10-31 — V2 foundations and planner
+
+Replaced the frontend interaction layer while retaining the React/Vite stack and storage keys. Added forest-green/cream tokens, botanical vector branding, responsive shell/navigation, native modal sheets with focus containment/Escape/restoration, storage error feedback and lazy routes. Planner now always renders seven days, with persistent Dinners/All Meals views, immediate text entry, optional recipe linking, Save & next, contextual move/swap/duplicate, servings, removal undo, queue placement and guarded week copying. No automatic fictional starter meals.
+
+Legacy weekday plans resolve to absolute calendar dates using their original week bucket. Saving updates overlapping date ranges atomically, retaining other dates and a pre-V2 backup. The old single-week key is retained and anchored before preference/navigation changes. Added Node regression tests for dates, week-start changes, moves/swaps/copies and quota failures. Lint, build and the initial six tests pass. Phone-width browser checks are underway; physical-device checks remain for the owner.
+
+## 2026-10-31 — Recipe library and cooking experience
+
+Added photo-led responsive recipe cards, compact category filters and sort/search controls, resilient missing-image placeholders, favourite hearts and Add to Week feedback. Rebuilt detail pages around photography, ingredients/method tabs, a cooking checklist, adjustable ingredient servings, edit/delete and direct Add to Planner with real dates and week navigation. Existing recipe IDs, favourites/usage metadata, local edits, parser and image compression remain. Paste import now also fills detected servings/prep/cook fields. Added optional example recipes, with no automatic insertion into saved plans. Local photos are bundled; image sources are documented with the assets.
+
+## 2026-10-31 — Shopping for the whole household
+
+Rebuilt shopping around compact aisle groups, a sticky progress bar, one-line quick entry and a detailed quantity/category/note sheet. Added household cleaning, toiletries, drinks, baby/family and pet categories without changing existing manual-item records. Checked rows persist across route changes and reloads. Generated rows expose recipe provenance; removing or clearing a merged row clears all contributing source IDs. Unknown quantities stay visible separately, and incompatible units remain readable instead of inventing conversions. Existing serving scaling, parser and legacy categories remain supported. Added integration, category, persistence and documented parser regression tests; all 11 tests pass with lint/build.
+
+## 2026-10-31 — Final V2 frontend polish and verification
+
+Completed botanical SVG/PNG PWA branding, lazy secondary routes, native-dialog keyboard/focus behaviour, visible draft restoration, importer extraction into a testable utility, readable muted text and narrow-screen overflow fixes. Removed unreferenced earlier planner/starter components. Added build-time offline-shell generation, preserving a simple dependency-free runtime. Corrected pepper/tinned-tomato aisle presentation and retained original ingredient text for traceability.
+
+Browser-tested the planning/recipe/shopping workflows and 320/390/430/768px layouts, including typed seven-dinner entry, optional linking/servings, move/swap, queue, safe copying, import/drafts/editing, household items and persistent checks. Seventeen domain/integration regressions, lint, build and generated service-worker syntax pass. Physical Android keyboard/camera/install/offline and new-user timing remain unverified. GitHub write remains blocked by integration 403 and missing HTTPS push credential. A separate private preview and downloadable source are being prepared; main remains untouched. Full details are in V2_DELIVERY_REPORT.md.
+
+## 2026-10-31 — Open meal picker without the keyboard
+
+Following Matt’s phone review, removed automatic focus from the meal-name / recipe-search field. The meal sheet keeps its native modal focus on the Close control, so opening or advancing the picker does not request the on-screen keyboard. Tapping a typing field still focuses it normally. Quick add, recipe selection and Save & next remain available. This supersedes the earlier automatic keyboard-opening behaviour. No storage or data changes.

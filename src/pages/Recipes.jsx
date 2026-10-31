@@ -5,6 +5,7 @@ import {
   CalendarPlus,
   Check,
   CheckCircle2,
+  ChevronDown,
   Filter,
   BookOpenText,
   Moon,
@@ -15,7 +16,7 @@ import {
   Sunrise,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import RecipeCard from '../components/RecipeCard'
@@ -32,7 +33,11 @@ import {
   recipeSortOptions,
   sortRecipes,
 } from '../utils/recipeFilters'
-import { getRecipeId, getRecipeKey, getVisibleRecipes } from '../utils/recipeKeys'
+import {
+  getRecipeId,
+  getRecipeKey,
+  getVisibleRecipes,
+} from '../utils/recipeKeys'
 import {
   createLocalId,
   deleteSavedRecipe,
@@ -56,7 +61,7 @@ const categoryFilters = [
   { label: 'Snacks', Icon: Apple },
 ]
 
-function RecipesHeader({ recipeCount }) {
+function RecipesHeader() {
   return (
     <ScreenHeader
       actions={
@@ -65,72 +70,55 @@ function RecipesHeader({ recipeCount }) {
           to="/recipes/add"
           variant="primary"
         >
-          <CalendarPlus size={19} />
+          <CalendarPlus size={18} />
           <span>Add</span>
         </Pressable>
       }
       eyebrow="Recipe Library"
-      stats={[{ label: `${recipeCount} recipes`, icon: BookOpenText }]}
-      subtitle="Quick meals, family favourites, and saved ideas"
-      title="Your recipes"
+      stats={[]}
+      subtitle="Familiar favourites. Fresh ideas. All in one place."
+      title="Your recipe book"
     />
   )
 }
 
 function SearchAndFilter({ onOpenFilter, onSearchChange, searchTerm }) {
   return (
-    <div className="mt-7 flex gap-3">
-      <label className="flex h-14 min-w-0 flex-1 items-center gap-3 rounded-2xl border border-stone-100 bg-white px-4 text-stone-400 shadow-sm">
-        <Search size={24} />
+    <div className="recipe-search-row">
+      <label className="search-field">
+        <Search size={19} />
         <input
-          className="w-full bg-transparent text-base font-medium text-stone-700 outline-none placeholder:text-stone-400"
-          onChange={onSearchChange}
-          placeholder="Search recipes..."
+          aria-label="Search recipes"
           type="search"
+          placeholder="Find a recipe…"
           value={searchTerm}
+          onChange={onSearchChange}
         />
       </label>
-
-      <Pressable
-        className="h-14 px-4"
+      <button
+        className="icon-button filter-button"
+        aria-label="Sort recipes"
         onClick={onOpenFilter}
-        variant="surface"
       >
-        <Filter size={20} />
-        <span>Filter</span>
-      </Pressable>
+        <Filter size={19} />
+      </button>
     </div>
   )
 }
-
 function RecipeTabs({ onSelectTab, selectedTab }) {
   return (
-    <div className="no-scrollbar -mx-4 mt-5 overflow-x-auto px-4 pb-1">
-      <div className="flex w-max gap-3">
-        {categoryFilters.map((category) => {
-          const Icon = category.Icon
-          const isActive = category.label === selectedTab
-
-          return (
-            <button
-              key={category.label}
-              onClick={() => onSelectTab(category.label)}
-              className={`premium-press flex h-12 items-center gap-2 rounded-2xl border px-4 text-base font-bold shadow-sm ${
-                isActive
-                  ? 'border-[#D7E8C3] bg-white text-[#5A8D2B] shadow-[0_10px_24px_rgba(90,141,43,0.12)]'
-                  : 'border-stone-100 bg-[#FBF6EE] text-stone-800'
-              }`}
-              type="button"
-            >
-              <Icon
-                size={21}
-                className={isActive ? 'text-[#5A8D2B]' : ''}
-              />
-              {category.label}
-            </button>
-          )
-        })}
-      </div>
+    <div className="recipe-tabs no-scrollbar" aria-label="Recipe categories">
+      {categoryFilters.map(({ label, Icon }) => (
+        <button
+          key={label}
+          type="button"
+          aria-pressed={selectedTab === label}
+          onClick={() => onSelectTab(label)}
+        >
+          <Icon size={14} />
+          {label === 'All Recipes' ? 'All recipes' : label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -153,7 +141,11 @@ function RecipeActionButton({ children, icon: Icon, isDanger, onClick }) {
 
 function SortRecipesSheet({ onClose, onSelectSort, selectedSort }) {
   return (
-    <BottomSheet eyebrow="Recipe filters" onClose={onClose} title="Sort Recipes">
+    <BottomSheet
+      eyebrow="Recipe filters"
+      onClose={onClose}
+      title="Sort Recipes"
+    >
       <div className="mt-5 grid gap-3">
         {recipeSortOptions.map((sortOption) => {
           const isSelected = selectedSort === sortOption
@@ -235,22 +227,15 @@ function DeleteRecipeSheet({ onCancel, onDelete, recipe }) {
       title={recipe.name}
       tone="danger"
     >
-
       <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold leading-relaxed text-red-600">
         This will remove the recipe and any linked planned meals.
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <Pressable
-          onClick={onCancel}
-          variant="surface"
-        >
+        <Pressable onClick={onCancel} variant="surface">
           Cancel
         </Pressable>
-        <Pressable
-          onClick={onDelete}
-          variant="dangerSolid"
-        >
+        <Pressable onClick={onDelete} variant="dangerSolid">
           Delete
         </Pressable>
       </div>
@@ -271,11 +256,18 @@ function Recipes() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTab, setSelectedTab] = useState('All Recipes')
   const [selectedSort, setSelectedSort] = useState(() => getRecipeSortOption())
-  const [recipeMetadata, setRecipeMetadata] = useState(() => getRecipeMetadata())
+  const [recipeMetadata, setRecipeMetadata] = useState(() =>
+    getRecipeMetadata(),
+  )
   const [successMessage, setSuccessMessage] = useState(
     location.state?.successMessage || '',
   )
   const [addedRecipeId, setAddedRecipeId] = useState('')
+  useEffect(() => {
+    if (!successMessage) return
+    const timer = window.setTimeout(() => setSuccessMessage(''), 4500)
+    return () => window.clearTimeout(timer)
+  }, [successMessage])
 
   const allRecipes = getVisibleRecipes(
     savedRecipes,
@@ -361,17 +353,14 @@ function Recipes() {
   }
 
   return (
-    <section className="relative">
-      <RecipesHeader recipeCount={filteredRecipes.length} />
+    <section className="recipe-library relative">
+      <RecipesHeader />
       <SearchAndFilter
         onOpenFilter={() => setShowSortSheet(true)}
         onSearchChange={(event) => setSearchTerm(event.target.value)}
         searchTerm={searchTerm}
       />
-      <RecipeTabs
-        onSelectTab={setSelectedTab}
-        selectedTab={selectedTab}
-      />
+      <RecipeTabs onSelectTab={setSelectedTab} selectedTab={selectedTab} />
 
       <StatusToast
         icon={CheckCircle2}
@@ -379,18 +368,28 @@ function Recipes() {
         show={Boolean(successMessage)}
       />
 
+      <div className="library-result">
+        <span>
+          {filteredRecipes.length}{' '}
+          {filteredRecipes.length === 1 ? 'recipe' : 'recipes'} to make your own
+        </span>
+        <button className="inline-link" onClick={() => setShowSortSheet(true)}>
+          {selectedSort}
+          <ChevronDown size={13} />
+        </button>
+      </div>
       {filteredRecipes.length === 0 ? (
         <div className="mt-5">
           <EmptyState icon={BookOpenText} title="No recipes found">
             {selectedTab === 'Favourites'
               ? 'Favourite recipes to find them quickly later.'
               : allRecipes.length === 0
-              ? 'Add your first recipe to start planning meals.'
-              : 'Try another search or add a new recipe.'}
+                ? 'Add your first recipe to start planning meals.'
+                : 'Try another search or add a new recipe.'}
           </EmptyState>
         </div>
       ) : (
-        <div className="mt-5 grid gap-3">
+        <div className="recipe-grid">
           {filteredRecipes.map((recipe, index) => (
             <div
               className="card-enter"

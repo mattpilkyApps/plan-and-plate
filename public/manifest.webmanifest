@@ -1,12 +1,12 @@
 {
   "name": "Plan & Plate",
   "short_name": "Plan & Plate",
-  "description": "A simple weekly meal planner, recipe library, and shopping list.",
+  "description": "Plan your meals. Cook your favourites. Shop for the whole household.",
   "start_url": "/planner",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#FAF8F3",
-  "theme_color": "#5A8D2B",
+  "background_color": "#f8f6ef",
+  "theme_color": "#214c36",
   "icons": [
     {
       "src": "/icons/icon-192.png",
@@ -19,6 +19,12 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/brand/plan-plate-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
     }
   ]
 }

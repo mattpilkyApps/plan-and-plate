@@ -1,51 +1,29 @@
-import { CalendarDays, BookOpen, ShoppingCart } from 'lucide-react'
+import { CalendarDays, BookOpen, ShoppingBasket } from 'lucide-react'
 import { NavLink } from 'react-router-dom'
-
-const navItems = [
+const items = [
   { label: 'Planner', path: '/planner', icon: CalendarDays },
   { label: 'Recipes', path: '/recipes', icon: BookOpen },
-  { label: 'Shopping', path: '/shopping', icon: ShoppingCart },
+  { label: 'Shopping', path: '/shopping', icon: ShoppingBasket },
 ]
-
-function BottomNav() {
+export default function BottomNav() {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 rounded-t-[1.5rem] border border-stone-100 bg-white/95 px-4 pb-3 pt-2 shadow-[0_-10px_30px_rgba(30,41,59,0.08)] backdrop-blur">
-      <div className="mx-auto flex max-w-[430px] items-center justify-between">
-        {navItems.map((item) => {
-          const Icon = item.icon
-
-          return (
-            <NavLink
-              key={item.path}
-              to={item.path}
-              className={({ isActive }) =>
-                `premium-press flex flex-1 flex-col items-center gap-0.5 rounded-2xl px-2 py-1 text-xs font-semibold ${
-                  isActive
-                    ? 'text-[#5A8D2B]'
-                    : 'text-stone-400 hover:text-[#5A8D2B]'
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <span
-                    className={`premium-transition rounded-xl p-1.5 ${
-                      isActive
-                        ? 'scale-105 bg-[#EAF3DE] shadow-sm'
-                        : 'scale-100 bg-transparent'
-                    }`}
-                  >
-                    <Icon size={21} strokeWidth={2} />
-                  </span>
-                  <span>{item.label}</span>
-                </>
-              )}
-            </NavLink>
-          )
-        })}
+    <nav className="bottom-nav" aria-label="Main navigation">
+      <div className="nav-inner">
+        {items.map(({ label, path, icon: Icon }) => (
+          <NavLink
+            key={path}
+            to={path}
+            className={({ isActive }) =>
+              `nav-item ${isActive ? 'nav-active' : ''}`
+            }
+          >
+            <span className="nav-icon">
+              <Icon size={22} strokeWidth={1.8} />
+            </span>
+            <span>{label}</span>
+          </NavLink>
+        ))}
       </div>
     </nav>
   )
 }
-
-export default BottomNav
