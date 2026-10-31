@@ -50,7 +50,7 @@ const initialRecipe = {
 }
 
 function recipeHasDraftContent(recipe) {
-  return Object.values(recipe).some((value) => String(value || '').trim())
+  return Object.entries(recipe).some(([key, value]) => key !== 'category' && String(value || '').trim())
 }
 
 function getAddRecipeDraft() {
@@ -115,12 +115,7 @@ function TextInput({ label, name, value, onChange, placeholder, type = 'text' })
         className="mt-2 h-14 w-full rounded-2xl border border-stone-100 bg-white px-4 text-base font-medium text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
         name={name}
         onChange={onChange}
-        onFocus={(event) =>
-          event.currentTarget.scrollIntoView({
-            block: 'center',
-            behavior: 'smooth',
-          })
-        }
+
         placeholder={placeholder}
         type={type}
         value={value}
@@ -193,6 +188,7 @@ function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
         </p>
 
         <textarea
+          aria-label="Pasted recipe text"
           className="mt-4 h-[48vh] max-h-[24rem] w-full touch-pan-y resize-none overflow-y-auto overscroll-contain rounded-2xl border border-stone-100 bg-white px-4 py-4 text-base font-medium leading-relaxed text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
           onChange={onPasteTextChange}
           placeholder={'Serves 4\nPrep time: 15 mins\nCook time: 30 mins\n\nIngredients\n500g chicken breast\n400ml coconut milk\n\nMethod\nCook everything gently until done.'}
@@ -564,6 +560,9 @@ function AddRecipe() {
 
     setRecipe((currentRecipe) => ({
       ...currentRecipe,
+      servings: parsedRecipe.servings || currentRecipe.servings,
+      prepTime: parsedRecipe.prepTime || currentRecipe.prepTime,
+      cookTime: parsedRecipe.cookTime || currentRecipe.cookTime,
       ingredients: formattedIngredients || currentRecipe.ingredients,
       method: parsedRecipe.method || currentRecipe.method,
     }))
@@ -577,14 +576,16 @@ function AddRecipe() {
 
   function handleSaveRecipe(event) {
     event.preventDefault()
+    if (!recipe.name.trim()) { setErrorMessage('Give your recipe a name before saving.'); return }
+    if (recipe.servings && (Number(recipe.servings) < 1 || Number(recipe.servings) > 100)) { setErrorMessage('Choose between 1 and 100 servings.'); return }
     const savedAt = new Date().toISOString()
 
     const recipeToSave = {
       id: recipeToEdit ? getRecipeId(recipeToEdit) : createLocalId('recipe'),
-      name: recipe.name || 'Untitled Recipe',
+      name: recipe.name.trim(),
       mealType: recipe.category,
       prepTime: recipe.prepTime,
-      time: recipe.prepTime || recipe.cookTime || 'Not set',
+      time: recipe.cookTime || recipe.prepTime || 'Not set',
       cookTime: recipe.cookTime,
       servings: recipe.servings || '1',
       description: recipe.notes || 'A locally saved recipe.',
@@ -604,7 +605,6 @@ function AddRecipe() {
     const nextSavedRecipes = isEditing
       ? updateSavedRecipe(recipeToSave)
       : saveRecipeToStorage(recipeToSave)
-    console.log(isEditing ? 'Updated recipe:' : 'New recipe:', recipeToSave)
 
     const recipeWasSaved = nextSavedRecipes.some(
       (savedRecipe) =>
@@ -645,7 +645,7 @@ function AddRecipe() {
   }
 
   return (
-    <section className="pb-6">
+    <section className="recipe-form pb-6">
       <header className="flex items-center justify-between gap-4">
         <Link
           className="premium-press flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl border border-stone-100 bg-white text-stone-800 shadow-sm"
@@ -853,6 +853,7 @@ function AddRecipe() {
         <Pressable
           as="button"
           className="sticky bottom-[6.4rem] w-full"
+          disabled={isProcessingImage}
           size="lg"
           type="submit"
           variant="primary"
