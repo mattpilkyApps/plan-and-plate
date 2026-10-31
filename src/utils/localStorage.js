@@ -39,7 +39,14 @@ function readFromStorage(key, fallbackValue) {
   }
 
   try {
-    return JSON.parse(storedValue)
+    const parsed = JSON.parse(storedValue)
+    if (Array.isArray(fallbackValue))
+      return Array.isArray(parsed) ? parsed : fallbackValue
+    if (fallbackValue && typeof fallbackValue === 'object')
+      return parsed && typeof parsed === 'object' && !Array.isArray(parsed)
+        ? parsed
+        : fallbackValue
+    return typeof parsed === typeof fallbackValue ? parsed : fallbackValue
   } catch {
     return fallbackValue
   }
@@ -239,7 +246,11 @@ export function savePlannedMealsForWeek(weekKey, plannedMeals) {
   const plannedMealsByWeek = getCompatiblePlanBuckets()
   // A single atomic write preserves dates outside this visible week, including
   // records in overlapping legacy buckets after a week-start preference change.
-  const nextPlannedMealsByWeek = replaceWeekMeals(plannedMealsByWeek, weekKey, plannedMeals)
+  const nextPlannedMealsByWeek = replaceWeekMeals(
+    plannedMealsByWeek,
+    weekKey,
+    plannedMeals,
+  )
   const backupKey = 'plan-and-plate-plans-before-v2'
   try {
     if (!window.localStorage.getItem(backupKey)) {
@@ -267,7 +278,8 @@ function getCompatiblePlanBuckets() {
     return plannedMealsByWeek
   }
   const settings = getPlannerSettings()
-  const anchor = settings.selectedWeekStartDate || getCurrentWeekKey(settings.weekStartDay)
+  const anchor =
+    settings.selectedWeekStartDate || getCurrentWeekKey(settings.weekStartDay)
   return { [anchor]: datedMeals(getPlannedMeals(), anchor) }
 }
 
@@ -497,7 +509,9 @@ export function getManualShoppingItems() {
 
 export function updateManualShoppingItem(updatedItem) {
   const items = getManualShoppingItems()
-  const next = items.map((item) => item.id === updatedItem.id ? updatedItem : item)
+  const next = items.map((item) =>
+    item.id === updatedItem.id ? updatedItem : item,
+  )
   return writeToStorage(MANUAL_SHOPPING_ITEMS_KEY, next) ? next : items
 }
 
@@ -506,7 +520,9 @@ export function getCheckedShoppingItemIds() {
 }
 
 export function saveCheckedShoppingItemIds(ids) {
-  return writeToStorage('plan-and-plate-checked-shopping-items', ids) ? ids : getCheckedShoppingItemIds()
+  return writeToStorage('plan-and-plate-checked-shopping-items', ids)
+    ? ids
+    : getCheckedShoppingItemIds()
 }
 
 export function saveManualShoppingItem(item) {
@@ -571,9 +587,13 @@ export function getPlannerSettings() {
 export function savePlannerSettings(settings) {
   // The legacy single-week fallback must be anchored before a navigation or
   // preference write changes its reference week. The old key is never deleted.
-  if (getPlannedMeals().length && Object.keys(getPlannedMealsByWeek()).length === 0) {
+  if (
+    getPlannedMeals().length &&
+    Object.keys(getPlannedMealsByWeek()).length === 0
+  ) {
     const current = getPlannerSettings()
-    const anchor = current.selectedWeekStartDate || getCurrentWeekKey(current.weekStartDay)
+    const anchor =
+      current.selectedWeekStartDate || getCurrentWeekKey(current.weekStartDay)
     savePlannedMealsForWeek(anchor, datedMeals(getPlannedMeals(), anchor))
     if (Object.keys(getPlannedMealsByWeek()).length === 0) return current
   }

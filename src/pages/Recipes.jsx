@@ -16,7 +16,7 @@ import {
   Sunrise,
   Trash2,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import RecipeCard from '../components/RecipeCard'
@@ -33,7 +33,11 @@ import {
   recipeSortOptions,
   sortRecipes,
 } from '../utils/recipeFilters'
-import { getRecipeId, getRecipeKey, getVisibleRecipes } from '../utils/recipeKeys'
+import {
+  getRecipeId,
+  getRecipeKey,
+  getVisibleRecipes,
+} from '../utils/recipeKeys'
 import {
   createLocalId,
   deleteSavedRecipe,
@@ -79,10 +83,44 @@ function RecipesHeader() {
 }
 
 function SearchAndFilter({ onOpenFilter, onSearchChange, searchTerm }) {
-  return <div className="recipe-search-row"><label className="search-field"><Search size={19} /><input aria-label="Search recipes" type="search" placeholder="Find a recipe…" value={searchTerm} onChange={onSearchChange} /></label><button className="icon-button filter-button" aria-label="Sort recipes" onClick={onOpenFilter}><Filter size={19} /></button></div>
+  return (
+    <div className="recipe-search-row">
+      <label className="search-field">
+        <Search size={19} />
+        <input
+          aria-label="Search recipes"
+          type="search"
+          placeholder="Find a recipe…"
+          value={searchTerm}
+          onChange={onSearchChange}
+        />
+      </label>
+      <button
+        className="icon-button filter-button"
+        aria-label="Sort recipes"
+        onClick={onOpenFilter}
+      >
+        <Filter size={19} />
+      </button>
+    </div>
+  )
 }
 function RecipeTabs({ onSelectTab, selectedTab }) {
-  return <div className="recipe-tabs no-scrollbar" aria-label="Recipe categories">{categoryFilters.map(({label,Icon}) => <button key={label} type="button" aria-pressed={selectedTab === label} onClick={() => onSelectTab(label)}><Icon size={14} />{label === 'All Recipes' ? 'All recipes' : label}</button>)}</div>
+  return (
+    <div className="recipe-tabs no-scrollbar" aria-label="Recipe categories">
+      {categoryFilters.map(({ label, Icon }) => (
+        <button
+          key={label}
+          type="button"
+          aria-pressed={selectedTab === label}
+          onClick={() => onSelectTab(label)}
+        >
+          <Icon size={14} />
+          {label === 'All Recipes' ? 'All recipes' : label}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 function RecipeActionButton({ children, icon: Icon, isDanger, onClick }) {
@@ -103,7 +141,11 @@ function RecipeActionButton({ children, icon: Icon, isDanger, onClick }) {
 
 function SortRecipesSheet({ onClose, onSelectSort, selectedSort }) {
   return (
-    <BottomSheet eyebrow="Recipe filters" onClose={onClose} title="Sort Recipes">
+    <BottomSheet
+      eyebrow="Recipe filters"
+      onClose={onClose}
+      title="Sort Recipes"
+    >
       <div className="mt-5 grid gap-3">
         {recipeSortOptions.map((sortOption) => {
           const isSelected = selectedSort === sortOption
@@ -185,22 +227,15 @@ function DeleteRecipeSheet({ onCancel, onDelete, recipe }) {
       title={recipe.name}
       tone="danger"
     >
-
       <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold leading-relaxed text-red-600">
         This will remove the recipe and any linked planned meals.
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-3">
-        <Pressable
-          onClick={onCancel}
-          variant="surface"
-        >
+        <Pressable onClick={onCancel} variant="surface">
           Cancel
         </Pressable>
-        <Pressable
-          onClick={onDelete}
-          variant="dangerSolid"
-        >
+        <Pressable onClick={onDelete} variant="dangerSolid">
           Delete
         </Pressable>
       </div>
@@ -221,11 +256,18 @@ function Recipes() {
   const [searchTerm, setSearchTerm] = useState('')
   const [selectedTab, setSelectedTab] = useState('All Recipes')
   const [selectedSort, setSelectedSort] = useState(() => getRecipeSortOption())
-  const [recipeMetadata, setRecipeMetadata] = useState(() => getRecipeMetadata())
+  const [recipeMetadata, setRecipeMetadata] = useState(() =>
+    getRecipeMetadata(),
+  )
   const [successMessage, setSuccessMessage] = useState(
     location.state?.successMessage || '',
   )
   const [addedRecipeId, setAddedRecipeId] = useState('')
+  useEffect(() => {
+    if (!successMessage) return
+    const timer = window.setTimeout(() => setSuccessMessage(''), 4500)
+    return () => window.clearTimeout(timer)
+  }, [successMessage])
 
   const allRecipes = getVisibleRecipes(
     savedRecipes,
@@ -318,10 +360,7 @@ function Recipes() {
         onSearchChange={(event) => setSearchTerm(event.target.value)}
         searchTerm={searchTerm}
       />
-      <RecipeTabs
-        onSelectTab={setSelectedTab}
-        selectedTab={selectedTab}
-      />
+      <RecipeTabs onSelectTab={setSelectedTab} selectedTab={selectedTab} />
 
       <StatusToast
         icon={CheckCircle2}
@@ -329,15 +368,24 @@ function Recipes() {
         show={Boolean(successMessage)}
       />
 
-      <div className="library-result"><span>{filteredRecipes.length} {filteredRecipes.length === 1 ? 'recipe' : 'recipes'} to make your own</span><button className="inline-link" onClick={() => setShowSortSheet(true)}>{selectedSort}<ChevronDown size={13} /></button></div>
+      <div className="library-result">
+        <span>
+          {filteredRecipes.length}{' '}
+          {filteredRecipes.length === 1 ? 'recipe' : 'recipes'} to make your own
+        </span>
+        <button className="inline-link" onClick={() => setShowSortSheet(true)}>
+          {selectedSort}
+          <ChevronDown size={13} />
+        </button>
+      </div>
       {filteredRecipes.length === 0 ? (
         <div className="mt-5">
           <EmptyState icon={BookOpenText} title="No recipes found">
             {selectedTab === 'Favourites'
               ? 'Favourite recipes to find them quickly later.'
               : allRecipes.length === 0
-              ? 'Add your first recipe to start planning meals.'
-              : 'Try another search or add a new recipe.'}
+                ? 'Add your first recipe to start planning meals.'
+                : 'Try another search or add a new recipe.'}
           </EmptyState>
         </div>
       ) : (
