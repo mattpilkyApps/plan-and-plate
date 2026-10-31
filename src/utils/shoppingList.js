@@ -14,6 +14,11 @@ export const shoppingCategoryOptions = [
   'Condiments & Sauces',
   'Oils & Cooking',
   'Frozen',
+  'Drinks',
+  'Household Cleaning',
+  'Toiletries',
+  'Baby & Family',
+  'Pet Supplies',
   'Other',
 ]
 
@@ -208,6 +213,12 @@ function resolveShoppingCategory(category) {
 export function getIngredientCategory(ingredientName) {
   const name = normalizeSearchText(ingredientName)
 
+  if (/\b(washing powder|washing liquid|laundry|detergent|bleach|dishwasher|washing up|bin bag|cleaner)\b/.test(name)) return 'Household Cleaning'
+  if (/\b(toilet rolls?|toilet paper|toothpaste|shampoo|soap|deodorant|shower gel)\b/.test(name)) return 'Toiletries'
+  if (/\b(nappies|nappy|baby wipes?|baby food|formula)\b/.test(name)) return 'Baby & Family'
+  if (/\b(dog food|cat food|pet food|cat litter|guinea pig|dog treat)\b/.test(name)) return 'Pet Supplies'
+  if (/\b(juice|coffee|tea bag|lemonade|cola|sparkling water)\b/.test(name)) return 'Drinks'
+
   if (!name) {
     return 'Other'
   }
@@ -377,7 +388,7 @@ function getShoppingItemDisplay(ingredient, scale) {
 
 function addGeneratedItemToGroup(groupedItems, category, item) {
   if (item.scaledQuantity === null) {
-    groupedItems[category].push(item)
+    groupedItems[category].push({ ...item, recipeNotes: [item.note] })
     return
   }
 
@@ -388,11 +399,12 @@ function addGeneratedItemToGroup(groupedItems, category, item) {
     (groupedItem) => groupedItem.mergeKey === mergeKey,
   )
   const sameNameItem = groupedItems[category].find((groupedItem) => {
-    return normalizeIngredientName(groupedItem.name) === normalizedName
+    return groupedItem.mergeKey && normalizeIngredientName(groupedItem.name) === normalizedName
   })
 
   if (!existingItem) {
     if (sameNameItem) {
+      sameNameItem.sourceIds.push(...item.sourceIds)
       sameNameItem.quantity = [sameNameItem.quantity, item.quantity]
         .filter(Boolean)
         .join(' + ')
@@ -414,6 +426,8 @@ function addGeneratedItemToGroup(groupedItems, category, item) {
     })
     return
   }
+
+  existingItem.sourceIds.push(...item.sourceIds)
 
   if (existingItem.scaledQuantity === null) {
     existingItem.quantity = [existingItem.quantity, item.quantity]
@@ -464,6 +478,8 @@ function cleanShoppingItem(item) {
     note: item.isManual ? item.note : getUsefulGeneratedNote(item),
     quantity: item.quantity,
     rawText: item.rawText,
+    sourceIds: item.sourceIds || [item.id],
+    sources: item.recipeNotes || (item.note ? [item.note] : []),
   }
 }
 
@@ -497,6 +513,7 @@ export function generateShoppingGroups(
 
       addGeneratedItemToGroup(groupedItems, category, {
         id: itemId,
+        sourceIds: [itemId],
         isManual: false,
         name: displayItem.name,
         quantity: displayItem.quantity,
@@ -523,7 +540,7 @@ export function generateShoppingGroups(
   return shoppingCategoryOptions
     .map((groupName) => ({
       name: groupName,
-      color: groupStyles[groupName],
+      color: groupStyles[groupName] || 'stone',
       items: sortShoppingItems(groupedItems[groupName]).map(cleanShoppingItem),
     }))
     .filter((group) => group.items.length > 0)

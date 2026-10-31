@@ -1,441 +1,104 @@
-import {
-  CheckCircle2,
-  ListChecks,
-  MoreHorizontal,
-  Plus,
-  ShoppingCart,
-  Trash2,
-} from 'lucide-react'
-import { useState } from 'react'
-import EmptyState from '../components/EmptyState'
+import { useEffect, useMemo, useState } from 'react'
+import { ArrowRight, Check, ChevronDown, Edit3, Leaf, ListChecks, MoreHorizontal, Plus, RotateCcw, ShoppingBasket, Trash2 } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import ScreenHeader from '../components/ScreenHeader'
 import ShoppingCategory from '../components/ShoppingCategory'
 import BottomSheet from '../components/ui/BottomSheet'
 import Pressable from '../components/ui/Pressable'
-import { recipes as sampleRecipes } from '../data/sampleData'
-import {
-  createLocalId,
-  deleteManualShoppingItem,
-  deleteManualShoppingItems,
-  getClearedShoppingItemIds,
-  getManualShoppingItems,
-  getPlannedMealsForWeek,
-  getPlannerSettings,
-  getRemovedRecipeIds,
-  getSavedRecipes,
-  saveClearedShoppingItemIds,
-  saveManualShoppingItem,
-} from '../utils/localStorage'
-import { getCurrentWeekKey } from '../utils/plannerWeeks'
+import StatusToast from '../components/ui/StatusToast'
+import { recipes as samples } from '../data/sampleData'
+import { createLocalId, deleteManualShoppingItem, deleteManualShoppingItems, getCheckedShoppingItemIds, getClearedShoppingItemIds, getManualShoppingItems, getPlannedMealsForWeek, getPlannerSettings, getRemovedRecipeIds, getSavedRecipes, saveCheckedShoppingItemIds, saveClearedShoppingItemIds, saveManualShoppingItem, updateManualShoppingItem } from '../utils/localStorage'
+import { getCurrentWeekKey, getDisplayDaysForWeek } from '../utils/plannerWeeks'
 import { getVisibleRecipes } from '../utils/recipeKeys'
-import {
-  generateShoppingGroups,
-  shoppingCategoryOptions,
-} from '../utils/shoppingList'
+import { generateShoppingGroups, getIngredientCategory, shoppingCategoryOptions } from '../utils/shoppingList'
 
-const initialManualItem = {
-  name: '',
-  quantity: '',
-  unit: '',
-  category: 'Fresh Produce',
-  note: '',
+function ItemSheet({ item, onClose, onSave }) {
+  const [draft,setDraft]=useState(item || { name:'',quantity:'',unit:'',category:'Other',note:'' })
+  const [error,setError]=useState('')
+  function update(event) { setDraft((current)=>({...current,[event.target.name]:event.target.value})); setError('') }
+  function submit(event) {
+    event.preventDefault()
+    if (!draft.name.trim()) { setError('Add an item name first.'); return }
+    if (!onSave({...draft,name:draft.name.trim()})) setError('Your item couldn’t be saved. Please try again.')
+  }
+  return <BottomSheet title={item ? 'A little adjustment' : 'Anything else for home?'} eyebrow={item ? 'Edit shopping item' : 'Add to your shop'} onClose={onClose}><form className="form-stack" onSubmit={submit}><label className="field">Item name<input autoFocus data-autofocus name="name" placeholder="e.g. Toilet roll, bananas, washing powder" maxLength={160} value={draft.name} onChange={update} /></label><div className="form-row"><label className="field">Quantity<input name="quantity" placeholder="1" inputMode="decimal" value={draft.quantity} onChange={update} /></label><label className="field">Unit or pack<input name="unit" placeholder="pack, kg, bottle…" value={draft.unit} onChange={update} /></label></div><label className="field">Category<select name="category" value={draft.category} onChange={update}>{shoppingCategoryOptions.map((category) => <option key={category}>{category}</option>)}</select></label><label className="field">Note, if you need one<input name="note" placeholder="Our usual brand, a bigger pack…" value={draft.note} onChange={update} /></label>{error && <p role="alert" className="error">{error}</p>}<Pressable variant="primary" type="submit"><Plus size={18} />{item ? 'Save changes' : 'Add item'}</Pressable></form></BottomSheet>
 }
-
-function ShoppingHeader({ checkedItems, onOpenOptions, totalItems }) {
-  return (
-    <ScreenHeader
-      actions={
-        <>
-        <span className="flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B] shadow-sm">
-          <ListChecks size={25} />
-        </span>
-        <button
-          aria-label="Shopping options"
-          className="premium-press flex h-[3.25rem] w-[3.25rem] items-center justify-center rounded-2xl bg-[#F8F2EA] text-stone-600 shadow-sm"
-          onClick={onOpenOptions}
-          type="button"
-        >
-          <MoreHorizontal size={27} />
-        </button>
-        </>
-      }
-      eyebrow="Weekly shop"
-      stats={[
-        { label: `${totalItems} items`, icon: ShoppingCart },
-        { label: `${checkedItems} checked`, icon: CheckCircle2 },
-      ]}
-      subtitle="Built from your planned meals"
-      title="Shopping list"
-    />
-  )
-}
-
-function ShoppingOptionsSheet({
-  checkedItems,
-  manualItemsCount,
-  onClearChecked,
-  onClearManualItems,
-  onClose,
-}) {
-  return (
-    <BottomSheet eyebrow="Shopping options" onClose={onClose} title="Manage list">
-        <div className="mt-5 grid gap-3">
-          <Pressable
-            className="w-full justify-start"
-            disabled={checkedItems === 0}
-            onClick={onClearChecked}
-            variant="surface"
-          >
-            <CheckCircle2 size={21} />
-            Clear checked
-          </Pressable>
-
-          <Pressable
-            className="w-full justify-start"
-            disabled={manualItemsCount === 0}
-            onClick={onClearManualItems}
-            variant="danger"
-          >
-            <Trash2 size={21} />
-            Clear manual items
-          </Pressable>
-        </div>
-    </BottomSheet>
-  )
-}
-
-function ShoppingSummary({ totalItems, checkedItems }) {
-  return (
-    <section className="mt-7 rounded-3xl border border-stone-100 bg-white p-4 shadow-[0_8px_24px_rgba(30,41,59,0.05)]">
-      <div className="flex items-center gap-4">
-        <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-[#EAF3DE] text-[#5A8D2B]">
-          <ShoppingCart size={28} />
-        </span>
-
-        <div className="flex-1">
-          <p className="text-sm font-semibold text-stone-500">Weekly shop</p>
-          <div className="mt-1 flex items-end gap-2">
-            <p className="text-3xl font-bold tracking-tight text-[#5A8D2B]">
-              {totalItems} items
-            </p>
-          </div>
-          <p className="mt-1 font-semibold text-stone-500">
-            {checkedItems} checked
-          </p>
-        </div>
-      </div>
-    </section>
-  )
-}
-
-function ShoppingActions({ checkedItems, onAddItem, onClearChecked }) {
-  return (
-    <div className="mt-5 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
-      <Pressable
-        className="min-w-0"
-        onClick={onAddItem}
-        size="lg"
-        variant="primary"
-      >
-        <Plus size={21} />
-        Add Item
-      </Pressable>
-
-      <Pressable
-        className="h-14 whitespace-nowrap px-3 text-sm"
-        disabled={checkedItems === 0}
-        onClick={onClearChecked}
-        variant="surface"
-      >
-        <CheckCircle2 size={20} />
-        Clear checked
-      </Pressable>
-    </div>
-  )
-}
-
-function TextInput({ label, name, onChange, placeholder, value }) {
-  return (
-    <label>
-      <span className="text-sm font-bold text-stone-700">{label}</span>
-      <input
-        className="mt-2 h-14 w-full rounded-2xl border border-stone-100 bg-white px-4 text-base font-medium text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
-        name={name}
-        onChange={onChange}
-        placeholder={placeholder}
-        value={value}
-      />
-    </label>
-  )
-}
-
-function AddManualItemModal({
-  errorMessage,
-  item,
-  onChange,
-  onClose,
-  onSave,
-}) {
-  return (
-    <BottomSheet eyebrow="Manual item" onClose={onClose} title="Add shopping item">
-        {errorMessage && (
-          <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm font-bold text-red-600">
-            {errorMessage}
-          </p>
-        )}
-
-        <div className="mt-5 grid gap-4">
-          <TextInput
-            label="Item name"
-            name="name"
-            onChange={onChange}
-            placeholder="Bananas"
-            value={item.name}
-          />
-
-          <div className="grid grid-cols-2 gap-3">
-            <TextInput
-              label="Quantity"
-              name="quantity"
-              onChange={onChange}
-              placeholder="4"
-              value={item.quantity}
-            />
-            <TextInput
-              label="Unit"
-              name="unit"
-              onChange={onChange}
-              placeholder="pieces"
-              value={item.unit}
-            />
-          </div>
-
-          <label>
-            <span className="text-sm font-bold text-stone-700">Category</span>
-            <select
-              className="mt-2 h-14 w-full rounded-2xl border border-stone-100 bg-white px-4 text-base font-bold text-stone-800 shadow-sm outline-none transition focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
-              name="category"
-              onChange={onChange}
-              value={item.category}
-            >
-              {shoppingCategoryOptions.map((category) => (
-                <option key={category}>{category}</option>
-              ))}
-            </select>
-          </label>
-
-          <TextInput
-            label="Optional note"
-            name="note"
-            onChange={onChange}
-            placeholder="For packed lunches"
-            value={item.note}
-          />
-        </div>
-
-        <Pressable
-          className="mt-5 w-full"
-          onClick={onSave}
-          size="lg"
-          variant="primary"
-        >
-          <Plus size={22} />
-          Add Item
-        </Pressable>
-    </BottomSheet>
-  )
-}
-
-function Shopping() {
-  const [checkedItemIds, setCheckedItemIds] = useState([])
-  const [clearedItemIds, setClearedItemIds] = useState(() =>
-    getClearedShoppingItemIds(),
-  )
-  const [manualItems, setManualItems] = useState(() =>
-    getManualShoppingItems(),
-  )
-  const [manualItem, setManualItem] = useState(initialManualItem)
-  const [showAddItemModal, setShowAddItemModal] = useState(false)
-  const [showOptionsModal, setShowOptionsModal] = useState(false)
-  const [errorMessage, setErrorMessage] = useState('')
-  const [plannedMeals] = useState(() => {
-    const plannerSettings = getPlannerSettings()
-    const selectedWeekKey =
-      plannerSettings.selectedWeekStartDate ||
-      getCurrentWeekKey(plannerSettings.weekStartDay)
-
-    return getPlannedMealsForWeek(selectedWeekKey)
+export default function Shopping() {
+  const [manual,setManual]=useState(getManualShoppingItems)
+  const [checked,setChecked]=useState(getCheckedShoppingItemIds)
+  const [cleared,setCleared]=useState(getClearedShoppingItemIds)
+  const [quick,setQuick]=useState('')
+  const [itemSheet,setItemSheet]=useState(null)
+  const [activeItem,setActiveItem]=useState(null)
+  const [options,setOptions]=useState(false)
+  const [confirmClear,setConfirmClear]=useState(false)
+  const [message,setMessage]=useState('')
+  useEffect(() => { if (!message) return; const timer = window.setTimeout(() => setMessage(''), 4500); return () => window.clearTimeout(timer) }, [message])
+  const [filter,setFilter]=useState('all')
+  const [context]=useState(()=>{
+    const settings=getPlannerSettings()
+    const week=settings.selectedWeekStartDate || getCurrentWeekKey(settings.weekStartDay)
+    return {week,meals:getPlannedMealsForWeek(week),recipes:getVisibleRecipes(getSavedRecipes(),samples,getRemovedRecipeIds())}
   })
-  const [recipes] = useState(() =>
-    getVisibleRecipes(getSavedRecipes(), sampleRecipes, getRemovedRecipeIds()),
-  )
-
-  const shoppingGroups = generateShoppingGroups(
-    plannedMeals,
-    recipes,
-    clearedItemIds,
-    manualItems,
-  )
-
-  const visibleItems = shoppingGroups.flatMap((group) => group.items)
-  const visibleItemIds = visibleItems.map((item) => item.id)
-  const manualItemIds = manualItems.map((item) => item.id)
-  const activeCheckedItemIds = checkedItemIds.filter((itemId) =>
-    visibleItemIds.includes(itemId),
-  )
-  const totalItems = shoppingGroups.reduce(
-    (total, group) => total + group.items.length,
-    0,
-  )
-  const checkedItems = activeCheckedItemIds.length
-
-  function toggleShoppingItem(itemId) {
-    setCheckedItemIds((currentItemIds) => {
-      if (currentItemIds.includes(itemId)) {
-        return currentItemIds.filter((currentItemId) => currentItemId !== itemId)
-      }
-
-      return [...currentItemIds, itemId]
-    })
+  const groups=useMemo(()=>generateShoppingGroups(context.meals,context.recipes,cleared,manual),[context,cleared,manual])
+  const items=groups.flatMap((group)=>group.items)
+  const completed=items.filter((item)=>checked.includes(item.id))
+  const shownGroups=filter==='remaining' ? groups.map((group)=>({...group,items:group.items.filter((item)=>!checked.includes(item.id))})).filter((group)=>group.items.length) : groups
+  const simpleMeals=context.meals.filter((meal)=>!context.recipes.some((recipe)=>(recipe.id||recipe.name)===meal.recipeId)).length
+  const days=getDisplayDaysForWeek(context.week)
+  const range=`${new Date(`${days[0].dateKey}T12:00:00`).toLocaleDateString('en-GB',{day:'numeric',month:'short'})} – ${new Date(`${days[6].dateKey}T12:00:00`).toLocaleDateString('en-GB',{day:'numeric',month:'short'})}`
+  function toggle(id) { setChecked(saveCheckedShoppingItemIds(checked.includes(id) ? checked.filter((value)=>value!==id) : [...checked,id])) }
+  function saveManual(draft) {
+    const record={...draft,id:draft.id || createLocalId('manual-shopping-item'),quantity:String(draft.quantity||'').trim(),unit:String(draft.unit||'').trim(),note:(draft.note||'').trim()}
+    const saved=draft.id ? updateManualShoppingItem(record) : saveManualShoppingItem(record)
+    if (!saved.some((item)=>item.id===record.id && item.name===record.name && item.quantity===record.quantity && item.unit===record.unit && item.category===record.category && item.note===record.note)) return false
+    setManual(saved); setItemSheet(null); setQuick(''); return true
   }
-
-  function clearCheckedItems() {
-    const checkedManualItemIds = activeCheckedItemIds.filter((itemId) =>
-      manualItemIds.includes(itemId),
-    )
-    const checkedGeneratedItemIds = activeCheckedItemIds.filter(
-      (itemId) => !manualItemIds.includes(itemId),
-    )
-    const nextClearedItemIds = [...clearedItemIds, ...checkedGeneratedItemIds]
-    const savedClearedItemIds = saveClearedShoppingItemIds(nextClearedItemIds)
-    const savedManualItems = deleteManualShoppingItems(checkedManualItemIds)
-
-    setClearedItemIds(savedClearedItemIds)
-    setManualItems(savedManualItems)
-    setCheckedItemIds([])
+  function quickAdd(event) {
+    event.preventDefault()
+    const name=quick.trim()
+    if (!name) return
+    if (saveManual({name,quantity:'1',unit:'',category:getIngredientCategory(name),note:''})) setMessage(`${name} added to your shop.`)
   }
-
-  function clearCheckedItemsAndCloseOptions() {
-    clearCheckedItems()
-    setShowOptionsModal(false)
-  }
-
-  function clearManualItems() {
-    const savedManualItems = deleteManualShoppingItems(
-      manualItems.map((item) => item.id),
-    )
-
-    setManualItems(savedManualItems)
-    setCheckedItemIds((currentItemIds) =>
-      currentItemIds.filter((itemId) => !manualItemIds.includes(itemId)),
-    )
-    setShowOptionsModal(false)
-  }
-
-  function openAddItemModal() {
-    setManualItem(initialManualItem)
-    setErrorMessage('')
-    setShowAddItemModal(true)
-  }
-
-  function updateManualItem(event) {
-    const { name, value } = event.target
-
-    setManualItem((currentItem) => ({
-      ...currentItem,
-      [name]: value,
-    }))
-    setErrorMessage('')
-  }
-
-  function saveManualItem() {
-    const trimmedName = manualItem.name.trim()
-
-    if (!trimmedName) {
-      setErrorMessage('Add an item name first.')
-      return
+  function remove(item) {
+    if (item.isManual) {
+      const result=deleteManualShoppingItem(item.id)
+      if (result.some((record)=>record.id===item.id)) return
+      setManual(result)
+    } else {
+      const result=saveClearedShoppingItemIds([...new Set([...cleared,...item.sourceIds])])
+      if (!item.sourceIds.every((id)=>result.includes(id))) return
+      setCleared(result)
     }
-
-    const itemToSave = {
-      id: createLocalId('manual-shopping-item'),
-      name: trimmedName,
-      quantity: manualItem.quantity.trim(),
-      unit: manualItem.unit.trim(),
-      category: manualItem.category,
-      note: manualItem.note.trim(),
-    }
-    const savedManualItems = saveManualShoppingItem(itemToSave)
-
-    setManualItems(savedManualItems)
-    setManualItem(initialManualItem)
-    setShowAddItemModal(false)
+    setChecked(saveCheckedShoppingItemIds(checked.filter((id)=>id!==item.id)))
+    setActiveItem(null)
   }
-
-  function removeManualItem(itemId) {
-    const savedManualItems = deleteManualShoppingItem(itemId)
-
-    setManualItems(savedManualItems)
-    setCheckedItemIds((currentItemIds) =>
-      currentItemIds.filter((currentItemId) => currentItemId !== itemId),
-    )
+  function clearCompleted() {
+    const generated=completed.filter((item)=>!item.isManual).flatMap((item)=>item.sourceIds)
+    const ids=completed.filter((item)=>item.isManual).map((item)=>item.id)
+    const nextCleared=saveClearedShoppingItemIds([...new Set([...cleared,...generated])])
+    if (!generated.every((id)=>nextCleared.includes(id))) return
+    const nextManual=deleteManualShoppingItems(ids)
+    setCleared(nextCleared); setManual(nextManual)
+    const remainingIds=ids.filter((id)=>nextManual.some((item)=>item.id===id))
+    setChecked(saveCheckedShoppingItemIds(checked.filter((id)=>!completed.some((item)=>item.id===id) || remainingIds.includes(id))))
+    setOptions(false); setMessage('Completed items cleared. Nicely done.')
   }
-
-  return (
-    <section className="relative">
-      <ShoppingHeader
-        checkedItems={checkedItems}
-        onOpenOptions={() => setShowOptionsModal(true)}
-        totalItems={totalItems}
-      />
-      <ShoppingSummary totalItems={totalItems} checkedItems={checkedItems} />
-      <ShoppingActions
-        checkedItems={checkedItems}
-        onAddItem={openAddItemModal}
-        onClearChecked={clearCheckedItems}
-      />
-
-      {totalItems === 0 ? (
-        <div className="mt-4">
-          <EmptyState icon={ShoppingCart} title="No items yet">
-            Your shopping list is empty. Add meals to your planner to generate
-            ingredients.
-          </EmptyState>
-        </div>
-      ) : (
-        <div className="mt-4 grid gap-3">
-          {shoppingGroups.map((group) => (
-            <ShoppingCategory
-              checkedItemIds={activeCheckedItemIds}
-              group={group}
-              key={group.name}
-              onRemoveManualItem={removeManualItem}
-              onToggleItem={toggleShoppingItem}
-            />
-          ))}
-        </div>
-      )}
-
-      {showAddItemModal && (
-        <AddManualItemModal
-          errorMessage={errorMessage}
-          item={manualItem}
-          onChange={updateManualItem}
-          onClose={() => setShowAddItemModal(false)}
-          onSave={saveManualItem}
-        />
-      )}
-
-      {showOptionsModal && (
-        <ShoppingOptionsSheet
-          checkedItems={checkedItems}
-          manualItemsCount={manualItems.length}
-          onClearChecked={clearCheckedItemsAndCloseOptions}
-          onClearManualItems={clearManualItems}
-          onClose={() => setShowOptionsModal(false)}
-        />
-      )}
-    </section>
-  )
+  return <section className="shopping-page"><ScreenHeader eyebrow="The whole household shop" title="A little list. All sorted." subtitle="Dinner ingredients, daily essentials and everything in between." actions={<button className="icon-button" aria-label="Shopping options" onClick={()=>setOptions(true)}><MoreHorizontal size={22} /></button>} />
+    <div className="shopping-status"><div className="shop-status-top"><span><ShoppingBasket size={17} />{range}</span><strong>{completed.length}<small> / {items.length} in your basket</small></strong></div><div className="shop-progress" role="progressbar" aria-label="Shopping progress" aria-valuenow={completed.length} aria-valuemin={0} aria-valuemax={items.length||1}><span style={{width:`${items.length ? completed.length/items.length*100 : 0}%`}} /></div></div>
+    <form className="quick-item" onSubmit={quickAdd}><Plus size={19} /><input aria-label="Quick add shopping item" value={quick} onChange={(event)=>setQuick(event.target.value)} placeholder="Milk, washing powder, toilet roll…" maxLength={160} /><button type="submit" aria-label="Add shopping item" disabled={!quick.trim()}><ArrowRight size={19} /></button></form>
+    <div className="shopping-tools"><button className="inline-link" onClick={()=>setItemSheet({})}><Plus size={14} />Add with details</button><button className="inline-link" disabled={!completed.length} onClick={clearCompleted}><Check size={14} />Clear completed{completed.length ? ` (${completed.length})` : ''}</button></div>
+    {simpleMeals > 0 && <div className="simple-meal-note"><Edit3 size={15} /><p>{simpleMeals} simple {simpleMeals===1?'meal needs':'meals need'} shopping items added by hand.</p><Link to="/planner">View plan</Link></div>}
+    {items.length > 0 && <div className="shopping-filter"><h2>Your aisles</h2><button className="inline-link" onClick={()=>setFilter(filter==='all'?'remaining':'all')}>{filter==='all'?'Show remaining':'Show all'}<ChevronDown size={13} /></button></div>}
+    <div className="shopping-groups">{shownGroups.map((group)=><ShoppingCategory key={group.name} group={group} checkedItemIds={checked} onToggleItem={toggle} onOpenItem={setActiveItem} />)}</div>
+    {items.length===0 && <div className="shopping-empty"><span><ShoppingBasket size={34} strokeWidth={1.2} /></span><h2>A fresh start for your shop</h2><p>Add the everyday things your household needs, or plan a recipe and its ingredients will appear here.</p><Pressable to="/planner" variant="secondary"><CalendarIcon />Plan something good</Pressable></div>}
+    {items.length>0 && shownGroups.length===0 && <div className="shopping-empty"><Check size={32} /><h2>That’s everything.</h2><p>All the items on your list are in your basket.</p><Pressable onClick={clearCompleted} variant="secondary">Clear completed</Pressable></div>}
+    <div className="shop-footnote"><Leaf size={15} /><p>One list for food, family and home.</p></div>
+    {itemSheet && <ItemSheet item={itemSheet.id ? itemSheet : undefined} onClose={()=>setItemSheet(null)} onSave={saveManual} />}
+    {activeItem && <BottomSheet title={activeItem.name} eyebrow={activeItem.isManual?'Added by you':'From your meal plan'} onClose={()=>setActiveItem(null)}><div className="form-stack">{!activeItem.isManual && <p className="helper">{activeItem.sources?.join(' · ')}<br />Change the recipe or its planned servings to update this quantity.</p>}{activeItem.rawText && <p className="helper">Original ingredients: {activeItem.rawText}</p>}<div className="menu-list">{activeItem.isManual && <Pressable onClick={()=>{setItemSheet(manual.find((item)=>item.id===activeItem.id)); setActiveItem(null)}}><Edit3 size={18} />Edit quantity, category or note</Pressable>}<Pressable variant="danger" onClick={()=>remove(activeItem)}><Trash2 size={18} />Remove from this list</Pressable></div></div></BottomSheet>}
+    {options && <BottomSheet title="Keep your list tidy" eyebrow="Shopping options" onClose={()=>setOptions(false)}><div className="menu-list"><Pressable disabled={!completed.length} onClick={clearCompleted}><ListChecks size={18} />Clear completed items</Pressable><Pressable disabled={!cleared.length} onClick={()=>{setCleared(saveClearedShoppingItemIds([]));setOptions(false)}}><RotateCcw size={18} />Restore removed recipe ingredients</Pressable><Pressable variant="danger" disabled={!manual.length} onClick={()=>{setOptions(false);setConfirmClear(true)}}><Trash2 size={18} />Remove all manual items</Pressable></div></BottomSheet>}
+    {confirmClear && <BottomSheet title="Remove your manual items?" eyebrow="Shopping list" onClose={()=>setConfirmClear(false)}><p className="helper mb-5">This removes {manual.length} items you added by hand. Recipe ingredients stay on the list.</p><div className="form-row"><Pressable onClick={()=>setConfirmClear(false)}>Keep items</Pressable><Pressable variant="dangerSolid" onClick={()=>{setManual(deleteManualShoppingItems(manual.map((item)=>item.id)));setConfirmClear(false)}}>Remove items</Pressable></div></BottomSheet>}
+    <StatusToast show={Boolean(message)} message={message} actionLabel="Dismiss" onAction={()=>setMessage('')} />
+  </section>
 }
-
-export default Shopping
+function CalendarIcon() { return <Leaf size={17} /> }
