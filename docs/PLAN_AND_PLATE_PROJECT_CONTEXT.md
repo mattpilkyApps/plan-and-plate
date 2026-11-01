@@ -54,8 +54,8 @@ These rules apply to all code and documentation work going forward.
 - Recipes can be created, edited, deleted, and stored locally.
 - Built-in sample recipes can also be edited or hidden for testing.
 - Recipe photos can be uploaded, compressed in-browser, and stored as local data URLs.
-- Pasted recipes can auto-fill ingredients and method fields locally.
-- Paste import cleans detected ingredients into one measurement format before filling the form.
+- Pasted recipes can auto-fill the name, servings, times, ingredients and method locally.
+- Paste import accepts plain website text and Markdown, removes common page clutter, and preserves original ingredient wording and preparation notes. The existing ingredient parser derives shopping quantities when the recipe is saved.
 - Add to Week sends recipes into a weekly queue.
 - Planner queue lets users place meals by tapping a queued meal, then tapping a planner slot.
 - Planner supports multiple weeks with previous/next arrows.
