@@ -4,6 +4,7 @@ import {
 } from './ingredientParser.js'
 import { extractRecipeMethod } from './recipeMethod.js'
 import { classifyRecipeBlock } from './recipeSignals.js'
+import { isPreparationContinuation } from './ingredientPreparation.js'
 
 function removeRecipePageLinks(text) {
   return text
@@ -222,24 +223,26 @@ function isNutritionTabBeforeIngredients(lines, index, ingredientCount) {
   )
 }
 
-function isIngredientContinuation(text) {
+function isIngredientContinuation(text, servingSection = false) {
   if (/^optional\s*:\s*(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/i.test(text)) return false
   return (
     /^(?:or\b|to serve\b|for serving\b|to taste\b|optional\b|plus\b|such as\b|and\b.*\bto serve\b)/i.test(text) ||
-    /^(?:(?:finely|roughly|thinly|freshly)\s+)?(?:chopped|sliced|diced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|cubed|softened|beaten|shredded|torn)(?:$|[,\s]+(?:and\b|with\b|into\b|until\b))/i.test(
-      text,
-    ) ||
+    isPreparationContinuation(text) ||
+    (servingSection && /^and\b/i.test(text)) ||
     /^(?:leaves|juice only|zest only)$/i.test(text)
   )
 }
 
 function isIngredientSubsection(line, nextLine) {
   const text = getHeading(line.text)
+  const nextStartsIngredient = nextLine && !isNoiseLine(nextLine.text) &&
+    !isMethodHeading(nextLine.text) && !isStopHeading(nextLine.text) &&
+    !isIngredientContinuation(nextLine.text)
   return (
     /^for\s+(?:the\s+)?/i.test(text) ||
     (line.headingLevel > 0 && !startsWithQuantity(text) && !isIngredientContinuation(text)) ||
     (/^(?:to serve|for serving|optional(?: toppings)?)$/i.test(text) &&
-      (line.headingLevel > 0 || line.text.endsWith(':') || startsWithQuantity(nextLine?.text || '')))
+      (line.headingLevel > 0 || line.text.endsWith(':') || nextStartsIngredient))
   )
 }
 
@@ -247,7 +250,7 @@ function isMeasureOnly(text) {
   return /^(?:\d+(?:[./]\d+)?(?:\s+\d+\/\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:g|kg|ml|l|tsp|tbsp|cups?|tablespoons?|teaspoons?|oz|lbs?|large|small)?$/i.test(text)
 }
 
-function appendIngredient(ingredients, line) {
+function appendIngredient(ingredients, line, servingSection = false) {
   const text = line.text
   if (ingredients.length && isMeasureOnly(ingredients.at(-1)) && !startsWithQuantity(text)) {
     ingredients[ingredients.length - 1] += ' ' + text
@@ -256,7 +259,7 @@ function appendIngredient(ingredients, line) {
   if (
     ingredients.length &&
     !line.bullet &&
-    isIngredientContinuation(text)
+    isIngredientContinuation(text, servingSection)
   ) {
     const joiner = /^(?:or\b|and\b|leaves$)/i.test(text) ? ' ' : ', '
     ingredients[ingredients.length - 1] += joiner + text
@@ -283,6 +286,8 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
   const ingredients = []
   const ingredientSections = []
   let method = []
+  let notes = []
+  let servingSection = false
   let methodDiagnostics = { state: 'BEFORE_RECIPE', stoppedBy: 'missing-method', discarded: [], reviewNeeded: true }
   const hasIngredientsHeading = lines.some(({ text }) =>
     isIngredientsHeading(text),
@@ -302,6 +307,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
     if (isMethodHeading(text)) {
       const extracted = extractRecipeMethod(lines.slice(index + 1), ingredients)
       method = extracted.steps
+      notes = extracted.notes
       methodDiagnostics = extracted.diagnostics
       break
     }
@@ -322,6 +328,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
     if (section === 'INGREDIENTS') {
       if (isIngredientSubsection(line, lines[index + 1])) {
         ingredientSections.push({ name: text.replace(/:$/, ''), startIndex: ingredients.length })
+        servingSection = /^(?:to serve|for serving)$/i.test(getHeading(text))
         continue
       }
       const classification = classifyRecipeBlock(line)
@@ -330,7 +337,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
         continue
       }
       if (['ADVERTISEMENT', 'PRODUCT', 'NAVIGATION', 'PROMOTION'].includes(classification.type) && !startsWithQuantity(text)) continue
-      appendIngredient(ingredients, line)
+      appendIngredient(ingredients, line, servingSection)
     } else if (section === 'METADATA' && !hasIngredientsHeading && startsWithQuantity(text)) {
       appendIngredient(ingredients, line)
     }
@@ -341,6 +348,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
     ...values,
     ingredients: ingredients.join('\n'),
     method: method.join('\n\n'),
+    ...(notes.length ? { notes: notes.join('\n\n') } : {}),
   }
   if (includeDiagnostics) {
     result.diagnostics = {

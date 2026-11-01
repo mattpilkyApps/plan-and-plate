@@ -1,3 +1,5 @@
+import { preparationWords, preparationAdverbs, preparationNotePattern } from './ingredientPreparation.js'
+
 const knownUnits = [
   'g',
   'kg',
@@ -100,13 +102,6 @@ const unicodeFractions = {
 
 const metricUnits = ['g', 'kg', 'ml', 'l']
 const measureModifiers = ['level', 'heaped', 'rounded', 'small', 'medium', 'large']
-const preparationWords =
-  'chopped|diced|sliced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|sifted|cubed|softened|beaten|shredded|pressed|melted'
-const preparationAdverbs = 'finely|roughly|thinly|freshly'
-const preparationNotePattern = new RegExp(
-  `,\\s*(?:(?:${preparationAdverbs})\\s+)?(?:${preparationWords}|cut|torn)\\b.*$`,
-  'i',
-)
 const nameCleanups = [
   /^\s*(?:small|large)?\s*handful\s+(?:of\s+)?/i,
   /\b(?:finely|roughly|thinly|freshly)\b/gi,

@@ -1,0 +1,95 @@
+{
+  "baselineCommit": "d0043476c8957fa6a8d39af88d68b73d6bca6ed2",
+  "total": 46,
+  "passed": 41,
+  "fields": {
+    "name": {
+      "passed": 46,
+      "total": 46
+    },
+    "servings": {
+      "passed": 22,
+      "total": 22
+    },
+    "prepTime": {
+      "passed": 10,
+      "total": 10
+    },
+    "cookTime": {
+      "passed": 10,
+      "total": 10
+    },
+    "notes": {
+      "passed": 0,
+      "total": 2
+    },
+    "ingredients": {
+      "passed": 43,
+      "total": 46
+    },
+    "method": {
+      "passed": 43,
+      "total": 46
+    },
+    "noise": {
+      "passed": 43,
+      "total": 46
+    },
+    "totalTime": {
+      "passed": 3,
+      "total": 3
+    }
+  },
+  "noiseLeakageCount": 3,
+  "falseIngredientCount": 22,
+  "falseMethodStepCount": 1,
+  "failures": [
+    {
+      "id": "owner-paneer-phone",
+      "failedFields": [
+        "notes",
+        "ingredients",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "To serve"
+      ]
+    },
+    {
+      "id": "preparation-clauses-not-food-names",
+      "failedFields": [
+        "ingredients"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "serving-header-with-unmeasured-food",
+      "failedFields": [
+        "ingredients",
+        "noise"
+      ],
+      "leaked": [
+        "To serve"
+      ]
+    },
+    {
+      "id": "tip-to-notes-before-syndication",
+      "failedFields": [
+        "notes",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "health routine"
+      ]
+    },
+    {
+      "id": "recipe-tip-before-next-numbered-step",
+      "failedFields": [
+        "method"
+      ],
+      "leaked": []
+    }
+  ]
+}

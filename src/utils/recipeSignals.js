@@ -1,7 +1,7 @@
 // Explainable evidence, shared by the stateful extractor. A cooking word is
 // evidence, not permission to import an otherwise obvious product or footer.
-const actions = /\b(?:add|bake|beat|blend|boil|brush|chop|combine|cook|drain|fold|fry|grill|heat|knead|mix|peel|pour|roast|season|simmer|slice|stir|whisk|preheat|saute|sauté|soften|chill|cool|freeze|refrigerate|serve|scatter|squeeze|sprinkle|melt|toast|steam|strain|marinate|rest|roll|cover|remove|transfer|leave|set aside)\b/i
-const specificActions = /\b(?:bake|beat|blend|boil|chop|combine|drain|fry|grill|heat|knead|mix|peel|roast|season|simmer|slice|stir|whisk|preheat|saute|sauté|soften|chill|refrigerate|squeeze|melt|toast|steam|strain|marinate)\b/i
+const actions = /\b(?:add|bake|beat|blend|boil|brush|chop|combine|cook|drain|fold|fry|grill|heat|reheat|defrost|knead|mix|peel|pour|roast|season|simmer|slice|stir|whisk|preheat|saute|sauté|soften|chill|cool|freeze|refrigerate|serve|scatter|squeeze|sprinkle|melt|toast|steam|strain|marinate|rest|roll|cover|remove|transfer|leave|set aside)\b/i
+const specificActions = /\b(?:bake|beat|blend|boil|chop|combine|drain|fry|grill|heat|reheat|defrost|knead|mix|peel|roast|season|simmer|slice|stir|whisk|preheat|saute|sauté|soften|chill|refrigerate|squeeze|melt|toast|steam|strain|marinate)\b/i
 const equipment = /\b(?:pan|pot|oven|bowl|tray|saucepan|skillet|wok|hob|griddle|blender|mixer|dish|rack|tin|sieve|colander|air fryer|slow cooker|pressure cooker)\b/i
 const cookingStates = /\b(?:golden|tender|softened|browned|bubbling|fragrant|thickened|translucent|crisp|crispy|dough|batter|sauce|ingredients|mixture|cooked|uncooked|wobble)\b/i
 const duration = /\b\d+(?:[–-]\d+)?\s*(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/i
@@ -33,6 +33,7 @@ export function isRecipeEndHeading(text) {
     /^(?:reviews?|comments?)(?:\s*(?:\(\d+\)|\d+))?$/.test(heading) ||
     /^(?:related recipes|recommended recipes|more recipes|recipes you may like|you (?:may|might) also like|about (?:the )?author|faqs?|frequently asked questions|newsletter|shop|shop ingredients|tags|featured products|additional info)$/.test(heading) ||
     /^did you make this(?: recipe)?\??$/.test(heading) ||
+    /^(?:recipe (?:from|source)\b|more from around the web$|from around the web$)/.test(heading) ||
     /^(?:leave a (?:review|comment)|subscribe\b|sign up\b|join our newsletter\b|privacy policy\b|all rights reserved\b)/.test(heading)
   )
 }
@@ -45,7 +46,8 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
   if (/^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(heading)) return { type: 'INGREDIENT_HEADING', text, cooking: 0 }
   if (/^(?:method|instructions|directions|preparation|steps|cooking instructions)$/.test(heading)) return { type: 'METHOD_HEADING', text, cooking: 0 }
   if (isMethodStepLabel(line.text)) return { type: 'STEP_LABEL', text, cooking: 0 }
-  if (/^(?:notes|tips|recipe tips|tips (?:from|by) .+|cook['’]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|video)$/.test(heading)) return { type: 'AUXILIARY_HEADING', text, cooking: 0 }
+  if (/^recipe tips?$/.test(heading)) return { type: 'RECIPE_NOTE_HEADING', text, cooking: 0 }
+  if (/^(?:notes|tips|tips (?:from|by) .+|cook['’]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|video)$/.test(heading)) return { type: 'AUXILIARY_HEADING', text, cooking: 0 }
   if (/^(?:perfect your technique|recipe inspiration|from our blog)$/.test(heading)) return { type: 'PROMOTION', text, cooking: 0 }
 
   const evidence = {

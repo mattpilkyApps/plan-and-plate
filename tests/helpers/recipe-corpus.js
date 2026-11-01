@@ -7,14 +7,14 @@ export function evaluateCase(entry, parser = parsePastedRecipe) {
   const checks = {}
   const ingredients = actual.ingredients.split('\n').filter(Boolean)
   const method = actual.method.split(/\n\n/).filter(Boolean)
-  for (const field of ['name', 'servings', 'prepTime', 'cookTime', 'totalTime']) {
+  for (const field of ['name', 'servings', 'prepTime', 'cookTime', 'totalTime', 'notes']) {
     if (Object.hasOwn(entry.expected, field)) checks[field] = actual[field] === entry.expected[field]
   }
   if (entry.expected.ingredients) checks.ingredients = isDeepStrictEqual(ingredients, entry.expected.ingredients)
   if (entry.expected.method) checks.method = isDeepStrictEqual(method, entry.expected.method)
   if (entry.expected.methodCount !== undefined) checks.method = method.length === entry.expected.methodCount
   if (entry.expected.methodEndsWith) checks.method = checks.method !== false && actual.method.endsWith(entry.expected.methodEndsWith)
-  const leaked = (entry.excluded || []).filter((noise) => (actual.ingredients + '\n' + actual.method).includes(noise))
+  const leaked = (entry.excluded || []).filter((noise) => (actual.ingredients + '\n' + actual.method + '\n' + (actual.notes || '')).includes(noise))
   checks.noise = !leaked.length
   return {
     id: entry.id, checks, passed: Object.values(checks).every(Boolean), leaked,

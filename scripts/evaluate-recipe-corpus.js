@@ -1,5 +1,5 @@
 import { evaluateCorpus } from '../tests/helpers/recipe-corpus.js'
-import { execFileSync } from 'node:child_process'
+import { execFileSync, spawnSync } from 'node:child_process'
 import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -14,8 +14,10 @@ if (args.includes('--baseline-ref')) {
   const directory = mkdtempSync(join(tmpdir(), 'recipe-parser-baseline-'))
   try {
     writeFileSync(join(directory, 'package.json'), '{"type":"module"}')
-    for (const file of ['recipeImport.js', 'ingredientParser.js']) {
-      writeFileSync(join(directory, file), execFileSync('git', ['show', commit + ':src/utils/' + file]))
+    for (const file of ['recipeImport.js', 'ingredientParser.js', 'recipeMethod.js', 'recipeSignals.js', 'ingredientPreparation.js']) {
+      const source = spawnSync('git', ['show', commit + ':src/utils/' + file], { stdio: 'pipe' })
+      if (source.status === 0) writeFileSync(join(directory, file), source.stdout)
+      else if (['recipeImport.js', 'ingredientParser.js'].includes(file)) throw new Error('Missing baseline module: ' + file)
     }
     const { parsePastedRecipe } = await import(pathToFileURL(join(directory, 'recipeImport.js')))
     report = { baselineCommit: commit, ...evaluateCorpus(parsePastedRecipe) }

@@ -370,6 +370,9 @@ function AddRecipe() {
       cookTime: parsedRecipe.cookTime || currentRecipe.cookTime,
       ingredients: parsedRecipe.ingredients || currentRecipe.ingredients,
       method: parsedRecipe.method || currentRecipe.method,
+      notes: parsedRecipe.notes
+        ? [...new Set([currentRecipe.notes, parsedRecipe.notes].filter(Boolean))].join('\n\n')
+        : currentRecipe.notes,
       sourcePaste: methodNeedsReview ? pasteText : '',
     }))
     closePasteSheet()
