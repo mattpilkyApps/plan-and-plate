@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs'
+import { methodBoundaryCases } from './method-boundaries.js'
 
 const fixture = (name) => readFileSync(new URL('../' + name, import.meta.url), 'utf8')
 const curry = fixture('pumpkin-curry-plain.txt')
@@ -22,6 +23,7 @@ const curryExpectation = {
 // Only the two pre-existing copies supplied by Matt contain publisher prose.
 // All new recipe prose below is invented; source URLs document layout research.
 export const recipeCorpus = [
+  ...methodBoundaryCases,
   {
     id: 'owner-curry-plain', layout: 'owner mobile copy',
     source: 'https://www.bbcgoodfood.com/recipes/pumpkin-curry-chickpeas',
@@ -38,7 +40,6 @@ export const recipeCorpus = [
     id: 'phone-retail-tail', layout: 'owner copy with reported retail tail',
     source: 'https://www.bbcgoodfood.com/recipes/pumpkin-curry-chickpeas',
     reason: 'Exact reported Android failure; retail copy must never be saved as steps.',
-    knownFailure: true,
     raw: curry + '\n\nElevated by design Your autumn wardrobe has arrived.\nOvert Heeled Ankle Boots £159\nDepend Leather Shoulder Bag £129\nDependent Suede Shoulder bag £129\nCarbon-Neutral Ad',
     expected: curryExpectation,
     excluded: ['Elevated by design', 'Overt Heeled', 'Depend Leather', 'Dependent Suede', 'Carbon-Neutral'],

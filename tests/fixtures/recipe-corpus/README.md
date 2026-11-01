@@ -6,4 +6,4 @@ Cases describe layout, source reference, reason, representative raw paste, focus
 
 Scores measure this curated engineering corpus, not accuracy over the web. A contaminated merged step counts once as a false method step; noise leakage counts each specified unwanted phrase. Ingredient false positives compare exact expected lines, so wording/join failures also count. Add adversarial preservation cases alongside each rejection rule.
 
-Initial infrastructure checkpoint deliberately marks the reported phone regression TODO until the method-boundary implementation. No other failures may be hidden this way.
+The initial infrastructure checkpoint tracked the reported phone regression as TODO. The method-boundary checkpoint fixes it; every corpus case is now an active assertion with no TODO or skip.

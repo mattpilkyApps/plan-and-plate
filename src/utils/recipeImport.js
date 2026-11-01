@@ -2,6 +2,7 @@ import {
   isInstructionLikeIngredientLine,
   isRejectedIngredientLine,
 } from './ingredientParser.js'
+import { extractRecipeMethod } from './recipeMethod.js'
 
 function removeRecipePageLinks(text) {
   return text
@@ -243,23 +244,16 @@ function appendIngredient(ingredients, line) {
   ingredients.push(text)
 }
 
-function isStepLabel(text) {
-  return /^(?:(?:step|stage)\s*\d+(?:\s*(?:of|\/)\s*\d+)?|\d+[.)])[.:]?$/i.test(
-    text,
-  )
-}
-
-export function parsePastedRecipe(text) {
+export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
   const lines = readRecipePageLines(text)
   const { values, consumed } = readMetadata(lines)
   const ingredients = []
-  const method = []
+  let method = []
+  let methodDiagnostics = { state: 'BEFORE_RECIPE', stoppedBy: 'missing-method', discarded: [], reviewNeeded: true }
   const hasIngredientsHeading = lines.some(({ text }) =>
     isIngredientsHeading(text),
   )
-  let section = ''
-  let startNewStep = true
-  let labelledSteps = false
+  let section = 'METADATA'
 
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
@@ -268,15 +262,17 @@ export function parsePastedRecipe(text) {
     if ((ingredients.length || method.length) && isRecipeFooter(text)) break
 
     if (isIngredientsHeading(text)) {
-      section = 'ingredients'
+      section = 'INGREDIENTS'
       continue
     }
     if (isMethodHeading(text)) {
-      section = 'method'
-      continue
+      const extracted = extractRecipeMethod(lines.slice(index + 1), ingredients)
+      method = extracted.steps
+      methodDiagnostics = extracted.diagnostics
+      break
     }
     if (
-      section === 'ingredients' &&
+      section === 'INGREDIENTS' &&
       isNutritionHeading(text) &&
       isNutritionTabBeforeIngredients(lines, index, ingredients.length)
     ) {
@@ -284,43 +280,34 @@ export function parsePastedRecipe(text) {
     }
     if (isStopHeading(text)) {
       if (method.length) break
-      section = 'ignore'
+      section = 'BEFORE_RECIPE'
       continue
     }
     if (isNoiseLine(text)) continue
 
-    if (section === 'ingredients') {
+    if (section === 'INGREDIENTS') {
       appendIngredient(ingredients, line)
-    } else if (section === 'method') {
-      if (isStepLabel(text)) {
-        startNewStep = true
-        labelledSteps = true
-        continue
-      }
-      const numbered = text.match(
-        /^(?:\d+[.)]\s+|(?:step|stage)\s*\d+[.:]?\s+)(.+)$/i,
-      )
-      if (
-        startNewStep ||
-        numbered ||
-        !labelledSteps ||
-        line.blankBefore
-      ) {
-        method.push(numbered?.[1] || text)
-      } else {
-        method[method.length - 1] += ' ' + text
-      }
-      if (numbered) labelledSteps = true
-      startNewStep = false
-    } else if (!section && !hasIngredientsHeading && startsWithQuantity(text)) {
+    } else if (section === 'METADATA' && !hasIngredientsHeading && startsWithQuantity(text)) {
       appendIngredient(ingredients, line)
     }
   }
 
-  return {
+  const result = {
     name: findRecipeName(lines, consumed),
     ...values,
     ingredients: ingredients.join('\n'),
     method: method.join('\n\n'),
   }
+  if (includeDiagnostics) {
+    result.diagnostics = {
+      fields: {
+        title: result.name ? 'detected' : 'missing',
+        servings: result.servings ? 'explicit' : 'missing-or-ambiguous',
+        ingredients: ingredients.length ? (hasIngredientsHeading ? 'section' : 'inferred') : 'missing',
+        method: method.length ? (methodDiagnostics.reviewNeeded ? 'review' : 'supported') : 'missing',
+      },
+      method: methodDiagnostics,
+    }
+  }
+  return result
 }
