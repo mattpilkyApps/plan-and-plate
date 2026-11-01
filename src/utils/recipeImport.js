@@ -3,6 +3,7 @@ import {
   isRejectedIngredientLine,
 } from './ingredientParser.js'
 import { extractRecipeMethod } from './recipeMethod.js'
+import { classifyRecipeBlock } from './recipeSignals.js'
 
 function removeRecipePageLinks(text) {
   return text
@@ -60,7 +61,7 @@ function getHeading(text) {
 }
 
 function isIngredientsHeading(text) {
-  return /^ingredients?(?:\s*\([^)]*\))?$/.test(getHeading(text))
+  return /^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(getHeading(text))
 }
 
 function isMethodHeading(text) {
@@ -80,7 +81,7 @@ function isUnitControl(text) {
   if (/^(?:units?|scale)$/.test(controls)) return true
   const tokens = controls.replace(/^(?:units?|scale)\s*:?\s*/, '')
   const remainder = tokens
-    .replace(/\b(?:metric|imperial|us customary|us|uk|[123]x)\b/g, '')
+    .replace(/(?:us customary|us cups|metric|imperial|custom|cups|us|uk|\d+(?:\.\d+)?(?:\/\d+)?x)/g, '')
     .replace(/[\s:/|\u00b7\u2013-]+/g, '')
   return Boolean(tokens) && !remainder
 }
@@ -135,17 +136,22 @@ function isTimeValue(text) {
 function readMetadata(lines) {
   const values = { servings: '', prepTime: '', cookTime: '' }
   const consumed = new Set()
+  let servingsPriority = 0
   for (let index = 0; index < lines.length; index += 1) {
     const text = lines[index].text
     if (isIngredientsHeading(text) || isMethodHeading(text)) break
     const labels = [...text.matchAll(
-      /\b(serves|servings|yield|makes|prep(?:\s*time)?|preparation time|cook(?:ing)?(?:\s*time)?)\b\s*:?\s*/gi,
+      /\b(serves|servings|yield|makes|prep(?:\s*time)?|preparation time|cook(?:ing)?(?:\s*time)?|total(?:\s*time)?|additional time)\b\s*:?\s*/gi,
     )]
     if (labels[0]?.index !== 0) continue
     let consumedNextLine = false
     for (const [labelIndex, match] of labels.entries()) {
       const field = /^(?:serves|servings|yield|makes)$/i.test(match[1])
         ? 'servings'
+        : /^total/i.test(match[1])
+          ? 'totalTime'
+        : /^additional/i.test(match[1])
+          ? 'additionalTime'
         : /^prep/i.test(match[1])
           ? 'prepTime'
           : 'cookTime'
@@ -157,7 +163,7 @@ function readMetadata(lines) {
       let value = ''
       if (field === 'servings') {
         // A serving range needs a person's choice, rather than a guessed number.
-        if (!/^\d+\s*[-\u2013/]\s*\d/.test(candidate)) {
+        if (!/^\d+\s*(?:[-\u2013\u2014/]|to|or)\s*\d/i.test(candidate)) {
           value = candidate.match(/^(\d+)\b/)?.[1] || ''
         }
       } else if (isTimeValue(candidate)) {
@@ -166,7 +172,11 @@ function readMetadata(lines) {
 
       consumed.add(index)
       if (value) {
-        if (!values[field]) values[field] = value
+        const priority = /^(?:serves|servings)$/i.test(match[1]) ? 2 : 1
+        if (field === 'servings') {
+          if (priority > servingsPriority) values[field] = value
+          servingsPriority = Math.max(servingsPriority, priority)
+        } else if (field !== 'additionalTime' && !values[field]) values[field] = value
         if (!inlineValue) {
           consumed.add(index + 1)
           consumedNextLine = true
@@ -213,23 +223,42 @@ function isNutritionTabBeforeIngredients(lines, index, ingredientCount) {
 }
 
 function isIngredientContinuation(text) {
+  if (/^optional\s*:\s*(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/i.test(text)) return false
   return (
-    /^(?:or\b|to serve\b|for serving\b|to taste\b|optional\b)/i.test(text) ||
-    /^(?:(?:finely|roughly|thinly|freshly)\s+)?(?:chopped|sliced|diced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed)(?:$|[,\s]+(?:and\b|with\b|into\b|until\b))/i.test(
+    /^(?:or\b|to serve\b|for serving\b|to taste\b|optional\b|plus\b|such as\b|and\b.*\bto serve\b)/i.test(text) ||
+    /^(?:(?:finely|roughly|thinly|freshly)\s+)?(?:chopped|sliced|diced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|cubed|softened|beaten|shredded|torn)(?:$|[,\s]+(?:and\b|with\b|into\b|until\b))/i.test(
       text,
     ) ||
     /^(?:leaves|juice only|zest only)$/i.test(text)
   )
 }
 
+function isIngredientSubsection(line, nextLine) {
+  const text = getHeading(line.text)
+  return (
+    /^for\s+(?:the\s+)?/i.test(text) ||
+    (line.headingLevel > 0 && !startsWithQuantity(text) && !isIngredientContinuation(text)) ||
+    (/^(?:to serve|for serving|optional(?: toppings)?)$/i.test(text) &&
+      (line.headingLevel > 0 || line.text.endsWith(':') || startsWithQuantity(nextLine?.text || '')))
+  )
+}
+
+function isMeasureOnly(text) {
+  return /^(?:\d+(?:[./]\d+)?(?:\s+\d+\/\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:g|kg|ml|l|tsp|tbsp|cups?|tablespoons?|teaspoons?|oz|lbs?|large|small)?$/i.test(text)
+}
+
 function appendIngredient(ingredients, line) {
   const text = line.text
+  if (ingredients.length && isMeasureOnly(ingredients.at(-1)) && !startsWithQuantity(text)) {
+    ingredients[ingredients.length - 1] += ' ' + text
+    return
+  }
   if (
     ingredients.length &&
     !line.bullet &&
     isIngredientContinuation(text)
   ) {
-    const joiner = /^(?:or\b|leaves$)/i.test(text) ? ' ' : ', '
+    const joiner = /^(?:or\b|and\b|leaves$)/i.test(text) ? ' ' : ', '
     ingredients[ingredients.length - 1] += joiner + text
     return
   }
@@ -245,9 +274,14 @@ function appendIngredient(ingredients, line) {
 }
 
 export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
-  const lines = readRecipePageLines(text)
+  const pageLines = readRecipePageLines(text)
+  // Explicit page titles anchor recipe content after a site's mega-menu.
+  const titleStart = pageLines.findIndex((line) => line.headingLevel === 1 &&
+    !isIngredientsHeading(line.text) && !isMethodHeading(line.text) && !isNoiseLine(line.text))
+  const lines = titleStart >= 0 ? pageLines.slice(titleStart) : pageLines
   const { values, consumed } = readMetadata(lines)
   const ingredients = []
+  const ingredientSections = []
   let method = []
   let methodDiagnostics = { state: 'BEFORE_RECIPE', stoppedBy: 'missing-method', discarded: [], reviewNeeded: true }
   const hasIngredientsHeading = lines.some(({ text }) =>
@@ -286,6 +320,16 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
     if (isNoiseLine(text)) continue
 
     if (section === 'INGREDIENTS') {
+      if (isIngredientSubsection(line, lines[index + 1])) {
+        ingredientSections.push({ name: text.replace(/:$/, ''), startIndex: ingredients.length })
+        continue
+      }
+      const classification = classifyRecipeBlock(line)
+      if (classification.type === 'FOOTER') {
+        section = 'BEFORE_RECIPE'
+        continue
+      }
+      if (['ADVERTISEMENT', 'PRODUCT', 'NAVIGATION', 'PROMOTION'].includes(classification.type) && !startsWithQuantity(text)) continue
       appendIngredient(ingredients, line)
     } else if (section === 'METADATA' && !hasIngredientsHeading && startsWithQuantity(text)) {
       appendIngredient(ingredients, line)
@@ -307,6 +351,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
         method: method.length ? (methodDiagnostics.reviewNeeded ? 'review' : 'supported') : 'missing',
       },
       method: methodDiagnostics,
+      ingredientSections,
     }
   }
   return result

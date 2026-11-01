@@ -17,8 +17,13 @@ export function isMethodStepLabel(text) {
 }
 
 export function splitMethodNumber(text) {
-  const match = text.match(/^(?:\d+[.)]\s+|(?:step|stage)\s*\d+[.:]?\s+)(.+)$/i)
-  return { text: match?.[1] || text, numbered: Boolean(match) }
+  const explicit = text.match(/^(?:\d+[.)]\s+|(?:step|stage)\s*\d+[.:]?\s+)(.+)$/i)
+  if (explicit) return { text: explicit[1], numbered: true }
+  const bare = text.match(/^\d{1,2}\s+(.+)$/)
+  if (bare && /^\p{Lu}/u.test(bare[1]) && !/^(?:seconds?|secs?|minutes?|mins?|hours?|hrs?)\b/i.test(bare[1])) {
+    return { text: bare[1], numbered: true }
+  }
+  return { text, numbered: false }
 }
 
 export function isRecipeEndHeading(text) {
@@ -26,7 +31,8 @@ export function isRecipeEndHeading(text) {
   return heading.length < 120 && (
     /^(?:nutrition(?:al information)?)(?:\s*[:(]|\s+per\b|$)/.test(heading) ||
     /^(?:reviews?|comments?)(?:\s*(?:\(\d+\)|\d+))?$/.test(heading) ||
-    /^(?:related recipes|recommended recipes|more recipes|recipes you may like|you (?:may|might) also like|about (?:the )?author|faqs?|frequently asked questions|newsletter|shop|shop ingredients|tags)$/.test(heading) ||
+    /^(?:related recipes|recommended recipes|more recipes|recipes you may like|you (?:may|might) also like|about (?:the )?author|faqs?|frequently asked questions|newsletter|shop|shop ingredients|tags|featured products|additional info)$/.test(heading) ||
+    /^did you make this(?: recipe)?\??$/.test(heading) ||
     /^(?:leave a (?:review|comment)|subscribe\b|sign up\b|join our newsletter\b|privacy policy\b|all rights reserved\b)/.test(heading)
   )
 }
@@ -36,10 +42,11 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
   const text = numbered.text
   const heading = sectionHeading(text)
   if (isRecipeEndHeading(text)) return { type: 'FOOTER', text, numbered: numbered.numbered, cooking: 0 }
-  if (/^ingredients?(?:\s*\([^)]*\))?$/.test(heading)) return { type: 'INGREDIENT_HEADING', text, cooking: 0 }
+  if (/^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(heading)) return { type: 'INGREDIENT_HEADING', text, cooking: 0 }
   if (/^(?:method|instructions|directions|preparation|steps|cooking instructions)$/.test(heading)) return { type: 'METHOD_HEADING', text, cooking: 0 }
   if (isMethodStepLabel(line.text)) return { type: 'STEP_LABEL', text, cooking: 0 }
-  if (/^(?:notes|tips|recipe tips|cook['’]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|video)$/.test(heading)) return { type: 'AUXILIARY_HEADING', text, cooking: 0 }
+  if (/^(?:notes|tips|recipe tips|tips (?:from|by) .+|cook['’]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|video)$/.test(heading)) return { type: 'AUXILIARY_HEADING', text, cooking: 0 }
+  if (/^(?:perfect your technique|recipe inspiration|from our blog)$/.test(heading)) return { type: 'PROMOTION', text, cooking: 0 }
 
   const evidence = {
     action: actions.test(text), specificAction: specificActions.test(text),
@@ -65,7 +72,7 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
   } else if (evidence.price && text.length < 180 &&
     (!evidence.action || (!evidence.duration && !evidence.temperature && !evidence.state && !evidence.ingredient))) {
     type = 'PRODUCT'
-  } else if (/^(?:share(?:\s+this recipe)?|facebook|pinterest|instagram|print(?: recipe)?|save(?: recipe)?|back to top|home|menu|sign in|log in|jump to recipe|cook mode\b.*|keep the screen awake\b.*)$/i.test(text) ||
+  } else if (/^(?:share(?:\s+this recipe)?|facebook|pinterest|instagram|print(?: recipe)?|save(?: recipe)?|back to top|home|menu|sign in|log in|jump to recipe|(?:cook|bake) mode\b.*|off on|keep (?:the )?screen\b.*)$/i.test(text) ||
     /^(?:\d+(?:\.\d+)?\s*(?:ratings?|votes?|reviews?)\b|a star rating\b|photo credit\b|photography by\b)/i.test(text)) {
     type = 'NAVIGATION'
   } else if (cooking >= 2) {

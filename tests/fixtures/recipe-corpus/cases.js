@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { methodBoundaryCases } from './method-boundaries.js'
+import { researchedLayoutCases } from './researched-layouts.js'
 
 const fixture = (name) => readFileSync(new URL('../' + name, import.meta.url), 'utf8')
 const curry = fixture('pumpkin-curry-plain.txt')
@@ -24,6 +25,7 @@ const curryExpectation = {
 // All new recipe prose below is invented; source URLs document layout research.
 export const recipeCorpus = [
   ...methodBoundaryCases,
+  ...researchedLayoutCases,
   {
     id: 'owner-curry-plain', layout: 'owner mobile copy',
     source: 'https://www.bbcgoodfood.com/recipes/pumpkin-curry-chickpeas',

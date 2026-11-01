@@ -1,6 +1,6 @@
 import { classifyRecipeBlock } from './recipeSignals.js'
 
-const noiseTypes = new Set(['ADVERTISEMENT', 'PRODUCT', 'NAVIGATION'])
+const noiseTypes = new Set(['ADVERTISEMENT', 'PRODUCT', 'NAVIGATION', 'PROMOTION'])
 const ingredientStopWords = new Set(['the', 'and', 'for', 'with', 'large', 'small', 'finely', 'roughly', 'chopped', 'sliced', 'serve', 'optional', 'extra', 'plus', 'can', 'tins', 'tin'])
 
 function getIngredientWords(ingredients) {
@@ -40,8 +40,11 @@ export function extractRecipeMethod(lines, ingredients) {
   // Bounded look-ahead keeps an interstitial ad from ending a good recipe.
   // A footer or second recipe is never crossed, even if it contains cooking verbs.
   function hasCookingAhead(index) {
+    let products = 0
     for (const block of blocks.slice(index + 1, index + 7)) {
       if (['FOOTER', 'INGREDIENT_HEADING'].includes(block.type)) return false
+      if (block.type === 'PRODUCT') products += 1
+      if (products >= 2) return false
       if (block.type === 'METHOD_STEP') return true
     }
     return false
@@ -96,12 +99,15 @@ export function extractRecipeMethod(lines, ingredients) {
     }
   }
   if (pending.length) {
-    if (labelledSteps && pending.length <= 2 && pending.every((block) => !block.blankBefore)) {
+    const structurallySupported = (labelledSteps && pending.every((block) => !block.blankBefore)) ||
+      (ingredients.length > 0 && pending.every((block) => block.numbered))
+    if (pending.length <= 2 && structurallySupported) {
       pending.forEach(append)
     } else {
       discardPending('uncertain-tail')
       stoppedBy = 'uncertain-tail'
     }
   }
-  return { steps, diagnostics: { state, stoppedBy, discarded, reviewNeeded: !steps.length || discarded.some((block) => block.reason === 'uncertain-tail') } }
+  const supportedLines = blocks.filter((block) => block.type === 'METHOD_STEP').length
+  return { steps, diagnostics: { state, stoppedBy, discarded, reviewNeeded: !steps.length || !supportedLines || discarded.some((block) => block.reason === 'uncertain-tail') } }
 }

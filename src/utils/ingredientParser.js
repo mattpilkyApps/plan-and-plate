@@ -30,7 +30,45 @@ const knownUnits = [
   'sprigs',
   'piece',
   'pieces',
+  'bunch',
+  'bunches',
+  'packet',
+  'packets',
+  'slice',
+  'slices',
+  'teaspoon',
+  'teaspoons',
+  'tablespoon',
+  'tablespoons',
+  'ounce',
+  'ounces',
+  'pound',
+  'pounds',
+  'gram',
+  'grams',
+  'kilogram',
+  'kilograms',
+  'millilitre',
+  'millilitres',
+  'milliliter',
+  'milliliters',
+  'litre',
+  'litres',
+  'liter',
+  'liters',
 ]
+
+const unitAliases = {
+  teaspoon: 'tsp', teaspoons: 'tsp', tablespoon: 'tbsp', tablespoons: 'tbsp',
+  ounce: 'oz', ounces: 'oz', pound: 'lb', pounds: 'lbs',
+  gram: 'g', grams: 'g', kilogram: 'kg', kilograms: 'kg',
+  millilitre: 'ml', millilitres: 'ml', milliliter: 'ml', milliliters: 'ml',
+  litre: 'l', litres: 'l', liter: 'l', liters: 'l',
+}
+
+function canonicalUnit(unit) {
+  return unitAliases[unit.toLowerCase()] || unit.toLowerCase()
+}
 
 const numberWords = {
   one: '1',
@@ -63,7 +101,7 @@ const unicodeFractions = {
 const metricUnits = ['g', 'kg', 'ml', 'l']
 const measureModifiers = ['level', 'heaped', 'rounded', 'small', 'medium', 'large']
 const preparationWords =
-  'chopped|diced|sliced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|sifted'
+  'chopped|diced|sliced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|sifted|cubed|softened|beaten|shredded|pressed|melted'
 const preparationAdverbs = 'finely|roughly|thinly|freshly'
 const preparationNotePattern = new RegExp(
   `,\\s*(?:(?:${preparationAdverbs})\\s+)?(?:${preparationWords}|cut|torn)\\b.*$`,
@@ -74,6 +112,7 @@ const nameCleanups = [
   /\b(?:finely|roughly|thinly|freshly)\b/gi,
   /\b(?:chopped|diced|sliced|minced|grated)\b/gi,
   /\b(?:peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|sifted)\b/gi,
+  /\b(?:cubed|softened|beaten|shredded|pressed|melted)\b/gi,
   /\b(?:boneless|skinless|skin removed|room temperature)\b/gi,
   /\b(?:at room temperature|juice only|zest and juice|split)\b/gi,
   /\b(?:optional|to taste)\b/gi,
@@ -94,6 +133,7 @@ const rejectedIngredientPatterns = [
   /^nutrition$/i,
   /^advertisement$/i,
   /^cook(?:'|\u2019)?s notes?$/i,
+  /^for\s+(?:the\s+)?/i,
 ]
 
 const instructionPatterns = [
@@ -150,6 +190,9 @@ export function cleanIngredientText(text) {
       return unicodeFractions[fraction] || fraction
     })
     .replace(/\s*\/\s*/g, '/')
+    .replace(/(\d)\s*[–—]\s*(\d)/g, '$1-$2')
+    .replace(/(\d)\s+and\s+(\d+\/\d+)/gi, '$1 $2')
+    .replace(/\b(tsp|tbsp|oz|lb|lbs)\.(?=\s|$)/gi, '$1')
     .trim()
 }
 
@@ -174,9 +217,8 @@ function getQuantityValuePattern() {
   const numberWordPattern = getNumberWordPattern()
   const mixedFractionPattern = '\\d+\\s+\\d+/\\d+'
   const numberPattern = '\\d+(?:\\.\\d+)?(?:/\\d+(?:\\.\\d+)?)?'
-  const rangePattern = '(?:-\\d+(?:\\.\\d+)?)?'
-
-  return `(?:${mixedFractionPattern}|${numberPattern}${rangePattern}|${numberWordPattern})`
+  const scalar = `(?:${mixedFractionPattern}|${numberPattern}|${numberWordPattern})`
+  return `${scalar}(?:\\s*(?:-|to)\\s*${scalar})?`
 }
 
 function getUnitPattern() {
@@ -197,10 +239,19 @@ function getMeasureModifierPattern() {
 function splitPastedIngredients(text) {
   // The creator and extractor supply one ingredient per line. Numbers inside
   // alternatives, pack sizes and preparation notes are not new ingredients.
-  return text
-    .split(/\r\n?|\n|\u2022|;/)
-    .map(cleanIngredientRawText)
-    .filter(Boolean)
+  const lines = []
+  let current = ''
+  let depth = 0
+  for (const character of text) {
+    if (character === '(') depth += 1
+    if (character === ')') depth = Math.max(0, depth - 1)
+    if (/[\r\n]/.test(character) || (depth === 0 && /[\u2022;]/.test(character))) {
+      if (current.trim()) lines.push(cleanIngredientRawText(current))
+      current = ''
+    } else current += character
+  }
+  if (current.trim()) lines.push(cleanIngredientRawText(current))
+  return lines.filter(Boolean)
 }
 
 function splitAmountAndName(line) {
@@ -208,7 +259,7 @@ function splitAmountAndName(line) {
   const unitPattern = getUnitCapturePattern()
   const match = line.match(
     new RegExp(
-      `^(${quantityValuePattern})(?:\\s*x)?\\s*(?:${getMeasureModifierPattern()}\\s+)?(?:${unitPattern})?\\s*(.+)$`,
+      `^(${quantityValuePattern})(?![\\d./])\\s*(?:${getMeasureModifierPattern()}\\s+)?(?:${unitPattern})?\\s*(.+)$`,
       'i',
     ),
   )
@@ -250,7 +301,7 @@ function splitNameAndAmount(line) {
 }
 
 function buildIngredientFromParts(rawText, parsedLine) {
-  const unit = parsedLine.possibleUnit.toLowerCase()
+  const unit = canonicalUnit(parsedLine.possibleUnit)
   const preferredMetric = getPreferredMetricParts(parsedLine)
 
   if (preferredMetric) {
@@ -266,7 +317,7 @@ function buildIngredientFromParts(rawText, parsedLine) {
     return {
       rawText,
       quantity: parsedLine.amount,
-      unit: parsedLine.possibleUnit,
+      unit,
       name: cleanIngredientName(parsedLine.restOfLine),
     }
   }
@@ -279,7 +330,7 @@ function buildIngredientFromParts(rawText, parsedLine) {
       return {
         rawText,
         quantity: parsedLine.amount,
-        unit: words[words.length - 1],
+        unit: canonicalUnit(words[words.length - 1]),
         name: cleanIngredientName(words.slice(0, -1).join(' ')),
       }
     }
@@ -301,7 +352,7 @@ function buildIngredientFromParts(rawText, parsedLine) {
     return {
       rawText,
       quantity: parsedLine.amount,
-      unit: words[words.length - 1],
+      unit: canonicalUnit(words[words.length - 1]),
       name: cleanIngredientName(words.slice(0, -1).join(' ')),
     }
   }
@@ -342,13 +393,24 @@ function parsePackageMultiplierLine(rawText, line) {
   return {
     rawText,
     quantity: String(multiplier * packageQuantity),
-    unit: match[3],
+    unit: canonicalUnit(match[3]),
     name: cleanIngredientName(match[4]),
+  }
+}
+
+function parseCountedPackageLine(rawText, line) {
+  const match = line.match(/^(\d+)\s*\((\d+(?:\.\d+)?)\s*(kg|g|ml|l)\)\s*(?:cans?|tins?|packs?|packets?)\s+(?:of\s+)?(.+)$/i)
+  if (!match) return null
+  return {
+    rawText, quantity: String(Number(match[1]) * Number(match[2])),
+    unit: match[3].toLowerCase(), name: cleanIngredientName(match[4]),
   }
 }
 
 function normalizeQuantity(quantity) {
   const cleanQuantity = quantity.trim().toLowerCase()
+  const range = cleanQuantity.split(/\s*(?:-|\bto\b)\s*/)
+  if (range.length === 2) return range.map(normalizeQuantity).join('-')
   const numberWord = numberWords[cleanQuantity]
 
   if (numberWord) {
@@ -393,11 +455,22 @@ function getFractionValue(quantity) {
 }
 
 function getPreferredMetricParts(parsedLine) {
-  const unit = parsedLine.possibleUnit.toLowerCase()
+  const unit = canonicalUnit(parsedLine.possibleUnit)
 
   if (!metricUnits.includes(unit)) {
+    // Use only an explicit equivalent amount immediately after the primary
+    // measure; never convert cups/ounces to weight using guessed densities.
+    const parenthetical = parsedLine.restOfLine.match(/^\(([^)]+)\)\s*(.+)$/)
+    const metric = parenthetical?.[1].match(/(\d+(?:\.\d+)?)\s*(kg|g|ml|l)\b/i)
+    const convertibleMeasure = ['cup', 'cups', 'oz', 'lb', 'lbs', 'tsp', 'tbsp'].includes(unit)
+    if (metric && convertibleMeasure) {
+      return { amount: metric[1], unit: metric[2].toLowerCase(), name: parenthetical[2] }
+    }
+    const slash = parsedLine.restOfLine.match(/^\/\s*(\d+(?:\.\d+)?)\s*(kg|g|ml|l)\s+(.+)$/i)
+    if (slash && convertibleMeasure) return { amount: slash[1], unit: slash[2].toLowerCase(), name: slash[3] }
     return null
   }
+
 
   const dualMeasureMatch = parsedLine.restOfLine.match(
     /^\/\d+(?:\.\d+)?(?:\s+\d+\/\d+|\/\d+(?:\.\d+)?)?\s*(?:fl\s*)?(?:oz|lb|lbs|pint|pints|pt)\s+(.+)$/i,
@@ -409,7 +482,7 @@ function getPreferredMetricParts(parsedLine) {
 
   return {
     amount: parsedLine.amount,
-    unit: parsedLine.possibleUnit,
+    unit,
     name: dualMeasureMatch[1],
   }
 }
@@ -440,7 +513,7 @@ export function cleanIngredientName(name) {
 }
 
 export function isRejectedIngredientLine(line) {
-  const cleanLine = cleanIngredientText(line)
+  const cleanLine = cleanIngredientText(line).replace(/:$/, '')
 
   return rejectedIngredientPatterns.some((pattern) => pattern.test(cleanLine))
 }
@@ -483,6 +556,8 @@ function getIngredientQualifiers(text) {
   )
   const qualifiers = [
     modifier, ...preparation, note, ...parentheticalNotes, extra, alternative,
+    text.match(/^(?:about|approximately|approx\.?)\b/i)?.[0],
+    /\boptional\b/i.test(text) ? 'optional' : '',
   ]
   return [...new Set(qualifiers.filter(Boolean))]
 }
@@ -499,23 +574,26 @@ export function parseIngredientLine(line) {
     return null
   }
 
+  const parseableText = rawText.replace(/^(?:(?:optional\s*:|about\b|approximately\b|approx\.?\s)\s*)+/i, '')
+  if (/^(?:\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?)(?:\s*(?:g|kg|ml|l|tsp|tbsp|cups?))?$/i.test(parseableText)) return null
+
   const fallbackIngredient = {
     rawText: originalRawText,
     quantity: '',
     unit: '',
-    name: cleanIngredientName(rawText),
+    name: cleanIngredientName(parseableText),
   }
 
   const implicitMeasure = rawText.match(
     /^(?:a\s+)?(?:(?:small|large)\s+)?(pinch|handful)\s+(?:of\s+)?(.+)$/i,
   )
-  const parsedLine = splitAmountAndName(rawText) || splitNameAndAmount(rawText)
+  const parsedLine = splitAmountAndName(parseableText) || splitNameAndAmount(parseableText)
   const packageMultiplierIngredient = parsePackageMultiplierLine(
     originalRawText,
-    rawText,
+    parseableText,
   )
 
-  let ingredient = packageMultiplierIngredient
+  let ingredient = packageMultiplierIngredient || parseCountedPackageLine(originalRawText, parseableText)
   if (!ingredient && implicitMeasure) {
     ingredient = {
       rawText: originalRawText,
