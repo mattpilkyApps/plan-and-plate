@@ -347,6 +347,9 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
       fields: {
         title: result.name ? 'detected' : 'missing',
         servings: result.servings ? 'explicit' : 'missing-or-ambiguous',
+        prepTime: result.prepTime ? 'explicit' : 'missing',
+        cookTime: result.cookTime ? 'explicit' : 'missing',
+        totalTime: result.totalTime ? 'explicit' : 'missing',
         ingredients: ingredients.length ? (hasIngredientsHeading ? 'section' : 'inferred') : 'missing',
         method: method.length ? (methodDiagnostics.reviewNeeded ? 'review' : 'supported') : 'missing',
       },
