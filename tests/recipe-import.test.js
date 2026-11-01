@@ -165,6 +165,30 @@ test('partial copies keep ingredients and method without guessing a serving rang
   assert.equal(result.method, 'Soften the onions.')
 })
 
+test('general website navigation, combined controls and numbered directions stay out of recipe data', () => {
+  const result = parsePastedRecipe(
+    'Home\nRecipes\nSearch\nSign in\nTomato and bean supper\nBy Alex Cook\nServings: 3\nPrep: 10 mins | Cook: 25 mins\n4.8 out of 5 stars\n45 votes\nJump to Recipe\nIngredients\nNutrition\nUnits: US Customary | Metric\nScale: 1x 2x 3x\nAdd to shopping list\n▢ 2 garlic cloves\ncrushed\n▢ 2 × 400g tins chopped tomatoes\n▢ 1 pinch of salt\nCook Mode: Prevent your screen from going dark\nCooking instructions\nStep 1 Warm the pan.\nStep 2 Simmer gently.\nRelated recipes\nIngredients\n1 unrelated advert',
+  )
+  assert.equal(result.name, 'Tomato and bean supper')
+  assert.equal(result.servings, '3')
+  assert.equal(result.prepTime, '10 mins')
+  assert.equal(result.cookTime, '25 mins')
+  assert.equal(result.ingredients, '2 garlic cloves, crushed\n2 × 400g tins chopped tomatoes\n1 pinch of salt')
+  assert.equal(result.method, 'Warm the pan.\n\nSimmer gently.')
+  const ingredients = parseIngredients(result.ingredients)
+  assert.equal(ingredients.length, 3)
+  assert.equal(ingredients[0].name, 'garlic')
+  assert.equal(ingredients[1].quantity, '800')
+})
+
+test('a footer cannot start a second recipe when only ingredients were copied', () => {
+  const result = parsePastedRecipe(
+    'Quick salad\nIngredients\n2 tomatoes\n1 onion\nRelated recipes\nIngredients\n5 recommended products',
+  )
+  assert.equal(result.ingredients, '2 tomatoes\n1 onion')
+  assert.equal(result.method, '')
+})
+
 test('editing and deleting a local recipe keep dated plans and queue relationships consistent', () => {
   const data = new Map(
     Object.entries({

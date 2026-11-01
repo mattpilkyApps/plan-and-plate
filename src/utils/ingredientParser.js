@@ -22,6 +22,14 @@ const knownUnits = [
   'tins',
   'can',
   'cans',
+  'handful',
+  'handfuls',
+  'stalk',
+  'stalks',
+  'sprig',
+  'sprigs',
+  'piece',
+  'pieces',
 ]
 
 const numberWords = {
@@ -53,12 +61,19 @@ const unicodeFractions = {
 }
 
 const metricUnits = ['g', 'kg', 'ml', 'l']
-const measureModifiers = ['level', 'heaped', 'rounded']
+const measureModifiers = ['level', 'heaped', 'rounded', 'small', 'medium', 'large']
+const preparationWords =
+  'chopped|diced|sliced|minced|grated|peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|sifted'
+const preparationAdverbs = 'finely|roughly|thinly|freshly'
+const preparationNotePattern = new RegExp(
+  `,\\s*(?:(?:${preparationAdverbs})\\s+)?(?:${preparationWords}|cut|torn)\\b.*$`,
+  'i',
+)
 const nameCleanups = [
   /^\s*(?:small|large)?\s*handful\s+(?:of\s+)?/i,
-  /\b(?:finely|roughly|thinly)\b/gi,
+  /\b(?:finely|roughly|thinly|freshly)\b/gi,
   /\b(?:chopped|diced|sliced|minced|grated)\b/gi,
-  /\b(?:peeled|crushed|drained|rinsed|sifted)\b/gi,
+  /\b(?:peeled|crushed|bashed|drained|rinsed|deseeded|trimmed|sifted)\b/gi,
   /\b(?:boneless|skinless|skin removed|room temperature)\b/gi,
   /\b(?:at room temperature|juice only|zest and juice|split)\b/gi,
   /\b(?:optional|to taste)\b/gi,
@@ -131,7 +146,6 @@ export function cleanIngredientText(text) {
       new RegExp(`(\\d)(${unicodeFractionPattern.source})`, 'g'),
       '$1 $2',
     )
-    .replace(/^(?:pinch|sprinkle)\s+(?:of\s+)?/i, '')
     .replace(unicodeFractionPattern, (fraction) => {
       return unicodeFractions[fraction] || fraction
     })
@@ -176,94 +190,15 @@ function getUnitCapturePattern() {
   return `(${getUnitPattern()})\\b`
 }
 
-function getUnitBoundaryPattern() {
-  return `(?:${getUnitPattern()})\\b`
-}
-
 function getMeasureModifierPattern() {
   return `(?:${measureModifiers.join('|')})`
 }
 
-function buildQuantityPattern() {
-  const unitPattern = getUnitBoundaryPattern()
-  const quantityValuePattern = getQuantityValuePattern()
-
-  return `${quantityValuePattern}(?:\\s*x)?\\s*(?:${getMeasureModifierPattern()}\\s+)?(?:${unitPattern})?\\s+`
-}
-
-function removeMeasuredAlternative(line) {
-  const quantityValuePattern = getQuantityValuePattern()
-
-  return line
-    .replace(new RegExp(`\\s+or\\s+${quantityValuePattern}\\b.*$`, 'i'), '')
-    .trim()
-}
-
-function isPackageMultiplierLine(line) {
-  const quantityValuePattern = getQuantityValuePattern()
-  const unitPattern = getUnitBoundaryPattern()
-
-  return new RegExp(
-    `^\\d+\\s*x\\s*${quantityValuePattern}\\s*${unitPattern}\\s+`,
-    'i',
-  ).test(line)
-}
-
-function hasDualMeasurementLine(line) {
-  const quantityValuePattern = getQuantityValuePattern()
-  const metricUnitPattern = `(?:${metricUnits.map(escapeRegExp).join('|')})\\b`
-
-  return new RegExp(
-    `^${quantityValuePattern}\\s*${metricUnitPattern}\\s*/`,
-    'i',
-  ).test(line)
-}
-
 function splitPastedIngredients(text) {
-  const normalizedText = text
-    .replace(/\r/g, '\n')
-    .replace(/\u2022/g, '\n')
-    .replace(/;/g, '\n')
-    .trim()
-
-  const quantityPattern = buildQuantityPattern()
-  const splitBeforeQuantity = new RegExp(`\\s+(?=${quantityPattern})`, 'gi')
-
-  return normalizedText
-    .split('\n')
-    .flatMap((line) => {
-      const displayLine = cleanIngredientRawText(line)
-      const cleanedLine = removeMeasuredAlternative(cleanIngredientText(line))
-      const quantityMatches = cleanedLine.match(new RegExp(quantityPattern, 'gi'))
-
-      if (isInstructionOnlyLine(cleanedLine)) {
-        return displayLine
-      }
-
-      if (/^\d+\s+\d+\/\d+\b/.test(cleanedLine)) {
-        return displayLine
-      }
-
-      if (isPackageMultiplierLine(cleanedLine)) {
-        return displayLine
-      }
-
-      if (hasDualMeasurementLine(cleanedLine)) {
-        return displayLine
-      }
-
-      if (
-        /[,.]\s+/.test(cleanedLine) &&
-        quantityMatches &&
-        quantityMatches.length > 1
-      ) {
-        return cleanedLine.split(/[,.]\s+/)
-      }
-
-      const splitIngredients = cleanedLine.split(splitBeforeQuantity)
-
-      return splitIngredients.length > 1 ? splitIngredients : displayLine
-    })
+  // The creator and extractor supply one ingredient per line. Numbers inside
+  // alternatives, pack sizes and preparation notes are not new ingredients.
+  return text
+    .split(/\r\n?|\n|\u2022|;/)
     .map(cleanIngredientRawText)
     .filter(Boolean)
 }
@@ -337,7 +272,7 @@ function buildIngredientFromParts(rawText, parsedLine) {
   }
 
   if (!unit) {
-    const words = parsedLine.restOfLine.trim().split(' ')
+    const words = cleanIngredientName(parsedLine.restOfLine).split(' ')
     const lastWord = words[words.length - 1].toLowerCase()
 
     if (words.length > 1 && knownUnits.includes(lastWord)) {
@@ -388,7 +323,7 @@ function parsePackageMultiplierLine(rawText, line) {
   const unitPattern = getUnitCapturePattern()
   const match = line.match(
     new RegExp(
-      `^(\\d+)\\s*x\\s*(${quantityValuePattern})\\s*${unitPattern}\\s+(.+)$`,
+      `^(\\d+)\\s*[x\u00d7]\\s*(${quantityValuePattern})\\s*${unitPattern}\\s+(.+)$`,
       'i',
     ),
   )
@@ -480,13 +415,19 @@ function getPreferredMetricParts(parsedLine) {
 }
 
 export function cleanIngredientName(name) {
+  const primaryName = name
+    .replace(/\s+or\s+.+$/i, '')
+    .replace(/\([^)]*\)/g, '')
+    .replace(/\s*,?\s+(?:plus|extra|for serving|to serve|to taste)\b.*$/i, '')
+    .replace(preparationNotePattern, '')
   const cleanedName = nameCleanups.reduce(
     (currentName, pattern) => currentName.replace(pattern, ''),
-    name,
+    primaryName,
   )
 
   return cleanedName
     .replace(/\([^)]*\)/g, '')
+    .replace(/^of\s+/i, '')
     .replace(/^(?:tin|can)s?\s+(?:of\s+)?/i, '')
     .replace(/\s+mixed with\s+.+$/i, '')
     .replace(/\s+or\s+.+$/i, '')
@@ -518,6 +459,34 @@ export function ingredientHasAlternative(line) {
   return /\bor\b/i.test(cleanIngredientText(line))
 }
 
+function getIngredientQualifiers(text) {
+  const alternative = text.match(/\bor\s+.+$/i)?.[0]
+  const primary = text.replace(/\s+or\s+.+$/i, '')
+  const note = primary.match(preparationNotePattern)?.[0].replace(/^,\s*/, '')
+  const preparation = primary
+    .replace(preparationNotePattern, '')
+    .match(new RegExp(
+      `\\b(?:(?:${preparationAdverbs})\\s+)?(?:${preparationWords})\\b`,
+      'gi',
+    )) || []
+  const modifier = primary.match(
+    new RegExp(
+      `^(?:${getQuantityValuePattern()}\\s*)?(${getMeasureModifierPattern()})\\s+`,
+      'i',
+    ),
+  )?.[1]
+  const extra = primary.match(
+    /\b(?:plus|extra|to taste|for serving|to serve)\b.*$/i,
+  )?.[0]
+  const parentheticalNotes = [...primary.matchAll(/\(([^)]+)\)/g)].map(
+    (match) => match[1],
+  )
+  const qualifiers = [
+    modifier, ...preparation, note, ...parentheticalNotes, extra, alternative,
+  ]
+  return [...new Set(qualifiers.filter(Boolean))]
+}
+
 export function parseIngredientLine(line) {
   const rawText = cleanIngredientText(line)
   const originalRawText = cleanIngredientRawText(line)
@@ -537,33 +506,31 @@ export function parseIngredientLine(line) {
     name: cleanIngredientName(rawText),
   }
 
-  const parsedLine = splitAmountAndName(rawText)
+  const implicitMeasure = rawText.match(
+    /^(?:a\s+)?(?:(?:small|large)\s+)?(pinch|handful)\s+(?:of\s+)?(.+)$/i,
+  )
+  const parsedLine = splitAmountAndName(rawText) || splitNameAndAmount(rawText)
   const packageMultiplierIngredient = parsePackageMultiplierLine(
     originalRawText,
     rawText,
   )
 
-  if (packageMultiplierIngredient) {
-    return packageMultiplierIngredient
+  let ingredient = packageMultiplierIngredient
+  if (!ingredient && implicitMeasure) {
+    ingredient = {
+      rawText: originalRawText,
+      quantity: '1',
+      unit: implicitMeasure[1].toLowerCase(),
+      name: cleanIngredientName(implicitMeasure[2]),
+    }
   }
-
-  if (parsedLine) {
-    return (
-      buildIngredientFromParts(originalRawText, parsedLine) ||
-      fallbackIngredient
-    )
+  if (!ingredient && parsedLine) {
+    ingredient = buildIngredientFromParts(originalRawText, parsedLine)
   }
-
-  const trailingAmountLine = splitNameAndAmount(rawText)
-
-  if (trailingAmountLine) {
-    return (
-      buildIngredientFromParts(originalRawText, trailingAmountLine) ||
-      fallbackIngredient
-    )
-  }
-
-  return fallbackIngredient
+  ingredient ||= fallbackIngredient
+  if (!ingredient.name) return null
+  const qualifiers = getIngredientQualifiers(rawText)
+  return qualifiers.length ? { ...ingredient, qualifiers } : ingredient
 }
 
 export function formatIngredientForSingleUnit(ingredient) {

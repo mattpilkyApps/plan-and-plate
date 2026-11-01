@@ -24,7 +24,10 @@ function readRecipePageLines(text) {
     .replace(/\r\n?/g, '\n')
     .split('\n')
     .flatMap((rawLine) => {
-      const unlisted = rawLine.trim().replace(/^[-*\u2022]\s+/, '')
+      const unlisted = rawLine
+        .trim()
+        .replace(/^[-*\u2022]\s+/, '')
+        .replace(/^(?:\[[ x]\]|[\u25a1\u25a2\u2610])\s*/i, '')
       const headingLevel = unlisted.match(/^(#{1,6})\s+/)?.[1].length || 0
       const cleanLine = unlisted
         .replace(/^#{1,6}\s+/, '')
@@ -72,9 +75,13 @@ function isNutritionHeading(text) {
 }
 
 function isUnitControl(text) {
-  return /^(?:units?|metric|imperial|us customary|us|uk|1x|2x|3x)$/.test(
-    getHeading(text),
-  )
+  const controls = getHeading(text)
+  if (/^(?:units?|scale)$/.test(controls)) return true
+  const tokens = controls.replace(/^(?:units?|scale)\s*:?\s*/, '')
+  const remainder = tokens
+    .replace(/\b(?:metric|imperial|us customary|us|uk|[123]x)\b/g, '')
+    .replace(/[\s:/|\u00b7\u2013-]+/g, '')
+  return Boolean(tokens) && !remainder
 }
 
 function isNoiseLine(text) {
@@ -83,10 +90,12 @@ function isNoiseLine(text) {
     isUnitControl(text) ||
     [
       /^(?:ad|advertisement|sponsored|rate|easy|medium|hard)$/,
+      /^(?:home|recipes|menu|search|back to top|sign in)$/,
       /^(?:a star rating|ratings?\b|rated\b|\d+(?:\.\d+)? from \d+)/,
-      /^\d+\s*(?:ratings?|comments?|reviews?)\b/,
+      /^\d+(?:\.\d+)?\s*(?:ratings?|comments?|reviews?|votes?|out of \d+ stars?)\b/,
       /^(?:skip to|jump to recipe|print(?: recipe)?$|pin recipe|save recipe)/,
       /^(?:shopping list|share|subscribe|newsletter|sign up|log in)/,
+      /^(?:(?:add to|copy|print|save) (?:shopping list|ingredients)|cook mode)\b/,
       /^(?:privacy policy|terms|all rights reserved|by\s|author\b)/,
       /^(?:course|cuisine|keyword|calories)\b/,
       /^(?:try (?:our|the) app|keep the screen awake|showing items)/,
@@ -106,6 +115,10 @@ function isStopHeading(text) {
   )
 }
 
+function isRecipeFooter(text) {
+  return /^(?:comments|reviews|related recipes|recommended recipes|more recipes|you (?:may|might) also like|leave a (?:review|comment))\b/i.test(text)
+}
+
 function startsWithQuantity(text) {
   return /^(?:\d|[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e])|^(?:one|two|three|four|five|six|seven|eight|nine|ten)\s+/i.test(
     text,
@@ -121,19 +134,24 @@ function isTimeValue(text) {
 function readMetadata(lines) {
   const values = { servings: '', prepTime: '', cookTime: '' }
   const consumed = new Set()
-  const labels = [
-    ['servings', /^(?:serves|servings|yield|makes)\b\s*:?\s*(.*)$/i],
-    ['prepTime', /^(?:prep(?:\s*time)?|preparation time)\b\s*:?\s*(.*)$/i],
-    ['cookTime', /^(?:cook(?:ing)?(?:\s*time)?)\b\s*:?\s*(.*)$/i],
-  ]
-
   for (let index = 0; index < lines.length; index += 1) {
     const text = lines[index].text
     if (isIngredientsHeading(text) || isMethodHeading(text)) break
-    for (const [field, pattern] of labels) {
-      const match = text.match(pattern)
-      if (!match) continue
-      const inlineValue = match[1].trim()
+    const labels = [...text.matchAll(
+      /\b(serves|servings|yield|makes|prep(?:\s*time)?|preparation time|cook(?:ing)?(?:\s*time)?)\b\s*:?\s*/gi,
+    )]
+    if (labels[0]?.index !== 0) continue
+    let consumedNextLine = false
+    for (const [labelIndex, match] of labels.entries()) {
+      const field = /^(?:serves|servings|yield|makes)$/i.test(match[1])
+        ? 'servings'
+        : /^prep/i.test(match[1])
+          ? 'prepTime'
+          : 'cookTime'
+      const inlineValue = text
+        .slice(match.index + match[0].length, labels[labelIndex + 1]?.index)
+        .replace(/[\s|\u00b7]+$/, '')
+        .trim()
       const candidate = inlineValue || lines[index + 1]?.text || ''
       let value = ''
       if (field === 'servings') {
@@ -150,11 +168,11 @@ function readMetadata(lines) {
         if (!values[field]) values[field] = value
         if (!inlineValue) {
           consumed.add(index + 1)
-          index += 1
+          consumedNextLine = true
         }
       }
-      break
     }
+    if (consumedNextLine) index += 1
   }
   return { values, consumed }
 }
@@ -247,6 +265,7 @@ export function parsePastedRecipe(text) {
     const line = lines[index]
     const text = line.text
     if (consumed.has(index)) continue
+    if ((ingredients.length || method.length) && isRecipeFooter(text)) break
 
     if (isIngredientsHeading(text)) {
       section = 'ingredients'
@@ -279,7 +298,7 @@ export function parsePastedRecipe(text) {
         continue
       }
       const numbered = text.match(
-        /^(?:\d+[.)]\s+|(?:step|stage)\s*\d+[.:]\s*)(.+)$/i,
+        /^(?:\d+[.)]\s+|(?:step|stage)\s*\d+[.:]?\s+)(.+)$/i,
       )
       if (
         startNewStep ||
