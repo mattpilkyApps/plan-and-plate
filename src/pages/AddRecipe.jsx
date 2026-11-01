@@ -199,8 +199,8 @@ function PasteRecipeSheet({
         Copy the recipe text from a website or message. We’ll fill in the title,
         ingredients, method, servings and times we can recognise. Review the
         details before saving.
-        {' '}For separate website tabs, paste the ingredients, then the method
-        below them before filling the form.
+        {' '}For separate website tabs, paste both sections here in either order
+        before filling the form.
       </p>
 
       <textarea

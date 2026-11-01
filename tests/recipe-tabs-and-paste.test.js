@@ -3,7 +3,63 @@ import assert from 'node:assert/strict'
 import { parsePastedRecipe } from '../src/utils/recipeImport.js'
 import { parseIngredients } from '../src/utils/ingredientParser.js'
 import { getRecipePasteSeparator } from '../src/utils/recipePaste.js'
-import { sproutsPaste, sproutsIngredientsPaste, sproutsMethodPaste, sproutsIngredients } from './fixtures/recipe-corpus/two-tab-layouts.js'
+import { sproutsPaste, sproutsIngredientsPaste, sproutsMethodPaste, sproutsMethodFirstPaste, sproutsIngredients } from './fixtures/recipe-corpus/two-tab-layouts.js'
+
+test('the owner clipboard fragments produce the same complete recipe in either paste order', () => {
+  const expected = parsePastedRecipe(sproutsPaste)
+  for (const [first, second] of [
+    [sproutsIngredientsPaste, sproutsMethodPaste],
+    [sproutsMethodPaste, sproutsIngredientsPaste],
+    ['Method\n' + sproutsMethodPaste, sproutsIngredientsPaste],
+  ]) {
+    const separator = getRecipePasteSeparator(first, second, first.length, first.length)
+    assert.equal(separator, '\n\n')
+    const result = parsePastedRecipe(first + separator + second)
+    assert.deepEqual(result, expected)
+    assert.deepEqual(parseIngredients(result.ingredients).map((item) => item.rawText), sproutsIngredients)
+  }
+  assert.deepEqual(parsePastedRecipe(sproutsMethodFirstPaste), expected)
+})
+
+test('method-first clipboard pastes retain supplied newlines and respect selected replacements', () => {
+  for (const [first, second] of [
+    [sproutsMethodPaste + '\n', sproutsIngredientsPaste],
+    [sproutsMethodPaste, '\n' + sproutsIngredientsPaste],
+  ]) {
+    assert.equal(getRecipePasteSeparator(first, second, first.length, first.length), '')
+    assert.deepEqual(parsePastedRecipe(first + second), parsePastedRecipe(sproutsPaste))
+  }
+  for (const [start, end] of [[0, sproutsMethodPaste.length], [10, 10], [10, sproutsMethodPaste.length]]) {
+    assert.equal(getRecipePasteSeparator(sproutsMethodPaste, sproutsIngredientsPaste, start, end), '')
+  }
+})
+
+test('a standalone method fragment retains its three steps and tip without inventing ingredients or metadata', () => {
+  const result = parsePastedRecipe(sproutsMethodPaste, { includeDiagnostics: true })
+  assert.equal(result.name, '')
+  assert.equal(result.ingredients, '')
+  assert.equal(result.servings, '')
+  assert.equal(result.prepTime, '')
+  assert.equal(result.cookTime, '')
+  assert.equal(result.method.split('\n\n').length, 3)
+  assert.equal(result.notes, parsePastedRecipe(sproutsPaste).notes)
+  assert.equal(result.diagnostics.fields.ingredients, 'missing')
+})
+
+test('a cooking-word recipe title is retained rather than reordered as a method', () => {
+  const title = 'Roast chicken with onions and potatoes for Sunday dinner'
+  const result = parsePastedRecipe(title + '\nServes 4\nIngredients\n1 chicken\n2 onions\nMethod\nRoast in the oven until cooked.')
+  assert.equal(result.name, title)
+  assert.equal(result.ingredients, '1 chicken\n2 onions')
+  assert.equal(result.method, 'Roast in the oven until cooked.')
+})
+
+test('reverse section detection does not cross a retail grid into another ingredient list', () => {
+  const result = parsePastedRecipe('Bean pot\nMethod\nHeat the beans in a pan.\nDesk lamp £45\nIngredients\n5 unrelated products')
+  assert.equal(result.ingredients, '')
+  assert.equal(result.method, 'Heat the beans in a pan.')
+  assert.doesNotMatch(result.method, /lamp|unrelated/)
+})
 
 test('the two-tab owner copy retains all 11 ingredient lines through saving and infers three method paragraphs', () => {
   const result = parsePastedRecipe(sproutsPaste, { includeDiagnostics: true })

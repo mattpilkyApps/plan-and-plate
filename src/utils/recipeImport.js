@@ -287,8 +287,72 @@ function appendIngredient(ingredients, line, servingSection = false) {
   ingredients.push(text)
 }
 
+function methodLeadText(lines, index) {
+  const { text } = lines[index]
+  const next = lines[index + 1]
+  return /\b(?:and|then|with|into)\s*$/i.test(text) && next && !next.blankBefore
+    ? text + ' ' + next.text : text
+}
+
+function ingredientHeadingHasContent(lines, index) {
+  for (const line of lines.slice(index + 1, index + 8)) {
+    if (isIngredientsHeading(line.text) || isMethodHeading(line.text)) return false
+    if (isNutritionHeading(line.text) || isNoiseLine(line.text)) continue
+    return !isStopHeading(line.text) && !isStrongMethodStart(line.text) &&
+      !isRejectedIngredientLine(line.text) && !isInstructionLikeIngredientLine(line.text) && line.text.length <= 200
+  }
+  return false
+}
+
+function findAppendedRecipeHeader(lines, methodStart, ingredientStart) {
+  const prefix = lines.slice(0, methodStart)
+  const title = findRecipeName(prefix, readMetadata(prefix).consumed)
+  for (let index = methodStart + 1; index < ingredientStart; index += 1) {
+    const line = lines[index]
+    const { type } = classifyRecipeBlock(line)
+    if (isNoiseLine(line.text) || isStopHeading(line.text) ||
+      ['INGREDIENT_HEADING', 'METHOD_HEADING', 'RECIPE_NOTE_HEADING', 'STEP_LABEL'].includes(type) ||
+      startsWithQuantity(line.text) || line.bullet || line.text.length > 140 || /[.!]$/.test(line.text)) continue
+    if (line.headingLevel || (title && line.text === title)) return index
+    if (isStrongMethodStart(line.text)) continue
+    // Full mobile-tab copies can repeat the title/metadata before Ingredients.
+    // Keep this look-ahead bounded; ordinary method and tip sentences stay put.
+    const header = readMetadata(lines.slice(index, Math.min(index + 16, ingredientStart)))
+    if (Object.values(header.values).some(Boolean)) return index
+  }
+  return ingredientStart
+}
+
+function sequenceRecipeSections(lines) {
+  const ingredientStart = lines.findIndex((line, index) =>
+    isIngredientsHeading(line.text) && ingredientHeadingHasContent(lines, index))
+  if (ingredientStart < 0) return lines
+  const methodStart = lines.findIndex((line, index) => index < ingredientStart && (
+    (isMethodHeading(line.text) && methodHeadingHasContent(lines, index)) ||
+    isStrongMethodStart(methodLeadText(lines, index), { requireOpening: true })
+  ))
+  if (methodStart < 0) return lines
+  // A related card/product grid must never become the ingredient section of
+  // this recipe. Reordering is restricted to supported primary recipe blocks.
+  if (lines.slice(methodStart, ingredientStart).some((line) => {
+    const { type } = classifyRecipeBlock(line)
+    return type === 'PRODUCT' || (type === 'FOOTER' && !isNutritionHeading(line.text))
+  })) return lines
+  const headerStart = findAppendedRecipeHeader(lines, methodStart, ingredientStart)
+  const methodLines = lines.slice(methodStart, headerStart)
+  return [
+    ...lines.slice(0, methodStart),
+    ...lines.slice(headerStart),
+    { text: 'Method', blankBefore: true, headingLevel: 0, bullet: false },
+    ...methodLines,
+  ]
+}
+
 export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
-  const pageLines = readRecipePageLines(text)
+  // Resolve primary section order before field extraction; the original paste
+  // remains untouched in the form/source data. Existing state/noise rules still
+  // govern extraction after this small block-segmentation stage.
+  const pageLines = sequenceRecipeSections(readRecipePageLines(text))
   // Explicit page titles anchor recipe content after a site's mega-menu.
   const titleStart = pageLines.findIndex((line) => line.headingLevel === 1 &&
     !isIngredientsHeading(line.text) && !isMethodHeading(line.text) && !isNoiseLine(line.text))
@@ -337,11 +401,13 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
     }
     if (isNoiseLine(text)) continue
 
-    const nextLine = lines[index + 1]
-    const methodLead = /\b(?:and|then|with|into)\s*$/i.test(text) && nextLine && !nextLine.blankBefore
-      ? text + ' ' + nextLine.text : text
-    if (ingredients.length && (section === 'INGREDIENTS' || (!hasIngredientsHeading && section === 'METADATA')) &&
-      !isIngredientContinuation(text, servingSection) && isStrongMethodStart(methodLead)) {
+    const methodLead = methodLeadText(lines, index)
+    const followsIngredients = ingredients.length &&
+      (section === 'INGREDIENTS' || (!hasIngredientsHeading && section === 'METADATA')) &&
+      !isIngredientContinuation(text, servingSection) && isStrongMethodStart(methodLead)
+    const methodOnly = !hasIngredientsHeading && section === 'METADATA' &&
+      isStrongMethodStart(methodLead, { requireOpening: true })
+    if (followsIngredients || methodOnly) {
       const extracted = extractRecipeMethod(lines.slice(index), ingredients)
       method = extracted.steps
       notes = extracted.notes

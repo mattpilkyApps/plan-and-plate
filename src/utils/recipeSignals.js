@@ -83,11 +83,14 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
   return { type, text, numbered: numbered.numbered, cooking, evidence }
 }
 
-// Used only after ingredients, or to separate two clipboard fragments. A short
-// prepared-food name such as "roast potatoes" is insufficient evidence.
-export function isStrongMethodStart(text) {
+// A short prepared-food name such as "roast potatoes" is insufficient evidence.
+// Before any ingredients, require an instruction opening as well as cooking
+// evidence so descriptive recipe introductions do not start a method.
+export function isStrongMethodStart(text, { requireOpening = false } = {}) {
   const block = classifyRecipeBlock({ text })
-  const sentence = /[.!?](?:\s|$)/.test(block.text) || block.text.split(/\s+/).length >= 8
+  if (requireOpening && !block.numbered && actions.exec(block.text)?.index !== 0 &&
+    !/^(?:in|using|with|first|next|then|meanwhile|once|when|to begin|start by)\b/i.test(block.text)) return false
+  const sentence = /[.!?](?:\s|$)/.test(block.text) || (!requireOpening && block.text.split(/\s+/).length >= 8)
   return block.type === 'METHOD_STEP' && block.cooking >= 3 && block.evidence.action &&
     (block.numbered || sentence) && (!/^\d/.test(text) || block.numbered)
 }

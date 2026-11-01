@@ -1,0 +1,86 @@
+{
+  "baselineCommit": "232fe818c54a40a42224c60725c55cec9cd27a14",
+  "total": 57,
+  "passed": 52,
+  "fields": {
+    "name": {
+      "passed": 56,
+      "total": 57
+    },
+    "servings": {
+      "passed": 29,
+      "total": 29
+    },
+    "prepTime": {
+      "passed": 15,
+      "total": 15
+    },
+    "cookTime": {
+      "passed": 15,
+      "total": 15
+    },
+    "totalTime": {
+      "passed": 6,
+      "total": 6
+    },
+    "notes": {
+      "passed": 4,
+      "total": 6
+    },
+    "ingredients": {
+      "passed": 56,
+      "total": 57
+    },
+    "method": {
+      "passed": 53,
+      "total": 57
+    },
+    "noise": {
+      "passed": 57,
+      "total": 57
+    }
+  },
+  "noiseLeakageCount": 0,
+  "falseIngredientCount": 0,
+  "falseMethodStepCount": 0,
+  "failures": [
+    {
+      "id": "owner-sprouts-method-first-phone",
+      "failedFields": [
+        "name",
+        "notes",
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "method-before-ingredients-explicit",
+      "failedFields": [
+        "ingredients"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "repeated-page-header-method-first",
+      "failedFields": [
+        "notes",
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "method-first-markdown-ingredients-header",
+      "failedFields": [
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "unlabelled-method-only-clipboard",
+      "failedFields": [
+        "method"
+      ],
+      "leaked": []
+    }
+  ]
+}
