@@ -21,10 +21,7 @@ import {
 } from '../utils/localStorage'
 import { getMealIcon } from '../utils/mealIcons'
 import { parsePastedRecipe } from '../utils/recipeImport'
-import {
-  formatIngredientForSingleUnit,
-  parseIngredients,
-} from '../utils/ingredientParser'
+import { parseIngredients } from '../utils/ingredientParser'
 import {
   findRecipeByKey,
   getRecipeId,
@@ -179,7 +176,13 @@ function FormSection({ children, description, title }) {
   )
 }
 
-function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
+function PasteRecipeSheet({
+  errorMessage,
+  onClose,
+  onImport,
+  onPasteTextChange,
+  pasteText,
+}) {
   return (
     <BottomSheet
       eyebrow="Paste Recipe"
@@ -189,9 +192,9 @@ function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
       zIndex="z-30"
     >
       <p className="mt-4 rounded-2xl bg-[#EAF3DE] px-4 py-3 text-sm font-semibold leading-relaxed text-[#5A8D2B]">
-        Paste a recipe here, even if it includes extra page text. Plan & Plate
-        will automatically clean the ingredients into one measurement format and
-        fill the form.
+        Copy the recipe text from a website or message. We’ll fill in the title,
+        ingredients, method, servings and times we can recognise. Review the
+        details before saving.
       </p>
 
       <textarea
@@ -199,10 +202,16 @@ function PasteRecipeSheet({ onClose, onImport, onPasteTextChange, pasteText }) {
         className="mt-4 h-[48vh] max-h-[24rem] w-full touch-pan-y resize-none overflow-y-auto overscroll-contain rounded-2xl border border-stone-100 bg-white px-4 py-4 text-base font-medium leading-relaxed text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
         onChange={onPasteTextChange}
         placeholder={
-          'Serves 4\nPrep time: 15 mins\nCook time: 30 mins\n\nIngredients\n500g chicken breast\n400ml coconut milk\n\nMethod\nCook everything gently until done.'
+          'Family vegetable curry\nServes 4\nPrep time: 15 mins\nCook time: 30 mins\n\nIngredients\n2 onions, finely chopped\n400ml coconut milk\n\nMethod\nAdd the cooking steps here.'
         }
         value={pasteText}
       />
+
+      {errorMessage && (
+        <p className="mt-3 text-sm font-semibold text-red-700" role="alert">
+          {errorMessage}
+        </p>
+      )}
 
       <div className="mt-4 grid grid-cols-2 gap-3">
         <Pressable onClick={onClose} variant="surface">
@@ -275,6 +284,7 @@ function AddRecipe() {
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [pasteText, setPasteText] = useState('')
+  const [pasteError, setPasteError] = useState('')
   const [showPasteSheet, setShowPasteSheet] = useState(false)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
 
@@ -337,34 +347,42 @@ function AddRecipe() {
 
   function closePasteSheet() {
     setShowPasteSheet(false)
-  }
-
-  function getFormattedImportedIngredients(ingredientsText) {
-    return parseIngredients(ingredientsText)
-      .map(formatIngredientForSingleUnit)
-      .filter(Boolean)
-      .join('\n')
+    setPasteError('')
   }
 
   function importPastedRecipe() {
     const parsedRecipe = parsePastedRecipe(pasteText)
-    const formattedIngredients = getFormattedImportedIngredients(
-      parsedRecipe.ingredients,
-    )
+    if (!parsedRecipe.ingredients && !parsedRecipe.method) {
+      setPasteError(
+        'We couldn’t find ingredients or cooking steps. Paste the recipe text, including its Ingredients and Method headings. A website link on its own won’t fill the form.',
+      )
+      return
+    }
 
     setRecipe((currentRecipe) => ({
       ...currentRecipe,
+      name: parsedRecipe.name || currentRecipe.name,
       servings: parsedRecipe.servings || currentRecipe.servings,
       prepTime: parsedRecipe.prepTime || currentRecipe.prepTime,
       cookTime: parsedRecipe.cookTime || currentRecipe.cookTime,
-      ingredients: formattedIngredients || currentRecipe.ingredients,
+      ingredients: parsedRecipe.ingredients || currentRecipe.ingredients,
       method: parsedRecipe.method || currentRecipe.method,
     }))
     closePasteSheet()
     setPasteText('')
     setErrorMessage('')
+    const needsReview = [
+      ['name', 'recipe name'],
+      ['servings', 'servings'],
+      ['ingredients', 'ingredients'],
+      ['method', 'method'],
+    ]
+      .filter(([field]) => !parsedRecipe[field])
+      .map(([, label]) => label)
     setSuccessMessage(
-      'Recipe imported and cleaned. Please double-check before saving.',
+      needsReview.length
+        ? 'Recipe text imported. Check or add: ' + needsReview.join(', ') + '.'
+        : 'Recipe details filled. Check the ingredients and method before saving.',
     )
   }
 
@@ -620,7 +638,7 @@ function AddRecipe() {
           title="Ingredients"
         >
           <TextArea
-            helperText="Pasted recipes are cleaned automatically into one measurement format."
+            helperText="Use one ingredient per line, with its quantity, unit and any preparation notes."
             label="Ingredients"
             name="ingredients"
             onChange={updateRecipe}
@@ -673,9 +691,13 @@ function AddRecipe() {
 
       {showPasteSheet && (
         <PasteRecipeSheet
+          errorMessage={pasteError}
           onClose={closePasteSheet}
           onImport={importPastedRecipe}
-          onPasteTextChange={(event) => setPasteText(event.target.value)}
+          onPasteTextChange={(event) => {
+            setPasteText(event.target.value)
+            setPasteError('')
+          }}
           pasteText={pasteText}
         />
       )}

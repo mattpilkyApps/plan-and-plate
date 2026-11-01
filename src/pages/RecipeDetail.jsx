@@ -262,14 +262,17 @@ export default function RecipeDetail() {
               <ul className="ingredient-list">
                 {ingredients.map((ingredient, index) => {
                   const quantity = Number(ingredient.quantity)
-                  const text = quantity
-                    ? formatIngredientForSingleUnit({
-                        ...ingredient,
-                        quantity: String(
-                          Math.round(quantity * scale * 100) / 100,
-                        ),
-                      })
-                    : ingredient.rawText || ingredient.name
+                  const text =
+                    scale === 1 && ingredient.rawText
+                      ? ingredient.rawText
+                      : quantity
+                        ? formatIngredientForSingleUnit({
+                            ...ingredient,
+                            quantity: String(
+                              Math.round(quantity * scale * 100) / 100,
+                            ),
+                          })
+                        : ingredient.rawText || ingredient.name
                   return (
                     <li key={index}>
                       <label

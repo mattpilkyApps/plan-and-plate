@@ -357,6 +357,7 @@ function normalizeIngredientName(name) {
 function normalizeUnit(unit) {
   const cleanUnit = unit.toLowerCase().trim()
 
+  if (cleanUnit === 'pinches') return 'pinch'
   return cleanUnit.replace(/s$/, '')
 }
 
@@ -367,9 +368,11 @@ function getDisplayUnit(unit, quantity) {
     return cleanUnit
   }
 
-  if (['bulb', 'can', 'clove', 'cup', 'pack', 'tin'].includes(cleanUnit)) {
+  if (['bulb', 'can', 'clove', 'cup', 'pack', 'tin', 'handful', 'stalk', 'sprig', 'piece'].includes(cleanUnit)) {
     return `${cleanUnit}s`
   }
+
+  if (cleanUnit === 'pinch') return 'pinches'
 
   return cleanUnit
 }
