@@ -1,444 +1,36 @@
-import {
-  isInstructionLikeIngredientLine,
-  isRejectedIngredientLine,
-} from './ingredientParser.js'
-import { extractRecipeMethod } from './recipeMethod.js'
+import { readRecipePageLines, isIngredientsHeading, isMethodHeading, isNoiseLine, readMetadata, findRecipeName } from './recipeText.js'
 import { classifyRecipeBlock, isStrongMethodStart } from './recipeSignals.js'
-import { isPreparationContinuation } from './ingredientPreparation.js'
-
-function removeRecipePageLinks(text) {
-  return text
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, '')
-    .replace(/\[([^\]]*)\]\(([^)]*)\)/g, (_, label, address) => {
-      // Keep ingredient names, but discard author links and whole linked adverts.
-      if (
-        /\/author\//i.test(address) ||
-        /\b(?:book now|tickets on sale|try our app|subscribe now)\b/i.test(label)
-      ) {
-        return ''
-      }
-      return label
-    })
-}
-
-function readRecipePageLines(text) {
-  let blankBefore = true
-  return removeRecipePageLinks(text)
-    .replace(/\r\n?/g, '\n')
-    .split('\n')
-    .flatMap((rawLine) => {
-      const unlisted = rawLine
-        .trim()
-        .replace(/^[-*\u2022]\s+/, '')
-        .replace(/^(?:\[[ x]\]|[\u25a1\u25a2\u2610])\s*/i, '')
-      const headingLevel = unlisted.match(/^(#{1,6})\s+/)?.[1].length || 0
-      const cleanLine = unlisted
-        .replace(/^#{1,6}\s+/, '')
-        .replace(/\\([^\w\s])/g, '$1')
-        .replace(/[*_\x60]/g, '')
-        .replace(/&nbsp;|&#160;/gi, ' ')
-        .replace(/&amp;/gi, '&')
-        .replace(/[\u200b-\u200d\ufeff]/g, '')
-        .replace(/\s+/g, ' ')
-        .trim()
-
-      if (!/[\p{L}\p{N}]/u.test(cleanLine)) {
-        blankBefore = true
-        return []
-      }
-      const line = {
-        text: cleanLine,
-        bullet: /^\s*[-*\u2022]\s+/.test(rawLine),
-        headingLevel,
-        blankBefore,
-      }
-      blankBefore = false
-      return [line]
-    })
-}
-
-function getHeading(text) {
-  return text.replace(/:$/, '').trim().toLowerCase()
-}
-
-function isIngredientsHeading(text) {
-  return /^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(getHeading(text))
-}
-
-function isMethodHeading(text) {
-  return /^(?:method|instructions|directions|preparation|steps|cooking instructions)$/.test(
-    getHeading(text),
-  )
-}
-
-function isNutritionHeading(text) {
-  return /^(?:nutrition|nutritional information)(?:\s*\([^)]*\))?$/.test(
-    getHeading(text),
-  )
-}
-
-function methodHeadingHasContent(lines, index) {
-  for (const line of lines.slice(index + 1, index + 7)) {
-    // Tab bars commonly list Method before Nutrition and the actual Ingredients.
-    // A real heading needs body text before another primary section begins.
-    if (isNutritionHeading(line.text) || isIngredientsHeading(line.text)) return false
-    if (isMethodHeading(line.text) || isNoiseLine(line.text)) continue
-    return true
-  }
-  return false
-}
-
-function isUnitControl(text) {
-  const controls = getHeading(text)
-  if (/^(?:units?|scale)$/.test(controls)) return true
-  const tokens = controls.replace(/^(?:units?|scale)\s*:?\s*/, '')
-  const remainder = tokens
-    .replace(/(?:us customary|us cups|metric|imperial|custom|cups|us|uk|\d+(?:\.\d+)?(?:\/\d+)?x)/g, '')
-    .replace(/[\s:/|\u00b7\u2013-]+/g, '')
-  return Boolean(tokens) && !remainder
-}
-
-function isNoiseLine(text) {
-  const heading = getHeading(text)
-  return (
-    isUnitControl(text) ||
-    [
-      /^(?:ad|advertisement|sponsored|rate|easy|medium|hard)$/,
-      /^(?:home|recipes|menu|search|back to top|sign in)$/,
-      /^(?:a star rating|ratings?\b|rated\b|\d+(?:\.\d+)? from \d+)/,
-      /^\d+(?:\.\d+)?\s*(?:ratings?|comments?|reviews?|votes?|out of \d+ stars?)\b/,
-      /^(?:skip to|jump to recipe|print(?: recipe)?$|pin recipe|save recipe)/,
-      /^(?:shopping list|share|subscribe|newsletter|sign up|log in)/,
-      /^(?:(?:add to|copy|print|save) (?:shopping list|ingredients)|cook mode)\b/,
-      /^(?:privacy policy|terms|all rights reserved|by\s|author\b)/,
-      /^(?:course|cuisine|keyword|calories)\b/,
-      /^(?:try (?:our|the) app|keep the screen awake|showing items)/,
-      /^(?:book now|tickets on sale|buy now|shop now|inspired by)$/,
-      /^(?:dairy-free|gluten-free|vegan|vegetarian|freezable(?:\s+.*)?)$/,
-      /^https?:\/\//,
-    ].some((pattern) => pattern.test(heading))
-  )
-}
-
-function isStopHeading(text) {
-  return (
-    text.length < 80 &&
-    /^(?:nutrition|nutritional information|notes|tips|recipe tips|cook['\u2019]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|faq|frequently asked questions|comments|reviews|video|more recipes|you may also like|inspired by)\b/.test(
-      getHeading(text),
-    )
-  )
-}
-
-function isRecipeFooter(text) {
-  return /^(?:comments|reviews|related recipes|recommended recipes|more recipes|you (?:may|might) also like|leave a (?:review|comment))\b/i.test(text)
-}
-
-function startsWithQuantity(text) {
-  return /^(?:\d|[\u00bc\u00bd\u00be\u2153\u2154\u215b\u215c\u215d\u215e])|^(?:one|two|three|four|five|six|seven|eight|nine|ten)\s+/i.test(
-    text,
-  )
-}
-
-function isTimeValue(text) {
-  return /(?:\d|[\u00bc\u00bd\u00be])\s*(?:hours?|hrs?|h|minutes?|mins?|m)\b/i.test(
-    text,
-  )
-}
-
-function readMetadata(lines) {
-  const values = { servings: '', prepTime: '', cookTime: '' }
-  const consumed = new Set()
-  let servingsPriority = 0
-  for (let index = 0; index < lines.length; index += 1) {
-    const text = lines[index].text
-    if (isIngredientsHeading(text) || isMethodHeading(text)) break
-    const labels = [...text.matchAll(
-      /\b(serves|servings|yield|makes|prep(?:are|aration)?(?:\s*time)?|preparation time|cook(?:ing)?(?:\s*time)?|total(?:\s*time)?|additional time)(?=\s|:|\d|$)\s*:?\s*/gi,
-    )]
-    if (labels[0]?.index !== 0) continue
-    let consumedNextLine = false
-    for (const [labelIndex, match] of labels.entries()) {
-      const field = /^(?:serves|servings|yield|makes)$/i.test(match[1])
-        ? 'servings'
-        : /^total/i.test(match[1])
-          ? 'totalTime'
-        : /^additional/i.test(match[1])
-          ? 'additionalTime'
-        : /^prep/i.test(match[1])
-          ? 'prepTime'
-          : 'cookTime'
-      const inlineValue = text
-        .slice(match.index + match[0].length, labels[labelIndex + 1]?.index)
-        .replace(/[\s|\u00b7]+$/, '')
-        .trim()
-      const candidate = inlineValue || lines[index + 1]?.text || ''
-      let value = ''
-      if (field === 'servings') {
-        // A serving range needs a person's choice, rather than a guessed number.
-        if (!/^\d+\s*(?:[-\u2013\u2014/]|to|or)\s*\d/i.test(candidate)) {
-          value = candidate.match(/^(\d+)\b/)?.[1] || ''
-        }
-      } else if (isTimeValue(candidate)) {
-        value = candidate
-      }
-
-      consumed.add(index)
-      if (value) {
-        const priority = /^(?:serves|servings)$/i.test(match[1]) ? 2 : 1
-        if (field === 'servings') {
-          if (priority > servingsPriority) values[field] = value
-          servingsPriority = Math.max(servingsPriority, priority)
-        } else if (field !== 'additionalTime' && !values[field]) values[field] = value
-        if (!inlineValue) {
-          consumed.add(index + 1)
-          consumedNextLine = true
-        }
-      }
-    }
-    if (consumedNextLine) index += 1
-  }
-  return { values, consumed }
-}
-
-function findRecipeName(lines, metadataLines) {
-  const firstSection = lines.findIndex(
-    ({ text }) => isIngredientsHeading(text) || isMethodHeading(text),
-  )
-  const candidates = lines
-    .slice(0, firstSection < 0 ? lines.length : firstSection)
-    .filter(
-      (line, index) =>
-        !metadataLines.has(index) &&
-        !isNoiseLine(line.text) &&
-        !isStopHeading(line.text) &&
-        !line.bullet &&
-        line.text.length >= 3 &&
-        line.text.length <= 140 &&
-        !/[.!]$/.test(line.text),
-    )
-  const explicitTitle = candidates.find(
-    ({ headingLevel }) => headingLevel === 1 || headingLevel === 2,
-  )
-  return explicitTitle?.text || (firstSection >= 0 ? candidates[0]?.text : '') || ''
-}
-
-function isNutritionTabBeforeIngredients(lines, index, ingredientCount) {
-  if (ingredientCount) return false
-  const next = lines[index + 1]?.text || ''
-  // Some sites put the Ingredients / Nutrition tabs above the ingredient list.
-  // A real nutrition section after ingredients must still stop collection.
-  return (
-    isUnitControl(next) ||
-    (startsWithQuantity(next) &&
-      !/^\d+(?:\.\d+)?\s*(?:kcal|kj|%)/i.test(next))
-  )
-}
-
-function isIngredientContinuation(text, servingSection = false) {
-  if (/^optional\s*:\s*(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/i.test(text)) return false
-  return (
-    /^(?:or\b|to serve\b|for serving\b|to taste\b|optional\b|plus\b|such as\b|and\b.*\bto serve\b)/i.test(text) ||
-    isPreparationContinuation(text) ||
-    (servingSection && /^and\b/i.test(text)) ||
-    /^(?:leaves|juice only|zest only)$/i.test(text)
-  )
-}
-
-function isIngredientSubsection(line, nextLine) {
-  const text = getHeading(line.text)
-  const nextStartsIngredient = nextLine && !isNoiseLine(nextLine.text) &&
-    !isMethodHeading(nextLine.text) && !isStopHeading(nextLine.text) &&
-    !isIngredientContinuation(nextLine.text)
-  return (
-    /^for\s+(?:the\s+)?/i.test(text) ||
-    (line.headingLevel > 0 && !startsWithQuantity(text) && !isIngredientContinuation(text)) ||
-    (/^(?:to serve|for serving|optional(?: toppings)?)$/i.test(text) &&
-      (line.headingLevel > 0 || line.text.endsWith(':') || nextStartsIngredient))
-  )
-}
-
-function isMeasureOnly(text) {
-  return /^(?:\d+(?:[./]\d+)?(?:\s+\d+\/\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])\s*(?:g|kg|ml|l|tsp|tbsp|cups?|tablespoons?|teaspoons?|oz|lbs?|large|small)?$/i.test(text)
-}
-
-function appendIngredient(ingredients, line, servingSection = false) {
-  const text = line.text
-  if (ingredients.length && isMeasureOnly(ingredients.at(-1)) && !startsWithQuantity(text)) {
-    ingredients[ingredients.length - 1] += ' ' + text
-    return
-  }
-  if (
-    ingredients.length &&
-    !line.bullet &&
-    isIngredientContinuation(text, servingSection)
-  ) {
-    const joiner = /^(?:or\b|and\b|leaves$)/i.test(text) ? ' ' : ', '
-    ingredients[ingredients.length - 1] += joiner + text
-    return
-  }
-  if (
-    /^for\s+(?:the\s+)?/i.test(text) ||
-    isRejectedIngredientLine(text) ||
-    (isInstructionLikeIngredientLine(text) && !startsWithQuantity(text)) ||
-    text.length > 200
-  ) {
-    return
-  }
-  ingredients.push(text)
-}
-
-function methodLeadText(lines, index) {
-  const { text } = lines[index]
-  const next = lines[index + 1]
-  return /\b(?:and|then|with|into)\s*$/i.test(text) && next && !next.blankBefore
-    ? text + ' ' + next.text : text
-}
-
-function ingredientHeadingHasContent(lines, index) {
-  for (const line of lines.slice(index + 1, index + 8)) {
-    if (isIngredientsHeading(line.text) || isMethodHeading(line.text)) return false
-    if (isNutritionHeading(line.text) || isNoiseLine(line.text)) continue
-    return !isStopHeading(line.text) && !isStrongMethodStart(line.text) &&
-      !isRejectedIngredientLine(line.text) && !isInstructionLikeIngredientLine(line.text) && line.text.length <= 200
-  }
-  return false
-}
-
-function findAppendedRecipeHeader(lines, methodStart, ingredientStart) {
-  const prefix = lines.slice(0, methodStart)
-  const title = findRecipeName(prefix, readMetadata(prefix).consumed)
-  for (let index = methodStart + 1; index < ingredientStart; index += 1) {
-    const line = lines[index]
-    const { type } = classifyRecipeBlock(line)
-    if (isNoiseLine(line.text) || isStopHeading(line.text) ||
-      ['INGREDIENT_HEADING', 'METHOD_HEADING', 'RECIPE_NOTE_HEADING', 'STEP_LABEL'].includes(type) ||
-      startsWithQuantity(line.text) || line.bullet || line.text.length > 140 || /[.!]$/.test(line.text)) continue
-    if (line.headingLevel || (title && line.text === title)) return index
-    if (isStrongMethodStart(line.text)) continue
-    // Full mobile-tab copies can repeat the title/metadata before Ingredients.
-    // Keep this look-ahead bounded; ordinary method and tip sentences stay put.
-    const header = readMetadata(lines.slice(index, Math.min(index + 16, ingredientStart)))
-    if (Object.values(header.values).some(Boolean)) return index
-  }
-  return ingredientStart
-}
-
-function sequenceRecipeSections(lines) {
-  const ingredientStart = lines.findIndex((line, index) =>
-    isIngredientsHeading(line.text) && ingredientHeadingHasContent(lines, index))
-  if (ingredientStart < 0) return lines
-  const methodStart = lines.findIndex((line, index) => index < ingredientStart && (
-    (isMethodHeading(line.text) && methodHeadingHasContent(lines, index)) ||
-    isStrongMethodStart(methodLeadText(lines, index), { requireOpening: true })
-  ))
-  if (methodStart < 0) return lines
-  // A related card/product grid must never become the ingredient section of
-  // this recipe. Reordering is restricted to supported primary recipe blocks.
-  if (lines.slice(methodStart, ingredientStart).some((line) => {
-    const { type } = classifyRecipeBlock(line)
-    return type === 'PRODUCT' || (type === 'FOOTER' && !isNutritionHeading(line.text))
-  })) return lines
-  const headerStart = findAppendedRecipeHeader(lines, methodStart, ingredientStart)
-  const methodLines = lines.slice(methodStart, headerStart)
-  return [
-    ...lines.slice(0, methodStart),
-    ...lines.slice(headerStart),
-    { text: 'Method', blankBefore: true, headingLevel: 0, bullet: false },
-    ...methodLines,
-  ]
-}
+import { indexRecipeSections, recipeHeaderRanges } from './recipeSections.js'
+import { extractRecipeIngredients } from './recipeIngredients.js'
+import { extractRecipeMethod } from './recipeMethod.js'
 
 export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
-  // Resolve primary section order before field extraction; the original paste
-  // remains untouched in the form/source data. Existing state/noise rules still
-  // govern extraction after this small block-segmentation stage.
-  const pageLines = sequenceRecipeSections(readRecipePageLines(text))
-  // Explicit page titles anchor recipe content after a site's mega-menu.
+  const pageLines = readRecipePageLines(text)
   const titleStart = pageLines.findIndex((line) => line.headingLevel === 1 &&
     !isIngredientsHeading(line.text) && !isMethodHeading(line.text) && !isNoiseLine(line.text))
-  const lines = titleStart >= 0 ? pageLines.slice(titleStart) : pageLines
-  const { values, consumed } = readMetadata(lines)
-  const ingredients = []
-  const ingredientSections = []
-  let method = []
-  let notes = []
-  let servingSection = false
-  let methodDiagnostics = { state: 'BEFORE_RECIPE', stoppedBy: 'missing-method', discarded: [], reviewNeeded: true }
-  const hasIngredientsHeading = lines.some(({ text }) =>
-    isIngredientsHeading(text),
-  )
-  let section = 'METADATA'
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const line = lines[index]
-    const text = line.text
-    if (consumed.has(index)) continue
-    if ((ingredients.length || method.length) && isRecipeFooter(text)) break
-
-    if (isIngredientsHeading(text)) {
-      section = 'INGREDIENTS'
-      continue
-    }
-    if (isMethodHeading(text)) {
-      if (!methodHeadingHasContent(lines, index)) continue
-      const extracted = extractRecipeMethod(lines.slice(index + 1), ingredients)
-      method = extracted.steps
-      notes = extracted.notes
-      methodDiagnostics = { ...extracted.diagnostics, start: 'heading' }
-      break
-    }
-    if (
-      section === 'INGREDIENTS' &&
-      isNutritionHeading(text) &&
-      isNutritionTabBeforeIngredients(lines, index, ingredients.length)
-    ) {
-      continue
-    }
-    if (isStopHeading(text)) {
-      if (method.length) break
-      section = 'BEFORE_RECIPE'
-      continue
-    }
-    if (isNoiseLine(text)) continue
-
-    const methodLead = methodLeadText(lines, index)
-    const followsIngredients = ingredients.length &&
-      (section === 'INGREDIENTS' || (!hasIngredientsHeading && section === 'METADATA')) &&
-      !isIngredientContinuation(text, servingSection) && isStrongMethodStart(methodLead)
-    const methodOnly = !hasIngredientsHeading && section === 'METADATA' &&
-      isStrongMethodStart(methodLead, { requireOpening: true })
-    if (followsIngredients || methodOnly) {
-      const extracted = extractRecipeMethod(lines.slice(index), ingredients)
-      method = extracted.steps
-      notes = extracted.notes
-      methodDiagnostics = { ...extracted.diagnostics, start: 'inferred' }
-      break
-    }
-
-    if (section === 'INGREDIENTS') {
-      if (isIngredientSubsection(line, lines[index + 1])) {
-        ingredientSections.push({ name: text.replace(/:$/, ''), startIndex: ingredients.length })
-        servingSection = /^(?:to serve|for serving)$/i.test(getHeading(text))
-        continue
-      }
-      const classification = classifyRecipeBlock(line)
-      if (classification.type === 'FOOTER') {
-        section = 'BEFORE_RECIPE'
-        continue
-      }
-      if (['ADVERTISEMENT', 'PRODUCT', 'NAVIGATION', 'PROMOTION'].includes(classification.type) && !startsWithQuantity(text)) continue
-      appendIngredient(ingredients, line, servingSection)
-    } else if (section === 'METADATA' && !hasIngredientsHeading && startsWithQuantity(text)) {
-      appendIngredient(ingredients, line)
-    }
+  const hasEarlierMethod = titleStart > 0 && pageLines.slice(0, titleStart).some((line) =>
+    isMethodHeading(line.text) || isStrongMethodStart(line.text, { requireOpening: true }))
+  const lines = titleStart >= 0 && !hasEarlierMethod ? pageLines.slice(titleStart) : pageLines
+  const sections = indexRecipeSections(lines)
+  const extractedIngredients = sections.ingredientStart >= 0
+    ? extractRecipeIngredients(lines.slice(sections.ingredientStart, sections.ingredientEnd))
+    : { ingredients: [], sections: [] }
+  const extractedMethod = sections.methodStart >= 0
+    ? extractRecipeMethod(lines.slice(sections.methodStart, sections.methodEnd), extractedIngredients.ingredients)
+    : { steps: [], notes: [], diagnostics: { state: 'BEFORE_RECIPE', stoppedBy: 'missing-method', discarded: [], reviewNeeded: true } }
+  const headers = recipeHeaderRanges(lines, sections).map((header) => {
+    const metadata = readMetadata(header)
+    return { name: findRecipeName(header, metadata.consumed), ...metadata.values }
+  })
+  const values = { name: '', servings: '', prepTime: '', cookTime: '' }
+  for (const header of headers) {
+    for (const [field, value] of Object.entries(header)) if (value && !values[field]) values[field] = value
   }
-
   const result = {
-    name: findRecipeName(lines, consumed),
     ...values,
-    ingredients: ingredients.join('\n'),
-    method: method.join('\n\n'),
-    ...(notes.length ? { notes: notes.join('\n\n') } : {}),
+    ingredients: extractedIngredients.ingredients.join('\n'),
+    method: extractedMethod.steps.join('\n\n'),
+    ...(extractedMethod.notes.length ? { notes: extractedMethod.notes.join('\n\n') } : {}),
   }
   if (includeDiagnostics) {
     result.diagnostics = {
@@ -448,11 +40,14 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
         prepTime: result.prepTime ? 'explicit' : 'missing',
         cookTime: result.cookTime ? 'explicit' : 'missing',
         totalTime: result.totalTime ? 'explicit' : 'missing',
-        ingredients: ingredients.length ? (hasIngredientsHeading ? 'section' : 'inferred') : 'missing',
-        method: method.length ? (methodDiagnostics.reviewNeeded ? 'review' : methodDiagnostics.start === 'inferred' ? 'inferred' : 'supported') : 'missing',
+        ingredients: result.ingredients ? (sections.ingredientHeading >= 0 ? 'section' : 'inferred') : 'missing',
+        method: result.method ? (extractedMethod.diagnostics.reviewNeeded ? 'review' : sections.methodEvidence === 'inferred' ? 'inferred' : 'supported') : 'missing',
       },
-      method: methodDiagnostics,
-      ingredientSections,
+      method: { ...extractedMethod.diagnostics, ...(sections.methodStart >= 0 ? { start: sections.methodEvidence } : {}) },
+      ingredientSections: extractedIngredients.sections,
+      ranges: sections,
+      // Ranges refer to cleaned source lines; no source line is physically reordered.
+      pageBoundary: sections.end < lines.length ? classifyRecipeBlock(lines[sections.end]).type : 'end-of-input',
     }
   }
   return result

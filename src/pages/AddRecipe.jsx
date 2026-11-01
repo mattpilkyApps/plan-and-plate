@@ -6,7 +6,7 @@ import {
   ImagePlus,
   Save,
 } from 'lucide-react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import EmptyState from '../components/EmptyState'
 import BottomSheet from '../components/ui/BottomSheet'
@@ -20,8 +20,8 @@ import {
   updateSavedRecipe,
 } from '../utils/localStorage'
 import { getMealIcon } from '../utils/mealIcons'
-import { parsePastedRecipe } from '../utils/recipeImport'
-import { getRecipePasteSeparator } from '../utils/recipePaste'
+import { assembleRecipeFragments, fillRecipeFromImport } from '../utils/recipeImportSession'
+import { createRecipePasteInput, updateRecipePasteInput, getRecipePasteParts } from '../utils/recipePaste'
 import { parseIngredients } from '../utils/ingredientParser'
 import {
   findRecipeByKey,
@@ -45,6 +45,7 @@ const initialRecipe = {
   method: '',
   notes: '',
   sourcePaste: '',
+  sourcePasteSpans: [],
 }
 
 function recipeHasDraftContent(recipe) {
@@ -105,6 +106,7 @@ function getRecipeFormValues(recipe) {
     method: recipe.method || recipe.instructions || '',
     notes: recipe.notes || '',
     sourcePaste: recipe.sourcePaste || '',
+    sourcePasteSpans: recipe.sourcePasteSpans || [],
   }
 }
 
@@ -186,6 +188,7 @@ function PasteRecipeSheet({
   onPasteTextChange,
   onPaste,
   pasteText,
+  parsedRecipe,
 }) {
   return (
     <BottomSheet
@@ -213,6 +216,16 @@ function PasteRecipeSheet({
         }
         value={pasteText}
       />
+
+      {pasteText.trim() && (
+        <p className="mt-3 text-sm font-semibold text-[#52634E]" role="status">
+          {parsedRecipe.ingredients.split('\n').filter(Boolean).length} ingredients ·{' '}
+          {parsedRecipe.method.split('\n\n').filter(Boolean).length} steps found.
+          {!parsedRecipe.ingredients && ' Ingredients still needed.'}
+          {!parsedRecipe.method && ' Method still needed.'}
+          {parsedRecipe.diagnostics.conflicts.length > 0 && ' Some copied sections disagree; check before saving.'}
+        </p>
+      )}
 
       {errorMessage && (
         <p className="mt-3 text-sm font-semibold text-red-700" role="alert">
@@ -290,7 +303,9 @@ function AddRecipe() {
   )
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  const [pasteText, setPasteText] = useState(() => recipe.sourcePaste || '')
+  const [pasteInput, setPasteInput] = useState(() => createRecipePasteInput(recipe.sourcePaste, recipe.sourcePasteSpans))
+  const pendingPaste = useRef(null)
+  const parsedRecipe = useMemo(() => assembleRecipeFragments(getRecipePasteParts(pasteInput), { includeDiagnostics: true }), [pasteInput])
   const [pasteError, setPasteError] = useState('')
   const [showPasteSheet, setShowPasteSheet] = useState(false)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
@@ -358,7 +373,6 @@ function AddRecipe() {
   }
 
   function importPastedRecipe() {
-    const parsedRecipe = parsePastedRecipe(pasteText, { includeDiagnostics: true })
     if (!parsedRecipe.ingredients && !parsedRecipe.method) {
       setPasteError(
         'We couldn’t find ingredients or cooking steps. Paste the recipe text, including its Ingredients and Method headings. A website link on its own won’t fill the form.',
@@ -366,22 +380,9 @@ function AddRecipe() {
       return
     }
 
-    const methodNeedsReview = parsedRecipe.diagnostics.method.reviewNeeded
-    setRecipe((currentRecipe) => ({
-      ...currentRecipe,
-      name: parsedRecipe.name || currentRecipe.name,
-      servings: parsedRecipe.servings || currentRecipe.servings,
-      prepTime: parsedRecipe.prepTime || currentRecipe.prepTime,
-      cookTime: parsedRecipe.cookTime || currentRecipe.cookTime,
-      ingredients: parsedRecipe.ingredients || currentRecipe.ingredients,
-      method: parsedRecipe.method || currentRecipe.method,
-      notes: parsedRecipe.notes
-        ? [...new Set([currentRecipe.notes, parsedRecipe.notes].filter(Boolean))].join('\n\n')
-        : currentRecipe.notes,
-      sourcePaste: methodNeedsReview ? pasteText : '',
-    }))
+    const methodNeedsReview = parsedRecipe.diagnostics.reviewNeeded
+    setRecipe((currentRecipe) => fillRecipeFromImport(currentRecipe, parsedRecipe, pasteInput))
     closePasteSheet()
-    if (!methodNeedsReview) setPasteText('')
     setErrorMessage('')
     const needsReview = [
       ['name', 'recipe name'],
@@ -396,7 +397,7 @@ function AddRecipe() {
         : 'Recipe details filled. Check the ingredients and method before saving.'
     setSuccessMessage(
       methodNeedsReview
-        ? reviewMessage + ' Some cooking text may need checking. Your original text is kept in Paste Recipe.'
+        ? reviewMessage + ' Some copied text may need checking. Your original text is kept in Paste Recipe.'
         : reviewMessage,
     )
   }
@@ -429,7 +430,7 @@ function AddRecipe() {
       parsedIngredients: parseIngredients(recipe.ingredients),
       method: recipe.method,
       notes: recipe.notes,
-      ...(recipe.sourcePaste ? { sourcePaste: recipe.sourcePaste } : {}),
+      ...(recipe.sourcePaste ? { sourcePaste: recipe.sourcePaste, sourcePasteSpans: recipe.sourcePasteSpans } : {}),
       badges: recipeToEdit?.badges || ['Saved Recipe'],
       icon: getMealIcon({ mealType: recipe.category, name: recipe.name }),
       image: recipe.image,
@@ -712,18 +713,18 @@ function AddRecipe() {
           onImport={importPastedRecipe}
           onPaste={(event) => {
             const input = event.currentTarget
-            const incoming = event.clipboardData.getData('text/plain')
-            const separator = getRecipePasteSeparator(input.value, incoming, input.selectionStart, input.selectionEnd)
-            if (!separator) return
-            event.preventDefault()
-            setPasteText(input.value + separator + incoming)
-            setPasteError('')
+            pendingPaste.current = { start: input.selectionStart, end: input.selectionEnd,
+              text: event.clipboardData.getData('text/plain').replace(/\r\n?/g, '\n') }
           }}
           onPasteTextChange={(event) => {
-            setPasteText(event.target.value)
+            const next = updateRecipePasteInput(pasteInput, event.target.value, pendingPaste.current)
+            pendingPaste.current = null
+            setPasteInput(next)
+            setRecipe((current) => ({ ...current, sourcePaste: next.text, sourcePasteSpans: next.spans }))
             setPasteError('')
           }}
-          pasteText={pasteText}
+          pasteText={pasteInput.text}
+          parsedRecipe={parsedRecipe}
         />
       )}
     </section>

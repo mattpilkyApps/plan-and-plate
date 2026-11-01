@@ -9,7 +9,7 @@ export async function loadRecipeParserAtRef(ref) {
   const directory = mkdtempSync(join(tmpdir(), 'recipe-parser-baseline-'))
   try {
     writeFileSync(join(directory, 'package.json'), '{"type":"module"}')
-    for (const file of ['recipeImport.js', 'ingredientParser.js', 'recipeMethod.js', 'recipeSignals.js', 'ingredientPreparation.js', 'recipeText.js', 'recipeSections.js']) {
+    for (const file of ['recipeImport.js', 'ingredientParser.js', 'recipeMethod.js', 'recipeSignals.js', 'ingredientPreparation.js', 'recipeText.js', 'recipeSections.js', 'recipeIngredients.js']) {
       const source = spawnSync('git', ['show', commit + ':src/utils/' + file], { stdio: 'pipe' })
       if (source.status === 0) writeFileSync(join(directory, file), source.stdout)
       else if (['recipeImport.js', 'ingredientParser.js'].includes(file)) throw new Error('Missing baseline module: ' + file)

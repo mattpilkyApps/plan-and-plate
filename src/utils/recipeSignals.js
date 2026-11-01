@@ -12,6 +12,13 @@ export function sectionHeading(text) {
   return text.replace(/:$/, '').trim().toLowerCase()
 }
 
+export function primaryRecipeHeading(text) {
+  const heading = sectionHeading(text)
+  if (/^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(heading)) return 'INGREDIENT_HEADING'
+  if (/^(?:method|instructions|directions|preparation|steps|cooking instructions)$/.test(heading)) return 'METHOD_HEADING'
+  return null
+}
+
 export function isMethodStepLabel(text) {
   return /^(?:(?:step|stage)\s*\d+(?:\s*(?:of|\/)\s*\d+)?|\d+[.)])[.:]?$/i.test(text)
 }
@@ -43,8 +50,8 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
   const text = numbered.text
   const heading = sectionHeading(text)
   if (isRecipeEndHeading(text)) return { type: 'FOOTER', text, numbered: numbered.numbered, cooking: 0 }
-  if (/^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(heading)) return { type: 'INGREDIENT_HEADING', text, cooking: 0 }
-  if (/^(?:method|instructions|directions|preparation|steps|cooking instructions)$/.test(heading)) return { type: 'METHOD_HEADING', text, cooking: 0 }
+  const primaryHeading = primaryRecipeHeading(text)
+  if (primaryHeading) return { type: primaryHeading, text, cooking: 0 }
   if (isMethodStepLabel(line.text)) return { type: 'STEP_LABEL', text, cooking: 0 }
   if (/^(?:recipe|cook['’]?s) tips?$/.test(heading)) return { type: 'RECIPE_NOTE_HEADING', text, cooking: 0 }
   if (/^(?:notes|tips|tips (?:from|by) .+|cook['’]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|video)$/.test(heading)) return { type: 'AUXILIARY_HEADING', text, cooking: 0 }
