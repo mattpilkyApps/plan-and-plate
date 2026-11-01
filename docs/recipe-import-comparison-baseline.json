@@ -1,0 +1,137 @@
+{
+  "baselineCommit": "e35614b5d92b5ff840c46bf61cd485a3f0d7e111",
+  "baselineCorpus": {
+    "total": 57,
+    "passed": 57,
+    "fields": {
+      "name": {
+        "passed": 57,
+        "total": 57
+      },
+      "servings": {
+        "passed": 29,
+        "total": 29
+      },
+      "prepTime": {
+        "passed": 15,
+        "total": 15
+      },
+      "cookTime": {
+        "passed": 15,
+        "total": 15
+      },
+      "totalTime": {
+        "passed": 6,
+        "total": 6
+      },
+      "notes": {
+        "passed": 6,
+        "total": 6
+      },
+      "ingredients": {
+        "passed": 57,
+        "total": 57
+      },
+      "method": {
+        "passed": 57,
+        "total": 57
+      },
+      "noise": {
+        "passed": 57,
+        "total": 57
+      }
+    },
+    "noiseLeakageCount": 0,
+    "falseIngredientCount": 0,
+    "falseMethodStepCount": 0,
+    "failures": []
+  },
+  "baselineWorkflow": {
+    "total": 16,
+    "passed": 5,
+    "failures": [
+      {
+        "id": "full-tabs-ingredients-first",
+        "failedFields": [
+          "notes",
+          "method"
+        ]
+      },
+      {
+        "id": "full-tabs-method-first",
+        "failedFields": [
+          "notes",
+          "ingredients",
+          "method",
+          "noise"
+        ]
+      },
+      {
+        "id": "labelled-full-method-first",
+        "failedFields": [
+          "ingredients"
+        ]
+      },
+      {
+        "id": "labelled-full-ingredients-first",
+        "failedFields": [
+          "notes",
+          "method"
+        ]
+      },
+      {
+        "id": "short-method-then-full-ingredients",
+        "failedFields": [
+          "notes",
+          "method"
+        ]
+      },
+      {
+        "id": "full-method-then-short-ingredients",
+        "failedFields": [
+          "notes",
+          "ingredients",
+          "method",
+          "noise"
+        ]
+      },
+      {
+        "id": "duplicate-ingredients-paste",
+        "failedFields": [
+          "notes",
+          "method"
+        ]
+      },
+      {
+        "id": "duplicate-method-paste",
+        "failedFields": [
+          "notes",
+          "ingredients",
+          "method",
+          "noise"
+        ]
+      },
+      {
+        "id": "method-tab-only",
+        "failedFields": [
+          "notes",
+          "ingredients",
+          "method",
+          "noise"
+        ]
+      },
+      {
+        "id": "method-only-then-unlabelled-ingredient-list",
+        "failedFields": [
+          "ingredients"
+        ]
+      },
+      {
+        "id": "retail-tail-stays-out-across-pastes",
+        "failedFields": [
+          "ingredients"
+        ]
+      }
+    ]
+  }
+}
