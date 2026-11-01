@@ -46,7 +46,7 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
   if (/^(?:ingredients?(?:\s*\([^)]*\))?|you will need|what you(?:'|’)ll need)$/.test(heading)) return { type: 'INGREDIENT_HEADING', text, cooking: 0 }
   if (/^(?:method|instructions|directions|preparation|steps|cooking instructions)$/.test(heading)) return { type: 'METHOD_HEADING', text, cooking: 0 }
   if (isMethodStepLabel(line.text)) return { type: 'STEP_LABEL', text, cooking: 0 }
-  if (/^recipe tips?$/.test(heading)) return { type: 'RECIPE_NOTE_HEADING', text, cooking: 0 }
+  if (/^(?:recipe|cook['’]?s) tips?$/.test(heading)) return { type: 'RECIPE_NOTE_HEADING', text, cooking: 0 }
   if (/^(?:notes|tips|tips (?:from|by) .+|cook['’]?s notes|equipment|storage|make ahead|freezing|substitutions|variations|video)$/.test(heading)) return { type: 'AUXILIARY_HEADING', text, cooking: 0 }
   if (/^(?:perfect your technique|recipe inspiration|from our blog)$/.test(heading)) return { type: 'PROMOTION', text, cooking: 0 }
 
@@ -81,4 +81,13 @@ export function classifyRecipeBlock(line, ingredientWords = new Set()) {
     type = 'METHOD_STEP'
   }
   return { type, text, numbered: numbered.numbered, cooking, evidence }
+}
+
+// Used only after ingredients, or to separate two clipboard fragments. A short
+// prepared-food name such as "roast potatoes" is insufficient evidence.
+export function isStrongMethodStart(text) {
+  const block = classifyRecipeBlock({ text })
+  const sentence = /[.!?](?:\s|$)/.test(block.text) || block.text.split(/\s+/).length >= 8
+  return block.type === 'METHOD_STEP' && block.cooking >= 3 && block.evidence.action &&
+    (block.numbered || sentence) && (!/^\d/.test(text) || block.numbered)
 }

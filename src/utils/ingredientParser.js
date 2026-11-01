@@ -165,7 +165,6 @@ const trailingPrepPhrases = [
   'juice only',
   'zest and juice',
   'split',
-  'cooked',
 ]
 
 const prepTailPattern = new RegExp(
@@ -500,6 +499,7 @@ export function cleanIngredientName(name) {
     .replace(/\s+mixed with\s+.+$/i, '')
     .replace(/\s+or\s+.+$/i, '')
     .replace(prepTailPattern, '')
+    .replace(/,\s*cooked(?:\s+.*)?$/i, '')
     .replace(/\s*,?\s*(?:plus extra|extra|for serving|to serve).*$/i, '')
     .replace(/\s*,?\s*and\s*$/i, '')
     .replace(/\s+/g, ' ')

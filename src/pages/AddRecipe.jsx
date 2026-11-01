@@ -21,6 +21,7 @@ import {
 } from '../utils/localStorage'
 import { getMealIcon } from '../utils/mealIcons'
 import { parsePastedRecipe } from '../utils/recipeImport'
+import { getRecipePasteSeparator } from '../utils/recipePaste'
 import { parseIngredients } from '../utils/ingredientParser'
 import {
   findRecipeByKey,
@@ -183,6 +184,7 @@ function PasteRecipeSheet({
   onClose,
   onImport,
   onPasteTextChange,
+  onPaste,
   pasteText,
 }) {
   return (
@@ -197,12 +199,15 @@ function PasteRecipeSheet({
         Copy the recipe text from a website or message. We’ll fill in the title,
         ingredients, method, servings and times we can recognise. Review the
         details before saving.
+        {' '}For separate website tabs, paste the ingredients, then the method
+        below them before filling the form.
       </p>
 
       <textarea
         aria-label="Pasted recipe text"
         className="mt-4 h-[48vh] max-h-[24rem] w-full touch-pan-y resize-none overflow-y-auto overscroll-contain rounded-2xl border border-stone-100 bg-white px-4 py-4 text-base font-medium leading-relaxed text-stone-800 shadow-sm outline-none transition placeholder:text-stone-400 focus:border-[#A8C686] focus:ring-4 focus:ring-[#EAF3DE]"
         onChange={onPasteTextChange}
+        onPaste={onPaste}
         placeholder={
           'Family vegetable curry\nServes 4\nPrep time: 15 mins\nCook time: 30 mins\n\nIngredients\n2 onions, finely chopped\n400ml coconut milk\n\nMethod\nAdd the cooking steps here.'
         }
@@ -705,6 +710,15 @@ function AddRecipe() {
           errorMessage={pasteError}
           onClose={closePasteSheet}
           onImport={importPastedRecipe}
+          onPaste={(event) => {
+            const input = event.currentTarget
+            const incoming = event.clipboardData.getData('text/plain')
+            const separator = getRecipePasteSeparator(input.value, incoming, input.selectionStart, input.selectionEnd)
+            if (!separator) return
+            event.preventDefault()
+            setPasteText(input.value + separator + incoming)
+            setPasteError('')
+          }}
           onPasteTextChange={(event) => {
             setPasteText(event.target.value)
             setPasteError('')

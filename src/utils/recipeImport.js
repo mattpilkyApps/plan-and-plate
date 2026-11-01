@@ -3,7 +3,7 @@ import {
   isRejectedIngredientLine,
 } from './ingredientParser.js'
 import { extractRecipeMethod } from './recipeMethod.js'
-import { classifyRecipeBlock } from './recipeSignals.js'
+import { classifyRecipeBlock, isStrongMethodStart } from './recipeSignals.js'
 import { isPreparationContinuation } from './ingredientPreparation.js'
 
 function removeRecipePageLinks(text) {
@@ -77,6 +77,17 @@ function isNutritionHeading(text) {
   )
 }
 
+function methodHeadingHasContent(lines, index) {
+  for (const line of lines.slice(index + 1, index + 7)) {
+    // Tab bars commonly list Method before Nutrition and the actual Ingredients.
+    // A real heading needs body text before another primary section begins.
+    if (isNutritionHeading(line.text) || isIngredientsHeading(line.text)) return false
+    if (isMethodHeading(line.text) || isNoiseLine(line.text)) continue
+    return true
+  }
+  return false
+}
+
 function isUnitControl(text) {
   const controls = getHeading(text)
   if (/^(?:units?|scale)$/.test(controls)) return true
@@ -142,7 +153,7 @@ function readMetadata(lines) {
     const text = lines[index].text
     if (isIngredientsHeading(text) || isMethodHeading(text)) break
     const labels = [...text.matchAll(
-      /\b(serves|servings|yield|makes|prep(?:\s*time)?|preparation time|cook(?:ing)?(?:\s*time)?|total(?:\s*time)?|additional time)\b\s*:?\s*/gi,
+      /\b(serves|servings|yield|makes|prep(?:are|aration)?(?:\s*time)?|preparation time|cook(?:ing)?(?:\s*time)?|total(?:\s*time)?|additional time)(?=\s|:|\d|$)\s*:?\s*/gi,
     )]
     if (labels[0]?.index !== 0) continue
     let consumedNextLine = false
@@ -305,10 +316,11 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
       continue
     }
     if (isMethodHeading(text)) {
+      if (!methodHeadingHasContent(lines, index)) continue
       const extracted = extractRecipeMethod(lines.slice(index + 1), ingredients)
       method = extracted.steps
       notes = extracted.notes
-      methodDiagnostics = extracted.diagnostics
+      methodDiagnostics = { ...extracted.diagnostics, start: 'heading' }
       break
     }
     if (
@@ -324,6 +336,18 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
       continue
     }
     if (isNoiseLine(text)) continue
+
+    const nextLine = lines[index + 1]
+    const methodLead = /\b(?:and|then|with|into)\s*$/i.test(text) && nextLine && !nextLine.blankBefore
+      ? text + ' ' + nextLine.text : text
+    if (ingredients.length && (section === 'INGREDIENTS' || (!hasIngredientsHeading && section === 'METADATA')) &&
+      !isIngredientContinuation(text, servingSection) && isStrongMethodStart(methodLead)) {
+      const extracted = extractRecipeMethod(lines.slice(index), ingredients)
+      method = extracted.steps
+      notes = extracted.notes
+      methodDiagnostics = { ...extracted.diagnostics, start: 'inferred' }
+      break
+    }
 
     if (section === 'INGREDIENTS') {
       if (isIngredientSubsection(line, lines[index + 1])) {
@@ -359,7 +383,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
         cookTime: result.cookTime ? 'explicit' : 'missing',
         totalTime: result.totalTime ? 'explicit' : 'missing',
         ingredients: ingredients.length ? (hasIngredientsHeading ? 'section' : 'inferred') : 'missing',
-        method: method.length ? (methodDiagnostics.reviewNeeded ? 'review' : 'supported') : 'missing',
+        method: method.length ? (methodDiagnostics.reviewNeeded ? 'review' : methodDiagnostics.start === 'inferred' ? 'inferred' : 'supported') : 'missing',
       },
       method: methodDiagnostics,
       ingredientSections,
