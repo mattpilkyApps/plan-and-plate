@@ -368,11 +368,12 @@ function getDisplayUnit(unit, quantity) {
     return cleanUnit
   }
 
-  if (['bulb', 'can', 'clove', 'cup', 'pack', 'tin', 'handful', 'stalk', 'sprig', 'piece'].includes(cleanUnit)) {
+  if (['bulb', 'can', 'clove', 'cup', 'pack', 'packet', 'slice', 'tin', 'handful', 'stalk', 'sprig', 'piece'].includes(cleanUnit)) {
     return `${cleanUnit}s`
   }
 
   if (cleanUnit === 'pinch') return 'pinches'
+  if (cleanUnit === 'bunch') return 'bunches'
 
   return cleanUnit
 }

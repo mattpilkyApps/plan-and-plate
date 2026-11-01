@@ -43,6 +43,7 @@ const initialRecipe = {
   ingredients: '',
   method: '',
   notes: '',
+  sourcePaste: '',
 }
 
 function recipeHasDraftContent(recipe) {
@@ -102,6 +103,7 @@ function getRecipeFormValues(recipe) {
         .join('\n'),
     method: recipe.method || recipe.instructions || '',
     notes: recipe.notes || '',
+    sourcePaste: recipe.sourcePaste || '',
   }
 }
 
@@ -283,7 +285,7 @@ function AddRecipe() {
   )
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
-  const [pasteText, setPasteText] = useState('')
+  const [pasteText, setPasteText] = useState(() => recipe.sourcePaste || '')
   const [pasteError, setPasteError] = useState('')
   const [showPasteSheet, setShowPasteSheet] = useState(false)
   const [isProcessingImage, setIsProcessingImage] = useState(false)
@@ -351,7 +353,7 @@ function AddRecipe() {
   }
 
   function importPastedRecipe() {
-    const parsedRecipe = parsePastedRecipe(pasteText)
+    const parsedRecipe = parsePastedRecipe(pasteText, { includeDiagnostics: true })
     if (!parsedRecipe.ingredients && !parsedRecipe.method) {
       setPasteError(
         'We couldn’t find ingredients or cooking steps. Paste the recipe text, including its Ingredients and Method headings. A website link on its own won’t fill the form.',
@@ -359,6 +361,7 @@ function AddRecipe() {
       return
     }
 
+    const methodNeedsReview = parsedRecipe.diagnostics.method.reviewNeeded
     setRecipe((currentRecipe) => ({
       ...currentRecipe,
       name: parsedRecipe.name || currentRecipe.name,
@@ -367,9 +370,13 @@ function AddRecipe() {
       cookTime: parsedRecipe.cookTime || currentRecipe.cookTime,
       ingredients: parsedRecipe.ingredients || currentRecipe.ingredients,
       method: parsedRecipe.method || currentRecipe.method,
+      notes: parsedRecipe.notes
+        ? [...new Set([currentRecipe.notes, parsedRecipe.notes].filter(Boolean))].join('\n\n')
+        : currentRecipe.notes,
+      sourcePaste: methodNeedsReview ? pasteText : '',
     }))
     closePasteSheet()
-    setPasteText('')
+    if (!methodNeedsReview) setPasteText('')
     setErrorMessage('')
     const needsReview = [
       ['name', 'recipe name'],
@@ -379,10 +386,13 @@ function AddRecipe() {
     ]
       .filter(([field]) => !parsedRecipe[field])
       .map(([, label]) => label)
-    setSuccessMessage(
-      needsReview.length
+    const reviewMessage = needsReview.length
         ? 'Recipe text imported. Check or add: ' + needsReview.join(', ') + '.'
-        : 'Recipe details filled. Check the ingredients and method before saving.',
+        : 'Recipe details filled. Check the ingredients and method before saving.'
+    setSuccessMessage(
+      methodNeedsReview
+        ? reviewMessage + ' Some cooking text may need checking. Your original text is kept in Paste Recipe.'
+        : reviewMessage,
     )
   }
 
@@ -414,6 +424,7 @@ function AddRecipe() {
       parsedIngredients: parseIngredients(recipe.ingredients),
       method: recipe.method,
       notes: recipe.notes,
+      ...(recipe.sourcePaste ? { sourcePaste: recipe.sourcePaste } : {}),
       badges: recipeToEdit?.badges || ['Saved Recipe'],
       icon: getMealIcon({ mealType: recipe.category, name: recipe.name }),
       image: recipe.image,

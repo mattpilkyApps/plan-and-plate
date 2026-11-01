@@ -1,0 +1,305 @@
+{
+  "baselineCommit": "b979d9767c5706248ea54eb0c7d1fb883b82c800",
+  "total": 40,
+  "passed": 15,
+  "fields": {
+    "name": {
+      "passed": 39,
+      "total": 40
+    },
+    "ingredients": {
+      "passed": 31,
+      "total": 40
+    },
+    "method": {
+      "passed": 23,
+      "total": 40
+    },
+    "noise": {
+      "passed": 22,
+      "total": 40
+    },
+    "servings": {
+      "passed": 18,
+      "total": 21
+    },
+    "prepTime": {
+      "passed": 9,
+      "total": 9
+    },
+    "cookTime": {
+      "passed": 9,
+      "total": 9
+    },
+    "totalTime": {
+      "passed": 0,
+      "total": 3
+    }
+  },
+  "noiseLeakageCount": 42,
+  "falseIngredientCount": 27,
+  "falseMethodStepCount": 23,
+  "failures": [
+    {
+      "id": "ad-between-numbered-steps",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "fresh look",
+        "Artisan Lamp"
+      ]
+    },
+    {
+      "id": "sponsored-between-paragraphs",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "offer for today"
+      ]
+    },
+    {
+      "id": "retail-new-products",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "new season",
+        "Handmade Desk",
+        "Travel Clock"
+      ]
+    },
+    {
+      "id": "retail-cooking-word-in-brand",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Cook Smart",
+        "Blend Pro"
+      ]
+    },
+    {
+      "id": "tips-within-recipe",
+      "failedFields": [
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "wrapped-unnumbered-paragraph",
+      "failedFields": [
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "uncertain-tail-fails-safely",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "world of possibilities",
+        "next chapter",
+        "Browse the collection"
+      ]
+    },
+    {
+      "id": "newsletter-footer",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "latest recipes"
+      ]
+    },
+    {
+      "id": "skinny-total-time",
+      "failedFields": [
+        "totalTime"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "love-equipment-and-serving-range",
+      "failedFields": [
+        "servings",
+        "totalTime",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Alex enjoys"
+      ]
+    },
+    {
+      "id": "spend-ingredient-subsections",
+      "failedFields": [
+        "ingredients",
+        "noise"
+      ],
+      "leaked": [
+        "Cheese mixture",
+        "To Serve:"
+      ]
+    },
+    {
+      "id": "gimme-fractional-scale-controls",
+      "failedFields": [
+        "ingredients",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "0.5x",
+        "Additional Info",
+        "Let us know"
+      ]
+    },
+    {
+      "id": "twopeas-linked-equipment",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Did you make"
+      ]
+    },
+    {
+      "id": "sally-complex-ingredient-notes",
+      "failedFields": [
+        "ingredients"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "goodfood-compact-toggle-extra",
+      "failedFields": [
+        "ingredients",
+        "noise"
+      ],
+      "leaked": [
+        "MetricUS"
+      ]
+    },
+    {
+      "id": "allrecipes-total-split-and-yield",
+      "failedFields": [
+        "totalTime"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "kingarthur-products-before-method",
+      "failedFields": [
+        "ingredients",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Featured Products",
+        "Digital Scale",
+        "Electric Griddle",
+        "Bake Mode",
+        "Off On",
+        "Keep screen"
+      ]
+    },
+    {
+      "id": "kingarthur-interstitial-technique-card",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Perfect your technique",
+        "Blog",
+        "notebook"
+      ]
+    },
+    {
+      "id": "cookie-range-optional-alternative",
+      "failedFields": [
+        "servings"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "inspired-you-will-need",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Can I buy"
+      ]
+    },
+    {
+      "id": "minimalist-optional-toppings",
+      "failedFields": [
+        "ingredients",
+        "noise"
+      ],
+      "leaked": [
+        "Optional toppings"
+      ]
+    },
+    {
+      "id": "goodfood-such-as-and-preparation",
+      "failedFields": [
+        "ingredients"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "chef-megamenu-before-title",
+      "failedFields": [
+        "name",
+        "servings",
+        "ingredients",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Chicken recipes",
+        "Pasta recipes",
+        "View all",
+        "Pasta pot"
+      ]
+    },
+    {
+      "id": "blog-mobile-full-controls",
+      "failedFields": [
+        "ingredients",
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "US Cups",
+        "Alex writes"
+      ]
+    },
+    {
+      "id": "phone-retail-tail",
+      "failedFields": [
+        "method",
+        "noise"
+      ],
+      "leaked": [
+        "Elevated by design",
+        "Overt Heeled",
+        "Depend Leather",
+        "Dependent Suede",
+        "Carbon-Neutral"
+      ]
+    }
+  ]
+}

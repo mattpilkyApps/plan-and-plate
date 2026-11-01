@@ -1,0 +1,46 @@
+{
+  "total": 46,
+  "passed": 46,
+  "fields": {
+    "name": {
+      "passed": 46,
+      "total": 46
+    },
+    "servings": {
+      "passed": 22,
+      "total": 22
+    },
+    "prepTime": {
+      "passed": 10,
+      "total": 10
+    },
+    "cookTime": {
+      "passed": 10,
+      "total": 10
+    },
+    "notes": {
+      "passed": 2,
+      "total": 2
+    },
+    "ingredients": {
+      "passed": 46,
+      "total": 46
+    },
+    "method": {
+      "passed": 46,
+      "total": 46
+    },
+    "noise": {
+      "passed": 46,
+      "total": 46
+    },
+    "totalTime": {
+      "passed": 3,
+      "total": 3
+    }
+  },
+  "noiseLeakageCount": 0,
+  "falseIngredientCount": 0,
+  "falseMethodStepCount": 0,
+  "failures": []
+}
