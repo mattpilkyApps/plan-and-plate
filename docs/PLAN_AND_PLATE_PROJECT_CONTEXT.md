@@ -55,8 +55,8 @@ These rules apply to all code and documentation work going forward.
 - Built-in sample recipes can also be edited or hidden for testing.
 - Recipe photos can be uploaded, compressed in-browser, and stored as local data URLs.
 - Pasted recipes can auto-fill the name, servings, times, ingredients and method locally.
-- Paste import accepts plain website text and Markdown, removes common page clutter, and preserves original ingredient wording and preparation notes. The existing ingredient parser derives shopping quantities when the recipe is saved.
-- Extraction (`recipeImport.js`) and ingredient normalisation (`ingredientParser.js`) remain separate. Normalisation keeps `rawText` and optionally adds a `qualifiers` array while keeping preparation/alternatives out of shopping identity. Existing records without qualifiers remain valid; no migration is needed. Ingredient entry uses one ingredient per line (or explicit bullet/semicolon separators); numbers inside a line never imply a new shopping item.
+- Paste import accepts plain website text and Markdown, including separately copied recipe tabs in either order. Native text input retains source ranges; live ingredient/step counts expose missing sections. Original paste/ranges survive draft, save and edit for recovery. Compatible fields are combined; conflicting copies request review. The existing ingredient parser derives shopping quantities when the recipe is saved.
+- Extraction (`recipeImport.js`, `recipeText.js`, `recipeSections.js`, `recipeIngredients.js`, `recipeMethod.js`) and paste/session assembly (`recipePaste.js`, `recipeImportSession.js`) remain separate from ingredient normalisation (`ingredientParser.js`). Normalisation keeps `rawText` and optionally adds a `qualifiers` array while keeping preparation/alternatives out of shopping identity. Existing records without qualifiers/source ranges remain valid; no migration is needed. Ingredient entry uses one ingredient per line (or explicit bullet/semicolon separators); numbers inside a line never imply a new shopping item.
 - Add to Week sends recipes into a weekly queue.
 - Planner queue lets users place meals by tapping a queued meal, then tapping a planner slot.
 - Planner supports multiple weeks with previous/next arrows.
@@ -122,7 +122,7 @@ Current planner component files:
 ## Recipe Parsing And Shopping List Guidance
 
 - Keep parser and shopping-list cleanup in utilities, not inside large UI components.
-- `AddRecipe.jsx` may decide when to run parsing or review, but detailed parsing rules should live in `src/utils/ingredientParser.js`.
+- `AddRecipe.jsx` binds parsing and review to the form; source handling, recipe extraction and ingredient normalisation belong in their respective utility modules. See `RECIPE_IMPORT_DESIGN.md` for boundaries and reproducible comparisons.
 - Shopping-list category and merge behavior should live in `src/utils/shoppingList.js`.
 - Shopping-list category order should stay supermarket-friendly: Fresh Produce, Meat & Fish, Dairy & Eggs, Bakery, Pantry / Tins / Dry Goods, Herbs & Spices, Condiments & Sauces, Oils & Cooking, Frozen, Other.
 - Preserve raw ingredient text where useful so users can see the original wording if parsing is imperfect.
