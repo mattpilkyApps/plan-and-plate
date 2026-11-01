@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "test": "node --test tests/*.test.js",
     "test:recipes": "node --test tests/recipe-*.test.js tests/ingredient-*.test.js",
-    "parser:report": "node scripts/evaluate-recipe-corpus.js --check"
+    "parser:report": "node scripts/evaluate-recipe-corpus.js --check",
+    "parser:compare": "node scripts/compare-recipe-import.js --check"
   },
   "dependencies": {
     "lucide-react": "^1.16.0",

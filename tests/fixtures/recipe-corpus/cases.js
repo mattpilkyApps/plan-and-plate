@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { methodBoundaryCases } from './method-boundaries.js'
 import { researchedLayoutCases } from './researched-layouts.js'
 import { phoneFollowupCases } from './phone-followup.js'
+import { twoTabLayoutCases } from './two-tab-layouts.js'
 
 const fixture = (name) => readFileSync(new URL('../' + name, import.meta.url), 'utf8')
 const curry = fixture('pumpkin-curry-plain.txt')
@@ -22,9 +23,10 @@ const curryExpectation = {
   methodCount: 2, methodEndsWith: 'warm naan breads.',
 }
 
-// Only the two pre-existing copies supplied by Matt contain publisher prose.
-// All new recipe prose below is invented; source URLs document layout research.
+// Exact owner-supplied copies are confined to dedicated phone fixtures.
+// Other new recipe prose is invented; source URLs document layout research.
 export const recipeCorpus = [
+  ...twoTabLayoutCases,
   ...phoneFollowupCases,
   ...methodBoundaryCases,
   ...researchedLayoutCases,

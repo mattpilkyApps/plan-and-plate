@@ -1,42 +1,42 @@
 {
-  "total": 46,
-  "passed": 46,
+  "total": 57,
+  "passed": 57,
   "fields": {
     "name": {
-      "passed": 46,
-      "total": 46
+      "passed": 57,
+      "total": 57
     },
     "servings": {
-      "passed": 22,
-      "total": 22
+      "passed": 29,
+      "total": 29
     },
     "prepTime": {
-      "passed": 10,
-      "total": 10
+      "passed": 15,
+      "total": 15
     },
     "cookTime": {
-      "passed": 10,
-      "total": 10
-    },
-    "notes": {
-      "passed": 2,
-      "total": 2
-    },
-    "ingredients": {
-      "passed": 46,
-      "total": 46
-    },
-    "method": {
-      "passed": 46,
-      "total": 46
-    },
-    "noise": {
-      "passed": 46,
-      "total": 46
+      "passed": 15,
+      "total": 15
     },
     "totalTime": {
-      "passed": 3,
-      "total": 3
+      "passed": 6,
+      "total": 6
+    },
+    "notes": {
+      "passed": 6,
+      "total": 6
+    },
+    "ingredients": {
+      "passed": 57,
+      "total": 57
+    },
+    "method": {
+      "passed": 57,
+      "total": 57
+    },
+    "noise": {
+      "passed": 57,
+      "total": 57
     }
   },
   "noiseLeakageCount": 0,

@@ -1,0 +1,98 @@
+{
+  "baselineCommit": "fde4ce3c75b41f5f6c4f53610f1720c48ae507a7",
+  "total": 51,
+  "passed": 46,
+  "fields": {
+    "name": {
+      "passed": 51,
+      "total": 51
+    },
+    "servings": {
+      "passed": 22,
+      "total": 25
+    },
+    "prepTime": {
+      "passed": 10,
+      "total": 13
+    },
+    "cookTime": {
+      "passed": 10,
+      "total": 13
+    },
+    "totalTime": {
+      "passed": 3,
+      "total": 5
+    },
+    "notes": {
+      "passed": 2,
+      "total": 4
+    },
+    "ingredients": {
+      "passed": 47,
+      "total": 51
+    },
+    "method": {
+      "passed": 48,
+      "total": 51
+    },
+    "noise": {
+      "passed": 51,
+      "total": 51
+    }
+  },
+  "noiseLeakageCount": 0,
+  "falseIngredientCount": 2,
+  "falseMethodStepCount": 0,
+  "failures": [
+    {
+      "id": "owner-sprouts-two-tab-phone",
+      "failedFields": [
+        "servings",
+        "prepTime",
+        "cookTime",
+        "totalTime",
+        "notes",
+        "ingredients",
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "tabs-before-ingredients-implicit-paragraphs",
+      "failedFields": [
+        "servings",
+        "prepTime",
+        "cookTime",
+        "notes",
+        "ingredients",
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "unmeasured-prepared-foods-before-inferred-method",
+      "failedFields": [
+        "ingredients",
+        "method"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "ingredients-tab-with-method-link-only",
+      "failedFields": [
+        "ingredients"
+      ],
+      "leaked": []
+    },
+    {
+      "id": "combined-compact-metadata-and-explicit-method",
+      "failedFields": [
+        "servings",
+        "prepTime",
+        "cookTime",
+        "totalTime"
+      ],
+      "leaked": []
+    }
+  ]
+}

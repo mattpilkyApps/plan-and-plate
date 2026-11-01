@@ -1,0 +1,469 @@
+{
+  "baselineCommit": "e35614b5d92b5ff840c46bf61cd485a3f0d7e111",
+  "baselineCorpus": {
+    "total": 57,
+    "passed": 57,
+    "fields": {
+      "name": {
+        "passed": 57,
+        "total": 57
+      },
+      "servings": {
+        "passed": 29,
+        "total": 29
+      },
+      "prepTime": {
+        "passed": 15,
+        "total": 15
+      },
+      "cookTime": {
+        "passed": 15,
+        "total": 15
+      },
+      "totalTime": {
+        "passed": 6,
+        "total": 6
+      },
+      "notes": {
+        "passed": 6,
+        "total": 6
+      },
+      "ingredients": {
+        "passed": 57,
+        "total": 57
+      },
+      "method": {
+        "passed": 57,
+        "total": 57
+      },
+      "noise": {
+        "passed": 57,
+        "total": 57
+      }
+    },
+    "noiseLeakageCount": 0,
+    "falseIngredientCount": 0,
+    "falseMethodStepCount": 0,
+    "failures": []
+  },
+  "approaches": [
+    {
+      "name": "existing-flat-parser",
+      "corpus": {
+        "total": 57,
+        "passed": 57,
+        "fields": {
+          "name": {
+            "passed": 57,
+            "total": 57
+          },
+          "servings": {
+            "passed": 29,
+            "total": 29
+          },
+          "prepTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "cookTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "totalTime": {
+            "passed": 6,
+            "total": 6
+          },
+          "notes": {
+            "passed": 6,
+            "total": 6
+          },
+          "ingredients": {
+            "passed": 57,
+            "total": 57
+          },
+          "method": {
+            "passed": 57,
+            "total": 57
+          },
+          "noise": {
+            "passed": 57,
+            "total": 57
+          }
+        },
+        "noiseLeakageCount": 0,
+        "falseIngredientCount": 0,
+        "falseMethodStepCount": 0,
+        "failures": []
+      },
+      "workflows": {
+        "total": 16,
+        "passed": 5,
+        "noiseLeakageCount": 8,
+        "falseIngredientCount": 4,
+        "failures": [
+          {
+            "id": "full-tabs-ingredients-first",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "full-tabs-method-first",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "labelled-full-method-first",
+            "failedFields": [
+              "ingredients"
+            ]
+          },
+          {
+            "id": "labelled-full-ingredients-first",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "short-method-then-full-ingredients",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "full-method-then-short-ingredients",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "duplicate-ingredients-paste",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "duplicate-method-paste",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "method-tab-only",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "method-only-then-unlabelled-ingredient-list",
+            "failedFields": [
+              "ingredients"
+            ]
+          },
+          {
+            "id": "retail-tail-stays-out-across-pastes",
+            "failedFields": [
+              "ingredients"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "indexed-sections-flat-text",
+      "corpus": {
+        "total": 57,
+        "passed": 57,
+        "fields": {
+          "name": {
+            "passed": 57,
+            "total": 57
+          },
+          "servings": {
+            "passed": 29,
+            "total": 29
+          },
+          "prepTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "cookTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "totalTime": {
+            "passed": 6,
+            "total": 6
+          },
+          "notes": {
+            "passed": 6,
+            "total": 6
+          },
+          "ingredients": {
+            "passed": 57,
+            "total": 57
+          },
+          "method": {
+            "passed": 57,
+            "total": 57
+          },
+          "noise": {
+            "passed": 57,
+            "total": 57
+          }
+        },
+        "noiseLeakageCount": 0,
+        "falseIngredientCount": 0,
+        "falseMethodStepCount": 0,
+        "failures": []
+      },
+      "workflows": {
+        "total": 16,
+        "passed": 8,
+        "noiseLeakageCount": 0,
+        "falseIngredientCount": 0,
+        "failures": [
+          {
+            "id": "full-tabs-ingredients-first",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "full-tabs-method-first",
+            "failedFields": [
+              "ingredients"
+            ]
+          },
+          {
+            "id": "labelled-full-method-first",
+            "failedFields": [
+              "ingredients"
+            ]
+          },
+          {
+            "id": "labelled-full-ingredients-first",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "full-method-then-short-ingredients",
+            "failedFields": [
+              "ingredients"
+            ]
+          },
+          {
+            "id": "duplicate-ingredients-paste",
+            "failedFields": [
+              "notes",
+              "method"
+            ]
+          },
+          {
+            "id": "duplicate-method-paste",
+            "failedFields": [
+              "ingredients"
+            ]
+          },
+          {
+            "id": "retail-tail-stays-out-across-pastes",
+            "failedFields": [
+              "ingredients"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "paste-boundaries-existing-parser",
+      "corpus": {
+        "total": 57,
+        "passed": 57,
+        "fields": {
+          "name": {
+            "passed": 57,
+            "total": 57
+          },
+          "servings": {
+            "passed": 29,
+            "total": 29
+          },
+          "prepTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "cookTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "totalTime": {
+            "passed": 6,
+            "total": 6
+          },
+          "notes": {
+            "passed": 6,
+            "total": 6
+          },
+          "ingredients": {
+            "passed": 57,
+            "total": 57
+          },
+          "method": {
+            "passed": 57,
+            "total": 57
+          },
+          "noise": {
+            "passed": 57,
+            "total": 57
+          }
+        },
+        "noiseLeakageCount": 0,
+        "falseIngredientCount": 0,
+        "falseMethodStepCount": 0,
+        "failures": []
+      },
+      "workflows": {
+        "total": 16,
+        "passed": 10,
+        "noiseLeakageCount": 10,
+        "falseIngredientCount": 4,
+        "failures": [
+          {
+            "id": "full-tabs-ingredients-first",
+            "failedFields": [
+              "notes",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "full-tabs-method-first",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "full-method-then-short-ingredients",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "duplicate-ingredients-paste",
+            "failedFields": [
+              "notes",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "duplicate-method-paste",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          },
+          {
+            "id": "method-tab-only",
+            "failedFields": [
+              "notes",
+              "ingredients",
+              "method",
+              "noise"
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "indexed-sections-and-paste-boundaries",
+      "corpus": {
+        "total": 57,
+        "passed": 57,
+        "fields": {
+          "name": {
+            "passed": 57,
+            "total": 57
+          },
+          "servings": {
+            "passed": 29,
+            "total": 29
+          },
+          "prepTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "cookTime": {
+            "passed": 15,
+            "total": 15
+          },
+          "totalTime": {
+            "passed": 6,
+            "total": 6
+          },
+          "notes": {
+            "passed": 6,
+            "total": 6
+          },
+          "ingredients": {
+            "passed": 57,
+            "total": 57
+          },
+          "method": {
+            "passed": 57,
+            "total": 57
+          },
+          "noise": {
+            "passed": 57,
+            "total": 57
+          }
+        },
+        "noiseLeakageCount": 0,
+        "falseIngredientCount": 0,
+        "falseMethodStepCount": 0,
+        "failures": []
+      },
+      "workflows": {
+        "total": 16,
+        "passed": 16,
+        "noiseLeakageCount": 0,
+        "falseIngredientCount": 0,
+        "failures": []
+      }
+    }
+  ],
+  "selectedTiming": {
+    "environment": "local Node; not a phone benchmark",
+    "samples": 80,
+    "medianMs": 1.524,
+    "p95Ms": 10.247
+  }
+}
