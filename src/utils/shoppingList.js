@@ -3,6 +3,7 @@ import {
   parseIngredientLine,
   parseIngredients,
 } from './ingredientParser.js'
+import { getSpecificShoppingCategory, matchesShoppingKeyword } from './shoppingProductCatalog.js'
 
 export const shoppingCategoryOptions = [
   'Fresh Produce',
@@ -198,7 +199,7 @@ function normalizeSearchText(text) {
 
 function hasKeyword(name, keywords) {
   return keywords.some((keyword) => {
-    return name.includes(normalizeSearchText(keyword))
+    return matchesShoppingKeyword(name, normalizeSearchText(keyword))
   })
 }
 
@@ -210,7 +211,7 @@ function resolveShoppingCategory(category) {
     : 'Other'
 }
 
-export function getIngredientCategory(ingredientName, unit = '') {
+export function getIngredientCategory(ingredientName, unit = '', source = '') {
   const name = normalizeSearchText(ingredientName)
 
   if (
@@ -245,6 +246,9 @@ export function getIngredientCategory(ingredientName, unit = '') {
   if (hasKeyword(name, categoryKeywordGroups.frozen)) {
     return 'Frozen'
   }
+
+  const specificCategory = getSpecificShoppingCategory(name, normalizeSearchText(source))
+  if (specificCategory) return specificCategory
 
   if (hasKeyword(name, categoryKeywordGroups.oilsAndCooking)) {
     return 'Oils & Cooking'
@@ -542,8 +546,9 @@ export function generateShoppingGroups(
       const scale = getServingScale(plannedMeal, recipe)
       const displayItem = getShoppingItemDisplay(ingredient, scale)
       const category = getIngredientCategory(
-        ingredient.name || displayItem.name,
+        displayItem.name || ingredient.name,
         ingredient.unit,
+        ingredient.rawText || ingredient.name,
       )
 
       addGeneratedItemToGroup(groupedItems, category, {
