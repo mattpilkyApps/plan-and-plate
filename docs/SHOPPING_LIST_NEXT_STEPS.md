@@ -37,3 +37,11 @@ After a verified data-quality milestone, check the mobile Shopping flow: checkin
 ## Relevant files/checks
 
 src/utils/ingredientParser.js; src/utils/shoppingList.js; src/pages/Shopping.jsx; tests/shopping.test.js; existing ingredient tests and owner phone fixtures. Start with these and current handoff; no repository-wide audit. Baseline full suite 188 passes. Run meaningful tests, lint/build/SW, checkpoint/push milestones and deploy a separate preview. Production deployment of Shopping changes requires a later release instruction.
+
+## First quality milestone implemented on a separate branch
+
+Branch improve/shopping-list-quality starts at main 162e6b47771a93333499da9b26f5d78716adadfd, after the parser production release. Added a small shoppingProductCatalog.js with explicit product-family/alias decisions before broad words; keyword matching now respects whole words/plurals. Sauce/seasoning names no longer inherit garlic/mushroom aisles. Unknown household oils do not automatically become cooking oils.
+
+Shared preparation grammar now recognises halved/quartered and component clauses such as whites and greens separated / seeds removed. Canonical shopping identity loses those notes while rawText and qualifiers preserve original wording. Prepared foods such as cooked pigs in blankets and quartered artichoke hearts remain named products. Category selection uses the cleaned display identity plus retained source evidence for chopped/tinned tomatoes, preserving the existing canned-tomato rule and contrasting freshly chopped produce. Legacy saved ingredient names improve without altering their item IDs, checked/cleared state or stored recipe.
+
+Added 29 functional checks including both full owner recipe → planned servings → Shopping paths, 24 aisle/preservation examples, canonical raw/qualifier preservation, legacy clear-state stability and tomato source-context contrasts. Full 217 tests, lint/build/generated-SW syntax/all 33 assets pass; recipe corpus remains 57/57 and full-tab workflows 16/16 with zero specified leakage. Preview/browser Shopping QA is next. No Shopping production deployment. Compound serving line remains unsplit for a deliberate component model; incompatible-unit conversion/purchase-pack rounding and wider UX are later work.
