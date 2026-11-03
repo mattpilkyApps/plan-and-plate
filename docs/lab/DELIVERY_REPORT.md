@@ -2,6 +2,8 @@
 
 3 November 2026. Experimental branch `lab/recipe-quality`; production release is not authorised. This is working product infrastructure, with explicit limits below.
 
+Verified protected preview: https://plan-and-plate-7d082suoi-mattpilkyapps-projects.vercel.app/ . READY deployment dpl_AKg2Je5QBSuSAt8Gyp49LKFariAu, source 90e00a62d6268c65c488449e74505f7e40ca6f0c, preview target. Lab HTML, matching JS/CSS and service worker return authenticated HTTP 200; preview SSO is preserved. Main remains b07e4b1. A subsequent docs-only branch checkpoint has identical application source. The Drive technical specification also contains a verified implementation appendix.
+
 ## Delivered
 
 The standalone Lab has six functional sections: recipe workspace/card, Chef simulator, Shopping simulator, regression library, diagnostics and issue notebook. Cream/green responsive styling uses readable recipe text, accessible labels and keyboard focus trapping, reduced motion, source/preview/review tabs on phones and large timer controls. A desktop Phone preview exercises actual 320/390/430px iframe viewports; those copies do not write to the main Lab store.

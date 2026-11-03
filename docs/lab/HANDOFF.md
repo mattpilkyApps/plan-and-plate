@@ -1,5 +1,16 @@
 # Recipe Quality Lab — recovery handoff
 
+## Verified final preview and source — 3 November 2026
+
+- **Usable protected Lab:** https://plan-and-plate-7d082suoi-mattpilkyapps-projects.vercel.app/ . Existing Vercel authentication is retained; Matt may need to sign in on his phone.
+- **Deployment:** dpl_AKg2Je5QBSuSAt8Gyp49LKFariAu, READY, target null (preview), project prj_BTGHRRCvar0bXD6Cd8rkW0jGPLsb, team team_rAS0gWuBiS9ffwL3XKEnGEPF.
+- **Exact validated application commit:** 90e00a62d6268c65c488449e74505f7e40ca6f0c on lab/recipe-quality. A following documentation-only checkpoint records this deployment; resolve its SHA with git log -1. It contains identical application source.
+- **Published verification:** authenticated HTTP 200 for Lab HTML, main JavaScript, stylesheet and service worker. index-C6AK4xGr.js contains the exact application commit; index-DKUZKU6c.css and cache plan-and-plate-lab-407c2511875c match the local build. Project preview SSO remains enabled for all_except_custom_domains. No production promotion.
+- **Main protection:** remote main rechecked at b07e4b1eb08c9dfc8753d41066bc4c9155144461, unchanged from task start.
+- **Drive technical specification:** implementation appendix added and read back at https://docs.google.com/document/d/1v4_lRMPGCYa8WMm7IRQF0Eq84G0PQifo_F5myl8cZpY . Approved target design remains unchanged; appendix states real scope, checks, limits, preview and next task.
+
+Production and the main branch are not a Lab release. Continue only on lab/recipe-quality. No additional deployment is needed for this documentation checkpoint.
+
 ## Current completed state — supersedes milestone notes below
 
 3 November 2026. Working isolated Lab with all six sections, source-faithful/editable cards, conservative Chef compiler and real/virtual sessions, actual production Shopping calculations, local issue capture/review/export, case import/source replay and a shared browser/Node regression library. Production/main remain protected and unchanged. Read DELIVERY_REPORT.md for scope, observed browser evidence and honest limits; quality-report.json contains the reproducible machine report.

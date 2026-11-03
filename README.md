@@ -39,3 +39,6 @@ Different website origins have different browser storage. The separate preview s
 Stable deployment remains the existing GitHub/Vercel setup, with SPA deep-route rewrites in `vercel.json`. Work belongs on `design/v2-ui-refresh`; do not merge to `main` before review. The separate Sites preview is a review build, not the stable deployment.
 
 See [frontend audit](docs/V2_FRONTEND_AUDIT.md), [delivery and QA report](docs/V2_DELIVERY_REPORT.md), and [developer log](docs/PLAN_AND_PLATE_DEVELOPER_LOG.md).
+# Isolated Recipe Quality Lab
+
+The experimental `lab/recipe-quality` branch includes a standalone recipe/Chef/Shopping development Lab. Start with [the recovery handoff](docs/lab/HANDOFF.md) and [delivery/quality report](docs/lab/DELIVERY_REPORT.md). Run `npm run dev:lab` or `npm run build:lab`; `npm run test:lab` and `npm run lab:report` exercise its shared domain engines and regression library. Normal `npm run build` continues to build the production application. Lab storage and navigation are isolated; no production release is implied.
