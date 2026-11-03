@@ -380,9 +380,13 @@ export default function ShoppingSimulator({
                   )}
                 </pre>
               </details>
-              {entry.sourceFragments?.length > 0 && (
+              {entry.sourceRefs?.length > 0 && (
                 <SourcePanel
-                  fragments={entry.sourceFragments}
+                  fragments={result.sourceFragments.filter((fragment) =>
+                    entry.sourceRefs.some(
+                      (ref) => ref.fragmentId === fragment.fragmentId,
+                    ),
+                  )}
                   evidence={entry.sourceRefs}
                 />
               )}

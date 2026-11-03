@@ -26,6 +26,18 @@ const entries = [
 const directory = new URL('../src/lab/generated/', import.meta.url)
 mkdirSync(directory, { recursive: true })
 writeFileSync(new URL('fixtures.json', directory), JSON.stringify(entries))
+writeFileSync(
+  new URL('starters.json', directory),
+  JSON.stringify(
+    entries.filter((entry) =>
+      [
+        'owner-curry-plain',
+        'owner-paneer-phone',
+        'owner-sprouts-two-tab-phone',
+      ].includes(entry.id),
+    ),
+  ),
+)
 console.log(
   `Prepared ${entries.length} existing/synthetic fixtures for the private Lab.`,
 )

@@ -124,11 +124,34 @@ test('Chef final cooking instruction precedes doneness check when there is no se
 })
 
 test('Chef explicit raw-food preparation is followed by a hygiene dependency', () => {
-  const plan = compileCookingPlan(approved('Chicken\nServes 2\nIngredients\n300g chicken\n2 carrots\nMethod\nDice the chicken. Chop the carrots. Fry everything for 15 minutes. Serve.'))
-  const dice = plan.tasks.find((item) => item.instruction === 'Dice the chicken.')
-  const chop = plan.tasks.find((item) => item.instruction === 'Chop the carrots.')
+  const plan = compileCookingPlan(
+    approved(
+      'Chicken\nServes 2\nIngredients\n300g chicken\n2 carrots\nMethod\nDice the chicken. Chop the carrots. Fry everything for 15 minutes. Serve.',
+    ),
+  )
+  const dice = plan.tasks.find(
+    (item) => item.instruction === 'Dice the chicken.',
+  )
+  const chop = plan.tasks.find(
+    (item) => item.instruction === 'Chop the carrots.',
+  )
   assert.ok(chop.dependencies.includes('clean-' + dice.taskId))
   assert.ok(dice.safetyFlags.includes('raw-food-handling'))
+})
+
+test('Chef includes cutting preparation specified on an ingredient line', () => {
+  const plan = compileCookingPlan(
+    approved(
+      'Paneer\nServes 2\nIngredients\n200g paneer, cut into 1cm cubes\nMethod\nFry the paneer in a pan for 5 minutes.',
+    ),
+  )
+  assert.ok(
+    plan.tasks.some(
+      (task) =>
+        task.phase === 'Preparation' &&
+        task.instruction.includes('cut into 1cm cubes'),
+    ),
+  )
 })
 
 test('Chef timing provenance distinguishes source, source range, word durations and estimates', () => {

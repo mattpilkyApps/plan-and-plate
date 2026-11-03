@@ -67,11 +67,6 @@ export function generateCanonicalShopping(
         originalRawLine: ingredient.originalRawLine,
         preparation: ingredient.preparation,
         sourceRefs: ingredient.sourceRefs,
-        sourceFragments: card.sourceFragments.filter((fragment) =>
-          ingredient.sourceRefs.some(
-            (ref) => ref.fragmentId === fragment.fragmentId,
-          ),
-        ),
         originalQuantity: ingredient.quantity,
         plannedServings: Number(plannedServings),
         baseServings: card.servings.value,
@@ -116,6 +111,16 @@ export function generateCanonicalShopping(
   )
   return {
     schemaVersion: 1,
+    sourceFragments: [
+      ...new Map(
+        selections.flatMap(({ card }) =>
+          card.sourceFragments.map((fragment) => [
+            fragment.fragmentId,
+            fragment,
+          ]),
+        ),
+      ).values(),
+    ],
     engine: 'production-shopping-adapter-1.0.0',
     groups: groups
       .map((group) => ({

@@ -27,6 +27,8 @@ export function downloadJson(value, filename) {
   const anchor = document.createElement('a')
   anchor.href = url
   anchor.download = filename
+  document.body.append(anchor)
   anchor.click()
+  anchor.remove()
   setTimeout(() => URL.revokeObjectURL(url), 1000)
 }

@@ -20,7 +20,8 @@ import {
   ShoppingBasket,
   Smartphone,
 } from 'lucide-react'
-import fixtures from './generated/fixtures.json'
+import fixtures from './generated/starters.json'
+import { engineScenarios } from '../domain/lab/scenarios.js'
 import {
   allIngredients,
   createRecipeCard,
@@ -46,6 +47,15 @@ import { createChefSession, chefEvent } from '../domain/cooking/session.js'
 import { generateCanonicalShopping } from '../domain/shopping/adapter.js'
 
 const commit = __LAB_COMMIT__
+const isPhonePreview = window.location.search.includes('phone')
+const shortNavLabels = {
+  recipe: 'Recipe',
+  chef: 'Chef',
+  shopping: 'Shop',
+  library: 'Tests',
+  diagnostics: 'Health',
+  issues: 'Issues',
+}
 const nav = [
   { id: 'recipe', label: 'Recipe card', icon: BookOpen },
   { id: 'chef', label: 'Chef mode', icon: ChefHat },
@@ -76,6 +86,7 @@ export default function Lab() {
   const [pendingCard, setPendingCard] = useState(null)
   const [results, setResults] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [fixtureLibrary, setFixtureLibrary] = useState(null)
   const [phonePreview, setPhonePreview] = useState(false)
   const [phoneWidth, setPhoneWidth] = useState(390)
   const notify = (message) => setToast(message)
@@ -116,8 +127,12 @@ export default function Lab() {
     }
   }, [shoppingBasket, shoppingOptions, manualItems])
   const cases = useMemo(
-    () => [...fixtures, ...state.savedCases],
-    [state.savedCases],
+    () => [
+      ...(fixtureLibrary || fixtures),
+      ...engineScenarios,
+      ...state.savedCases,
+    ],
+    [state.savedCases, fixtureLibrary],
   )
   const inputHash = contentHash(state.parts.join('\u0000'))
   const changedSource =
@@ -152,6 +167,7 @@ export default function Lab() {
     recentRuns: state.runs.slice(0, 3),
   }
   useEffect(() => {
+    if (isPhonePreview) return // Device previews are disposable copies, never another writer.
     const ok = writeLabState(state)
     if (!ok)
       queueMicrotask(() =>
@@ -168,6 +184,23 @@ export default function Lab() {
     const id = setTimeout(() => setToast(''), 5500)
     return () => clearTimeout(id)
   }, [toast])
+  useEffect(() => {
+    if (!['library', 'diagnostics'].includes(tab) || fixtureLibrary) return
+    let cancelled = false
+    import('./generated/fixtures.json')
+      .then((module) => {
+        if (!cancelled) setFixtureLibrary(module.default)
+      })
+      .catch(() => {
+        if (!cancelled)
+          setToast(
+            'The fixture library could not be loaded. Reconnect and try again.',
+          )
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [tab, fixtureLibrary])
   useEffect(() => {
     if (!state.plan || state.chefSession?.clock.mode !== 'real') return
     const id = setInterval(
@@ -291,21 +324,53 @@ export default function Lab() {
       notify(error.message)
     }
   }
-  function runSuite() {
+  function newTest() {
+    setState((current) => ({
+      ...current,
+      drafts: current.card
+        ? [
+            {
+              caseId: current.caseId,
+              card: current.card,
+              parts: current.parts,
+              pendingInput: current.pendingInput,
+              sourceUrl: current.sourceUrl,
+            },
+            ...(current.drafts || []).filter(
+              (draft) => draft.caseId !== current.caseId,
+            ),
+          ].slice(0, 15)
+        : current.drafts || [],
+      card: null,
+      parts: [],
+      caseId: 'unsaved',
+      pendingInput: '',
+      sourceUrl: '',
+    }))
+    setMobilePane('source')
+    notify(
+      'New test ready. Your previous recipe is kept under Resume an earlier draft.',
+    )
+  }
+  async function runSuite() {
     setBusy(true)
-    setTimeout(() => {
-      try {
-        const report = runRegressions(cases, state.lastGood)
-        setResults(report)
-        notify(
-          `${report.passed}/${report.total} fixture cases pass; ${report.regressions.length} new regressions.`,
-        )
-      } catch (error) {
-        notify(error.message)
-      } finally {
-        setBusy(false)
-      }
-    }, 25)
+    try {
+      const entries =
+        fixtureLibrary || (await import('./generated/fixtures.json')).default
+      setFixtureLibrary(entries)
+      const report = runRegressions(
+        [...entries, ...engineScenarios, ...state.savedCases],
+        state.lastGood,
+      )
+      setResults(report)
+      notify(
+        `${report.passed}/${report.total} cases pass. ${report.baselineAvailable ? report.regressions.length + ' new regressions.' : 'Save a last-good run to track regressions.'}`,
+      )
+    } catch (error) {
+      notify(error.message)
+    } finally {
+      setBusy(false)
+    }
   }
   async function importPack(event) {
     const file = event.target.files[0]
@@ -434,6 +499,7 @@ export default function Lab() {
         )}
         <button
           className="secondary-button report-button"
+          aria-label="Report issue"
           onClick={() => setReporting(true)}
         >
           <Bug size={17} />
@@ -446,12 +512,16 @@ export default function Lab() {
           <nav aria-label="Lab sections">
             {nav.map(({ id, label, icon: Icon }) => (
               <button
+                aria-label={label}
                 className={tab === id ? 'active' : ''}
                 key={id}
                 onClick={() => setTab(id)}
               >
                 <Icon size={19} />
-                <span>{label}</span>
+                <span className="nav-label">{label}</span>
+                <span className="nav-short" aria-hidden="true">
+                  {shortNavLabels[id]}
+                </span>
                 {id === 'issues' && state.issues.length > 0 && (
                   <b>{state.issues.length}</b>
                 )}
@@ -515,6 +585,10 @@ export default function Lab() {
                   </div>
                 </div>
                 <div className="workspace-bar">
+                  <button className="text-button" onClick={newTest}>
+                    <Plus size={16} />
+                    New test
+                  </button>
                   <div>
                     <span className="tiny-label">CURRENT CASE</span>
                     <span className="mono case-id">{state.caseId}</span>
@@ -947,17 +1021,19 @@ export default function Lab() {
                         {
                           passed: result.passed,
                           commit,
-                          output: result.card
-                            ? {
-                                title: result.card.title,
-                                ingredients: allIngredients(result.card).map(
-                                  (item) => item.rawLine,
-                                ),
-                                steps: result.card.steps.map(
-                                  (step) => step.instruction,
-                                ),
-                              }
-                            : null,
+                          output:
+                            result.output ||
+                            (result.card
+                              ? {
+                                  title: result.card.title,
+                                  ingredients: allIngredients(result.card).map(
+                                    (item) => item.rawLine,
+                                  ),
+                                  steps: result.card.steps.map(
+                                    (step) => step.instruction,
+                                  ),
+                                }
+                              : null),
                         },
                       ]),
                     ),

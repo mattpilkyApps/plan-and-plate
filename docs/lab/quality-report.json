@@ -1,0 +1,3340 @@
+{
+  "generatedAt": "2026-11-03T19:06:26.120Z",
+  "engineVersions": {
+    "schema": 1,
+    "recipe": "1.1.0",
+    "method": "1.0.0",
+    "parser": "production-b07e4b1",
+    "cooking": "1.0.0",
+    "timers": "1.0.0",
+    "shopping": "1.0.0"
+  },
+  "sourceFingerprint": "27db73ba5a96ab0e64eebb430fa5a38e6174b257cf9c8bf305be49723ff4bfeb",
+  "baseline": {
+    "existingTests": 217,
+    "recipeCorpus": 57,
+    "fragmentWorkflows": 16
+  },
+  "totalCases": 92,
+  "passed": 92,
+  "failed": 0,
+  "warnings": 52,
+  "exactNumberedStepGoldens": [
+    "owner-sprouts-two-tab-phone",
+    "owner-paneer-phone",
+    "owner-curry-plain",
+    "lab-ordered-actions",
+    "lab-decimals-and-heat",
+    "lab-groups-and-options"
+  ],
+  "assertionCount": 581,
+  "failures": [],
+  "cases": [
+    {
+      "id": "owner-sprouts-method-first-phone",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "method-before-ingredients-explicit",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "repeated-page-header-method-first",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "method-first-markdown-ingredients-header",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "method-first-related-ingredients-rejected",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-ingredients",
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "unlabelled-method-only-clipboard",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-title",
+        "missing-ingredients",
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "owner-sprouts-two-tab-phone",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "numberedSteps",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "tabs-before-ingredients-implicit-paragraphs",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "unmeasured-prepared-foods-before-inferred-method",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "ingredients-tab-with-method-link-only",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-method",
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "parser-review"
+      ]
+    },
+    {
+      "id": "combined-compact-metadata-and-explicit-method",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "owner-paneer-phone",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "numberedSteps",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime",
+        "alternative-ingredient-3-fb42e88a",
+        "alternative-ingredient-16-368b7a25",
+        "optional-scope-ingredient-16-368b7a25",
+        "branch-step-2-90"
+      ]
+    },
+    {
+      "id": "preparation-clauses-not-food-names",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "serving-header-with-unmeasured-food",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "serving-note-at-end-still-joins",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "tip-to-notes-before-syndication",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "recipe-tip-before-next-numbered-step",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "branch-step-1-14"
+      ]
+    },
+    {
+      "id": "ad-between-numbered-steps",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "sponsored-between-paragraphs",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "retail-new-products",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "retail-cooking-word-in-brand",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "currency-inside-real-instruction",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "tips-within-recipe",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "footer-can-contain-cooking-verbs",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "unusual-labelled-instruction",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "wrapped-unnumbered-paragraph",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "uncertain-tail-fails-safely",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "parser-review"
+      ]
+    },
+    {
+      "id": "newsletter-footer",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "final-ad-marker",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "skinny-total-time",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "love-equipment-and-serving-range",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings"
+      ]
+    },
+    {
+      "id": "spend-ingredient-subsections",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "gimme-fractional-scale-controls",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "twopeas-linked-equipment",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "sally-complex-ingredient-notes",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "alternative-ingredient-3-0ed6719c"
+      ]
+    },
+    {
+      "id": "goodfood-compact-toggle-extra",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "allrecipes-total-split-and-yield",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "kingarthur-products-before-method",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "kingarthur-interstitial-technique-card",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "cookie-range-optional-alternative",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "quantity-ingredient-1-f6aab2f2",
+        "alternative-ingredient-2-7b5c3227"
+      ]
+    },
+    {
+      "id": "inspired-you-will-need",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "minimalist-optional-toppings",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "goodfood-such-as-and-preparation",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "alternative-ingredient-1-43a83504"
+      ]
+    },
+    {
+      "id": "chef-megamenu-before-title",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "blog-mobile-full-controls",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "owner-curry-plain",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "numberedSteps",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime",
+        "alternative-ingredient-2-f214d639",
+        "alternative-ingredient-7-05216d47"
+      ]
+    },
+    {
+      "id": "owner-curry-markdown",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime",
+        "alternative-ingredient-2-f214d639",
+        "evidence-ingredient-3-88a68c47",
+        "evidence-ingredient-4-ea7b57f6",
+        "evidence-ingredient-7-05216d47",
+        "alternative-ingredient-7-05216d47",
+        "evidence-ingredient-12-3c8b050c"
+      ]
+    },
+    {
+      "id": "phone-retail-tail",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime",
+        "alternative-ingredient-2-f214d639",
+        "alternative-ingredient-7-05216d47"
+      ]
+    },
+    {
+      "id": "simple-numbered",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "unmeasured-and-continuations",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "tabs-checkboxes-footer",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "tesco-metric-card",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "jamie-numbered-wrap",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "branch-step-1-0"
+      ]
+    },
+    {
+      "id": "recipetin-scale-controls",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime",
+        "parser-review"
+      ]
+    },
+    {
+      "id": "allrecipes-split-labels",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "budget-card-cost-not-product",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "serious-eats-dual-measures",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "workflow-short-ingredients-then-method",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-short-method-then-ingredients",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-full-tabs-ingredients-first",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-full-tabs-method-first",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-labelled-full-method-first",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-labelled-full-ingredients-first",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-short-method-then-full-ingredients",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-full-method-then-short-ingredients",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-duplicate-ingredients-paste",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-duplicate-method-paste",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-noise-paste-after-complete-recipe",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "prepTime",
+          "passed": true
+        },
+        {
+          "field": "cookTime",
+          "passed": true
+        },
+        {
+          "field": "totalTime",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-method-tab-only",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-ingredients",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-ingredients-tab-only",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-method",
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "parser-review"
+      ]
+    },
+    {
+      "id": "workflow-method-only-then-unlabelled-ingredient-list",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "methodCount",
+          "passed": true
+        },
+        {
+          "field": "methodEndsWith",
+          "passed": true
+        },
+        {
+          "field": "notes",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-title",
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "alternative-ingredient-2-a1470d97",
+        "alternative-ingredient-9-9cfdf869",
+        "branch-step-3-326"
+      ]
+    },
+    {
+      "id": "workflow-wrapped-preparations-separate-tabs",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "workflow-retail-tail-stays-out-across-pastes",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "method",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "missing-servings",
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "lab-ordered-actions",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "numberedSteps",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "lab-decimals-and-heat",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "numberedSteps",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime"
+      ]
+    },
+    {
+      "id": "lab-groups-and-options",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "name",
+          "passed": true
+        },
+        {
+          "field": "servings",
+          "passed": true
+        },
+        {
+          "field": "ingredients",
+          "passed": true
+        },
+        {
+          "field": "numberedSteps",
+          "passed": true
+        },
+        {
+          "field": "ingredientGroups",
+          "passed": true
+        },
+        {
+          "field": "methodPartitionCoverage",
+          "passed": true
+        },
+        {
+          "field": "excludedNoise",
+          "passed": true
+        }
+      ],
+      "reviewCodes": [
+        "unknown-prepTime",
+        "unknown-cookTime",
+        "unknown-totalTime",
+        "alternative-ingredient-2-a64e0de4"
+      ]
+    },
+    {
+      "id": "chef-normal-confirmed",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.status",
+          "passed": true
+        },
+        {
+          "field": "starts.finish",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-expiry-needs-confirmation",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.status",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.finish.status",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-extend-only-descendants",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.targetAt",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.pan.targetAt",
+          "passed": true
+        },
+        {
+          "field": "starts.finish",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-done-early",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "starts.finish",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.pan.targetAt",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-running-behind",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.targetAt",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.pan.targetAt",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-pause-one-timer",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.targetAt",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.pan.targetAt",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-hold-is-not-food-pause",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.presentation.paused",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.status",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-presentation-is-not-completion",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.status",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.pan.status",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-interrupted-replay",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "replayMatches",
+          "passed": true
+        },
+        {
+          "field": "session.taskStates.oven.status",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-prerequisite-blocked",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "expectedError",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-equipment-conflict",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "expectedError",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-safety-not-confirmed",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "expectedError",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "chef-cycle-rejected",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "expectedError",
+          "passed": true
+        },
+        {
+          "field": "safeFallback",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "shopping-scale-and-household",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "quantities.beans",
+          "passed": true
+        },
+        {
+          "field": "quantities.garlic",
+          "passed": true
+        },
+        {
+          "field": "categories.Toilet rolls",
+          "passed": true
+        },
+        {
+          "field": "sourceCount",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "shopping-optional-keeps-evidence",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "sourceCount",
+          "passed": true
+        },
+        {
+          "field": "excludedCount",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "shopping-incompatible-units",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "quantities.flour",
+          "passed": true
+        },
+        {
+          "field": "sourceCount",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    }
+  ],
+  "limitations": [
+    "Fixture assertion passes are not a calibrated probability of recipe correctness.",
+    "Method character coverage measures extracted method, not all webpage classification.",
+    "Six numbered-step goldens checked against source during engineering; independent human/owner review remains outstanding.",
+    "Smart scheduling currently enables safe preheat overlap; arbitrary parallel prose is retained conservatively.",
+    "Physical Android/iOS and background notification reliability remain unverified."
+  ]
+}

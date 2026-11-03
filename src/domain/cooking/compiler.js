@@ -14,7 +14,7 @@ export const SAFETY_POLICY = {
     'Check the food is thoroughly cooked before serving. Follow the recipe and packet instructions and use a clean food thermometer where appropriate. A timer alone cannot confirm safe doneness. Review the linked FSA guidance.',
 }
 const prepPattern =
-  /\b(chopp?ed|diced|sliced|peeled|grated|crushed|trimmed|deseeded|quartered|halved|rinsed|washed|juiced|bashed)\b/i
+  /\b(chopp?ed|diced|sliced|peeled|grated|crushed|trimmed|deseeded|quartered|halved|rinsed|washed|juiced|bashed|cut into)\b/i
 const rawRisk =
   /\b(chicken|turkey|poultry|pork|beef|mince|lamb|fish|prawns?|salmon)\b/i
 const prepared = /\b(?:cooked|ready[- ]to[- ]eat|tinned|canned)\b/i
@@ -315,7 +315,31 @@ export function compileCookingPlan(card, preferences = {}) {
     if (phase === 'Preparation' && refs.some((id) => rawIds.has(id))) {
       task.safetyFlags.push('raw-food-handling')
       const cleanId = `clean-${task.taskId}`
-      tasks.push({ taskId: cleanId, phase: 'Preparation', actionType: 'safety-check', instruction: SAFETY_POLICY.hygieneMessage, ingredientRefs: [], quantities: [], recipeStepRefs: [step.stepId], sourceRefs: [], duration: { seconds: 60, status: 'estimate', label: 'Cleaning estimate' }, active: true, userPresence: true, equipment: ['board', 'knife'], resources: ['person', 'board', 'knife'], dependencies: [task.taskId], requiresConfirmation: true, safetyFlags: ['cross-contamination-check'], originalOrder: index + 0.25, provenance: 'safety-policy', policy: SAFETY_POLICY.version })
+      tasks.push({
+        taskId: cleanId,
+        phase: 'Preparation',
+        actionType: 'safety-check',
+        instruction: SAFETY_POLICY.hygieneMessage,
+        ingredientRefs: [],
+        quantities: [],
+        recipeStepRefs: [step.stepId],
+        sourceRefs: [],
+        duration: {
+          seconds: 60,
+          status: 'estimate',
+          label: 'Cleaning estimate',
+        },
+        active: true,
+        userPresence: true,
+        equipment: ['board', 'knife'],
+        resources: ['person', 'board', 'knife'],
+        dependencies: [task.taskId],
+        requiresConfirmation: true,
+        safetyFlags: ['cross-contamination-check'],
+        originalOrder: index + 0.25,
+        provenance: 'safety-policy',
+        policy: SAFETY_POLICY.version,
+      })
       previousMethod = cleanId
     }
     if (conditional)

@@ -59,16 +59,20 @@ export default function ChefSimulator({
   function dispatch(type, extra = {}) {
     if (!plan || !session) return
     try {
-      onSession(
-        chefEvent(plan, session, {
-          type,
-          at:
-            session.clock.mode === 'real'
-              ? Math.max(Date.now(), session.clock.now)
-              : session.clock.now,
-          ...extra,
-        }),
-      )
+      let next = chefEvent(plan, session, {
+        type,
+        at:
+          session.clock.mode === 'real'
+            ? Math.max(Date.now(), session.clock.now)
+            : session.clock.now,
+        ...extra,
+      })
+      if (['COMPLETE', 'DONE_EARLY'].includes(type))
+        next = chefEvent(plan, next, {
+          type: 'PRESENT_NEXT',
+          at: next.clock.now,
+        })
+      onSession(next)
     } catch (error) {
       notify(error.message)
     }
@@ -234,8 +238,8 @@ export default function ChefSimulator({
         <>
           {stale && (
             <p className="notice warm">
-              This session uses an earlier reviewed recipe snapshot. Finish
-              inspecting it or compile the newly approved card to use your
+              This session uses an earlier reviewed recipe snapshot. Continue
+              this saved session or compile the newly approved card to use your
               changes.
             </p>
           )}
@@ -357,10 +361,8 @@ export default function ChefSimulator({
                   <button
                     className="primary-button full-width"
                     disabled={
-                      Boolean(stale) ||
                       taskStartBlockers(plan, session.taskStates, task.taskId)
-                        .length > 0 ||
-                      session.presentation.paused
+                        .length > 0 || session.presentation.paused
                     }
                     onClick={() => dispatch('START', { taskId: task.taskId })}
                   >
@@ -436,7 +438,7 @@ export default function ChefSimulator({
                         }
                       >
                         <Check size={17} />
-                        Done / Next task ready
+                        Done & next
                       </button>
                       <button
                         className="text-button"

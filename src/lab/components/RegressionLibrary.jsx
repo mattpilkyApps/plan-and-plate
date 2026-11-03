@@ -39,7 +39,7 @@ export default function RegressionLibrary({
           Run regression suite
         </button>
       </div>
-      <div className="stats-grid">
+      <div className="stats-grid five-stats">
         <div className="stat">
           <span>Total cases</span>
           <strong>{results?.total ?? cases.length}</strong>
@@ -51,6 +51,10 @@ export default function RegressionLibrary({
         <div className="stat">
           <span>Failed</span>
           <strong>{results?.failed ?? '—'}</strong>
+        </div>
+        <div className="stat">
+          <span>Warnings</span>
+          <strong>{results?.warnings ?? '—'}</strong>
         </div>
         <div className="stat">
           <span>New regressions</span>
@@ -128,8 +132,18 @@ export default function RegressionLibrary({
                 </span>
               </div>
               <div className="case-actions">
-                <button className="text-button" onClick={() => onLoad(entry)}>
-                  Open input <ArrowUpRight size={15} />
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    entry.raw || entry.clips
+                      ? onLoad(entry)
+                      : setExpanded(entry.id)
+                  }
+                >
+                  {entry.kind === 'cooking-simulation'
+                    ? 'Inspect plan & events'
+                    : 'Open input'}{' '}
+                  <ArrowUpRight size={15} />
                 </button>
                 <button
                   className="text-button"
@@ -251,11 +265,21 @@ export default function RegressionLibrary({
                     </details>
                   )}
                   <details>
-                    <summary>Untouched source input</summary>
+                    <summary>
+                      {entry.kind === 'cooking-simulation'
+                        ? 'Synthetic plan and replay events'
+                        : 'Untouched source input'}
+                    </summary>
                     <pre className="raw-preview">
-                      {(entry.clips || [entry.raw]).join(
-                        '\n\n--- NEXT FRAGMENT ---\n\n',
-                      )}
+                      {entry.kind === 'cooking-simulation'
+                        ? JSON.stringify(
+                            { plan: entry.plan, events: entry.events },
+                            null,
+                            2,
+                          )
+                        : (entry.clips || [entry.raw]).join(
+                            '\n\n--- NEXT FRAGMENT ---\n\n',
+                          )}
                     </pre>
                   </details>
                 </div>

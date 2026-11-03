@@ -1,7 +1,9 @@
 import { createRecipeCard, allIngredients } from '../recipe/card.js'
+import { runEngineScenario } from './scenarios.js'
 
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b)
 export function runRegressionCase(entry) {
+  if (entry.kind?.endsWith('-simulation')) return runEngineScenario(entry)
   try {
     const card = createRecipeCard(entry.clips || [entry.raw], {
       now: '2026-11-03T00:00:00.000Z',
@@ -92,7 +94,9 @@ export function runRegressions(entries, lastGood = {}) {
     passed: results.filter((result) => result.passed).length,
     failed: results.filter((result) => !result.passed).length,
     warnings: results.reduce(
-      (count, result) => count + result.warnings.length,
+      (count, result) =>
+        count +
+        result.warnings.filter((entry) => entry.severity === 'warning').length,
       0,
     ),
     baselineAvailable: Object.keys(lastGood).length > 0,

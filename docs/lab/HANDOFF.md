@@ -1,5 +1,27 @@
 # Recipe Quality Lab — recovery handoff
 
+## Current completed state — supersedes milestone notes below
+
+3 November 2026. Working isolated Lab with all six sections, source-faithful/editable cards, conservative Chef compiler and real/virtual sessions, actual production Shopping calculations, local issue capture/review/export, case import/source replay and a shared browser/Node regression library. Production/main remain protected and unchanged. Read DELIVERY_REPORT.md for scope, observed browser evidence and honest limits; quality-report.json contains the reproducible machine report.
+
+Final checks: **346/346 full tests**, **92/92 Lab cases / 581 assertions**, **57/57 original recipe corpus**, **16 existing multi-tab workflows**, lint, production build, Lab build and service-worker syntax pass. The 92 cases are 76 recipe/paste cases plus 16 cooking/shopping scenarios. 52 warning-level fixture review flags remain explicit; there are no failed case assertions. Browser baseline rerun: zero new regressions. No claim of universal or perfect parsing. Six exact numbered-step goldens are source-checked engineering expectations, awaiting Matt's independent human review.
+
+Browser QA passed source highlights; paneer 16 ingredients/9 steps; explicit approval/full pipeline; +3 minutes/ETA/expiry awaiting confirmation; six-serving Shopping quantities, manual Toilet rolls, original-source trace and recoverable Already-got. At 320/390/430px actual embedded viewports, all six navigation buttons fit and the document has no horizontal overflow. Method-first/ingredients-second phone paste yielded four ingredients/four ordered steps; edited title survived rebuilding. Full reviewed issue JSON was actually downloaded and parsed with source, timers and Shopping attached; no device/screenshot included without opting in. Evidence: ../review/recipe-quality-lab-phone.jpg. Physical Android/iOS/Safari, real-kitchen use and prolonged offline/background behaviour remain unverified.
+
+Start a new case with New test; old cards remain under Resume an earlier draft. User edits revoke approval. Lab storage key is plan-and-plate-lab-v1; phone-preview iframes are disposable copies and do not write it. Default app storage is never read. Timers/presentation states are separate; independent timers are not restarted by rescheduling.
+
+### Exact recovery sequence
+
+1. Fetch and checkout `lab/recipe-quality`; `git status --short --branch` and `git log -4 --oneline`. Do not start from main or recreate this implementation.
+2. Read this top section, DELIVERY_REPORT.md, then only relevant domain/UI files. Approved full design is APPROVED_SPECIFICATION.md. Do not re-ingest all project history.
+3. `npm ci`; `npm run test:lab`; `npm run lab:report`. Full release checks: `npm test`, `npm run parser:report`, `npm run lint`, `npm run build`, `npm run build:lab`.
+4. `npm run dev:lab` for standalone development. Build output dist-lab; normal app build remains dist. The Lab has its own generated service worker/cache namespace.
+5. For managed local browser QA, create a scratch wrapper with an actual copy of dist-lab in dist and .openai/hosting.json declaring static.directory=dist; use sites-preview start <wrapper>. Nested-package dev preview had a daemon cwd limitation; do not change production scripts to compensate. Exclude wrapper from Git.
+6. Use the connected GitHub tree/commit/ref tools if direct Git push has no credentials. The last pushed integration checkpoint before final QA was 1ebe7aaac7f40cab9ec3953263f7bd27d16ae658. `git rev-parse HEAD` resolves the final documentation checkpoint. Never force unrelated branch history.
+7. Preview only: use exact source SHA with Vercel per-deployment buildCommand npm run build:lab, outputDirectory dist-lab and existing project/team IDs documented below. Omit target (preview default); never promote to production or change main. Verify READY/source SHA and authenticated HTTP 200. Preserve preview protection.
+
+Highest-value next task: Matt's physical Android review of the three known owner cases and ten fresh website copies. Keep recipe/card correctness ahead of richer scheduling. Each confirmed defect needs an issue snapshot and new regression assertion. Source replay restores inputs; full reports retain reported graph/timers for Work debugging. Arbitrary multi-pan interpretation, culinary/personalised estimates, native notifications/voice, full issue-session UI replay, server collaboration and compound ingredient components remain future work.
+
 ## Cooking and Shopping integration checkpoint
 
 Standalone UI now has six working areas. Reusable cooking compiler, DAG/resource scheduler, timestamp-based session reducer, virtual/real clocks, presentation autoplay, confirmation-only completion, independent timer adjustment, pause/resume, early/behind controls, preference persistence, safety-policy checkpoints, event replay and timeline inspection are implemented. Smart reordering is deliberately limited to supported preheat overlap and ingredient preparation preferences. Composite/unknown method instructions retain source order. Generic prep estimates are labelled, not claimed vetted/personalised. FSA policy sources reviewed 3 November 2026.

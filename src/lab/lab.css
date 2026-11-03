@@ -297,6 +297,9 @@ small {
   flex-direction: column;
   gap: 6px;
 }
+.nav-short {
+  display: none;
+}
 .lab-sidebar nav button {
   display: flex;
   align-items: center;
@@ -2534,5 +2537,71 @@ summary {
     animation: none !important;
     transition: none !important;
     scroll-behavior: auto !important;
+  }
+}
+@media (max-width: 640px) {
+  .brand > span:last-child {
+    white-space: nowrap;
+  }
+  .lab-sidebar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+  }
+  .lab-sidebar nav button {
+    min-width: 0;
+    flex: 1;
+    padding: 9px 3px;
+  }
+  .lab-sidebar .nav-label {
+    display: none;
+  }
+  .lab-sidebar .nav-short {
+    display: block;
+    font-size: 9px;
+    white-space: nowrap;
+  }
+  .lab-sidebar nav {
+    overflow: visible;
+  }
+  .workspace-bar {
+    gap: 4px 12px;
+  }
+  .workspace-bar > div {
+    flex-basis: 100%;
+    order: -1;
+  }
+}
+@media (max-width: 360px) {
+  .report-button span {
+    display: none;
+  }
+  .report-button {
+    min-width: 44px;
+    padding: 10px;
+  }
+  .brand {
+    font-size: 23px;
+  }
+  .page-intro h1 {
+    font-size: 31px;
+  }
+}
+.five-stats {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+.saved-drafts {
+  margin-top: 20px;
+}
+.saved-drafts .text-button {
+  display: flex;
+  text-align: left;
+}
+@media (max-width: 640px) {
+  .five-stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .five-stats > .stat:last-child {
+    grid-column: 1 / -1;
   }
 }
