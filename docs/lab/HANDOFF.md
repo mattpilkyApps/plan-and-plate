@@ -20,6 +20,14 @@ Validation at engine checkpoint: 80 new Lab tests (57 corpus + 16 workflows + 3 
 
 ## Known limits
 
+## Recipe Lab MVP checkpoint
+
+The standalone cream/green Lab UI now includes fragment intake, source comparison/highlights, complete recipe preview, title/servings/time/notes/group/ingredient editing, step edits/reorder/split/merge, explicit revision approval, sticky corrections during reprocessing, locally reviewed fixtures, 76-case regression runner and expected/actual comparisons, local issue notebook, opt-in full diagnostic exports and issue-source replay. Lab storage uses only plan-and-plate-lab-v1. No production route or storage is used.
+
+MVP verification: 300/300 full tests, lint, standalone Lab build pass. Browser loaded the actual owner paneer case with all 16 ingredients and 11 numbered steps. Private source remains intact. Phone viewport QA and cooking/shopping integration follow. The daemon's dev-server route could not resolve the nested package cwd; regular static preview works with an actual copy (not symlink) of dist-lab in scratch/lab-preview/dist. Start it with sites-preview start <scratch>/lab-preview. Never commit the local preview wrapper.
+
+Run npm run build:lab, or npm run dev:lab. Fixtures are generated from existing source files and ignored, so build/dev always runs scripts/build-lab-fixtures.js first.
+
 Coverage is of extracted method text; it is not proof that arbitrary website source was classified perfectly. Unmapped evidence and uncertain boundaries request review. Conservative deterministic segmentation cannot understand every conditional recipe. No recipe is labelled perfect. No AI cost or API key introduced. Browser and physical-device validation pending.
 
 ## Recovery
