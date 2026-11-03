@@ -1,5 +1,9 @@
 # Plan & Plate — Current Handoff
 
+## Active isolated Lab work — 3 November 2026
+
+Continue on `lab/recipe-quality`; production is unchanged. Read [Lab recovery handoff](lab/HANDOFF.md) first for the current implementation, checks, limitations and next task. The production release history below remains authoritative for the live app.
+
 Updated 2026-11-01. Repo mattpilkyApps/plan-and-plate.
 
 - **Main/production release:** ca4546053ca9d657ea99dd8a8f3d7326b202cf14, Shopping PR #5 https://github.com/mattpilkyApps/plan-and-plate/pull/5. The following main documentation checkpoint has identical app source; resolve current main HEAD with git log -1 / GitHub ref. No uncommitted application changes.

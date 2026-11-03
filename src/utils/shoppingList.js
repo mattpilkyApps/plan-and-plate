@@ -296,7 +296,7 @@ export function getIngredientCategory(ingredientName, unit = '', source = '') {
 function getRecipeIngredients(recipe) {
   if (recipe.parsedIngredients?.length) {
     return recipe.parsedIngredients.map((ingredient) => {
-      if (ingredient.quantity || !ingredient.rawText) {
+      if (ingredient.canonicalIngredientId || ingredient.quantity || !ingredient.rawText) {
         return ingredient
       }
 

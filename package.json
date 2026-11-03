@@ -5,6 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lab": "node scripts/build-lab-fixtures.js && vite --config vite.lab.config.js",
+    "build:lab": "node scripts/build-lab-fixtures.js && vite build --config vite.lab.config.js",
+    "test:lab": "node --test tests/lab-*.test.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",

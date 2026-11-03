@@ -1,0 +1,161 @@
+﻿PLAN & PLATE
+Recipe Quality Lab & Adaptive Chef Mode
+MASTER TECHNICAL DESIGN SPECIFICATION — v1.0 | 3 November 2026
+Status: APPROVED DESIGN DIRECTION; NOT YET IMPLEMENTED. Created to guide an isolated development-and-testing implementation before changing the production app.
+Ownership: Plan & Plate. This document supplements the existing 'Plan and Plate v2' master product plan. The user's latest explicit decisions take priority.
+1. Executive decision and product promise
+The first deliverable is NOT Chef Mode. It is a faithful, clean, editable, numbered recipe card created from messy real-world recipe material. Every downstream subsystem—Chef Mode, shopping and future pantry/price comparison—must consume the same validated canonical recipe. No downstream engine should independently reinterpret raw pasted text.
+Development sequence: source ingestion → canonical recipe drafting → evidence-backed validation → editable preview → accepted recipe card → cooking-plan compilation → adaptive Chef Mode → shopping-list simulation → production integration.
+Primary goal: a user can paste badly formatted copied text (including separate Ingredients and Method tabs in either order), get an accurate numbered recipe, correct it easily where needed, and then use it for both cooking and shopping without mysterious data loss.
+Non-goals in the first release: live supermarket product pricing, automatic personalised coupon access, voice-based AI conversation, strict pantry inventory accounting, production account migration or a production-wide rewrite.
+2. Existing Plan & Plate baseline — inspect, do not overwrite
+Repository: mattpilkyApps/plan-and-plate (React 19, Vite 8, React Router, Tailwind CSS). Current product is local-first and stores recipe/planner/shopping data in the browser. The current handoff dated 1 November 2026 describes an accepted shopping release and deferred pantry work. Verify the latest main branch before implementation; this specification is not a fresh code audit.
+Key currently inspected modules: src/utils/recipeImport.js (parsePastedRecipe and optional diagnostics), recipePaste.js (multi-part paste span tracking), recipeImportSession.js (fragment assembly), ingredientParser.js, shoppingList.js, shoppingProductCatalog.js, src/pages/AddRecipe.jsx; tests/helpers/recipe-corpus.js, scripts/evaluate-recipe-corpus.js, scripts/compare-recipe-import.js.
+The handoff reported a 57/57 recipe-corpus pass, 16/16 multi-tab workflow pass and 217 total tests at the time of the shopping release. These cover specified expectations, not universal recipe correctness. Preserve them as baseline regression tests; run current tests, lint and build at the start of lab implementation.
+Important known edge case: compound 'To serve' ingredient lines such as 'steamed basmati rice and coriander' must not be split by naive AND/OR rules; retain original text, optional/unknown quantity and provenance. More general product matching/units/pack conversion remain separate future work.
+Existing Pantry product decision: 'Already got it' from Shopping records a low-friction Pantry item, with optional quantity and no automatic stock deduction. Lab may simulate pantry data, but production pantry implementation remains gated on current loop validation.
+3. Core design constraints
+• Preserve every original source fragment in order with its paste session and position; do not silently overwrite original wording.
+• Any computed ingredient, step, quantity, temperature or timer must be traceable to source text or explicitly labelled as a suggestion/estimate.
+• Unknown is a valid data value. Never turn an unknown weight, cooking time, temperature or yield into an authoritative number.
+• User corrections must be easy and sticky. Reprocessing a source should not erase a user's approved edits without an explicit conflict review.
+• Do not make the existing recipe import, planner or shopping behaviour worse to accommodate Chef Mode.
+• Never silently treat elapsed presentation time as proof that preparation is finished or food is safe.
+• Keep the UI calm, mobile-first, with large text, generous controls, cream/green design and accessible reduced-motion support.
+4. End-to-end user workflow
+4.1 Import and perfect the recipe card
+Entry points: Add Recipe > Paste Recipe, a future direct Lab import, or an existing saved recipe. User can paste whole-page text, recipe excerpts, ingredient tab then method tab, or method tab then ingredients. The system maintains paste-part boundaries, allows more than one paste, previews what it found and highlights conflicts.
+After paste: display source text and structured draft side by side on desktop, as toggled views on phone. Present title, servings, prep/cook time, ingredient groups, NOTES, and a clearly NUMBERED method. Indicate 'Found in source', 'Inferred layout', 'Missing' or 'Needs review' per field.
+User actions: edit a field; merge/split/reorder numbered steps; mark lines as ingredients versus instructions; choose alternatives; accept an uncertainty; compare to original; save validated recipe. Keep raw text unmodified. If a required fact is absent, show 'Not specified' rather than fabricating it.
+4.2 Use the same card everywhere
+From the accepted recipe card the user may Start Chef Mode, Add to Planner, simulate Shopping, or save the card for later. The cooking and shopping engines consume its canonical structured data, not separate second-pass text parsing. The old app's storage representation continues through an explicit compatibility adapter until a staged migration is proven safe.
+5. Canonical RecipeCard v1 — proposed schema
+RecipeCard is the central domain object. These fields are PROPOSED and must be mapped against current saved recipes before implementation.
+Identity: id, schemaVersion, revision, title, category, optional author/source URL/attribution, photo reference, createdAt/updatedAt.
+Source: sourceFragments[{fragmentId, rawText, originalOrder, pasteSequence, sourceType, contentHash}], sourceLocation spans or line IDs; original full method preserved.
+Yield and time: servings = {value|null, unit, sourceRef, status}; prepTime/cookTime/totalTime = {minutes|null, sourceRef, status}, where status distinguishes explicit, derived and missing.
+Ingredients: ingredientGroups[{groupId, heading, items:[{ingredientId, rawLine, quantity:{value|range|null,unit|null}, productName, preparation, optional, alternativeGroupId, packageSize, qualifiers, sourceRefs, parseStatus}]}]. Preserve 'to serve', optional, 'or', packaging and fractions, even where quantities are unresolved.
+Method: steps[{stepId, number, heading?, instruction, sourceRefs, ingredientRefs[], duration?, heat?, equipment[], safetyFlags[], parseStatus, originalOrder}]. The readable recipe card contains the numbered instructions in intended cooking order.
+Metadata: notes[], dietaryClaimSource?, unresolvedIssues[], approvals[], parserVersion, recipeCardStatus(DRAFT|NEEDS_REVIEW|VALIDATED), diagnosticSummary.
+Chef data is separate: CookingPlan has phases, atomic tasks, dependencies, estimates and evidence links. ChefSession stores personal preferences, live progress, actual timings and timer state. Editing a cooking session must not rewrite the saved RecipeCard.
+Add versioned validators and migrations. Maintain existing recipe ID, sources, favourites and planner links where current behaviour expects them.
+6. Parsing and recipe-card compilation pipeline
+6.1 Source intake and segmentation
+Normalize whitespace and copy artefacts only for analysis; preserve the raw originals. Detect repeated page headers, advertisements, unrelated recipe recommendations, newsletter panels, tabs and nutrition text; exclude irrelevant content from the recipe card while logging exclusions and source locations.
+Recognise common metadata (title, servings, prep, cook), ingredient group headings, ingredient candidates and method sections. Retain part identifiers across multiple pasted sections so same-page and separate-tab content are assembled without losing their relative evidence.
+6.2 Candidate extraction and conflict resolution
+Extract high-confidence ingredient and method candidates using the current deterministic parser as baseline. Accept alternatives, subordinate preparation lines, parenthetical package weights, fractions, plural units and UK site formats. For duplicate full-page pastes, deduplicate equivalent content by normalized content and evidence—not by blindly deleting repeated legitimate ingredients.
+If two fragments disagree about ingredient quantities, steps, title or servings, preserve both candidates and flag the conflict. Never silently take the first or last number. Display the source lines that caused the disagreement.
+6.3 Numbered method generation — the critical enhancement
+Convert the method into a deliberately structured, readable numbered series. Split a large paragraph when it contains distinct ordered actions ('fry onions for 5 minutes; add garlic; simmer for 2 minutes'), but do not split to the point that each adjective or stirring reminder becomes its own slide. Keep actions with shared context together.
+Retain exact times, heat values, oven settings, temperatures, quantities and dependencies. Maintain source step ordering unless the original source is demonstrably corrupted by page noise or a user explicitly edits the order. Preserve qualifiers such as 'until golden', 'occasionally' and 'or until cooked'.
+Example source: 'Heat the oil. Cook onions 5 mins until soft, then add garlic and cook 1 min. Stir in tomatoes and simmer for 20 mins.'
+Clean recipe-card method: 1. Heat the oil in the pan. 2. Add onions and cook for 5 minutes until soft. 3. Add garlic and cook for 1 minute. 4. Stir in the tomatoes, then simmer for 20 minutes.
+This is a representation example, not an additional source of cooking instructions. Never invent a temperature, heat setting, number of ingredients or a time absent from the original. Do not rewrite safety-critical meaning.
+Preserve original method paragraphs and map every generated numbered instruction back to a source span. Validate that meaningful source actions remain represented exactly once (except intentional reminders); highlight any unassigned or duplicated fragments. A step editor supports merge, split and reorder with a live source comparison.
+6.4 Validation and approval
+Validate: source coverage; ingredient lines not leaked into method; method text not leaked into ingredients; quantity-unit pairing; notes/optional preservation; title/servings extraction; ordered step consistency; duplicate detection; no invented data; contradictory oven and cooking instructions; malformed conditional branches.
+Show a field-level review panel with an explicit distinction between missing, uncertain and conflicting data. 'Ready to cook' requires a coherent ordered method and ingredients; 'Ready for shopping' additionally requires reliable ingredient identities and quantities where the source specified them. Some recipes may legitimately remain usable with unspecified optional amounts.
+The Lab should offer a small 'Fix this' action beside each flagged field, not ask the user to retype the recipe from scratch.
+7. Quality scoring — proof, not a vanity percentage
+Use objective comparison against human-reviewed expected recipe fixtures, with separate parser and cooking readiness labels. Do not claim a percentage represents probability of correctness unless properly calibrated.
+Recipe quality dimensions: ingredient precision and recall; quantity/unit accuracy; step completeness and order; metadata accuracy; source coverage/no hallucinations; error/conflict detection; user correction effort. Report per-field success and a comprehensive case PASS only when all required assertions succeed.
+Example gates for release: 100% pass on designated high-risk golden fixtures; zero invented temperatures or ingredient amounts in the test corpus; zero silent loss of required source cooking actions; no food-safety-dependency violations; new regressions = 0. Broad percentage targets must only be set once the fixture set and expected outputs are representative.
+A recipe with missing source cooking times may still be a faithful card and must not be scored as a parser failure for not knowing missing information. Flag 'source incomplete' instead. Track improvements separately for parser extraction, method segmentation and human-reviewed corrections.
+8. Chef Mode UX — default decisions
+8.1 Entry and setup
+Recipe Detail and Planned Meal show 'Start Chef Mode'. First launch shows a simple preflight: servings, estimated total time (label estimated if not explicit), required equipment when known and preparation style. Remember preferences and normally skip setup on later uses.
+Modes: PREP EVERYTHING FIRST (default, predictable); SMART TIMING (safe overlapping tasks); MY ORDER (vegetables-first/meat-first and limited user-adjustable preferences). Include an expertise setting Beginner|Standard|Confident controlling explanation length, not food-safety rules.
+8.2 Primary cooking screen
+One very large active action; highlighted ingredient amount; heat/oven setting only when source-supported or clearly labelled derived; prominent active timers; 'Coming next' line; subtle phase progress; bottom controls Pause/Hold, More Time, Back and Done/Next. No clutter or forced ad interruptions during active cooking.
+Recipe phases are PREPARE, COOK and FINISH/SERVE by default, with interleaving when dependency graph requires it. A user should complete a simple recipe with few touches, not 20–30 forced swipes. The engine may auto-advance presentation cards while the actual task remains open.
+8.3 Autoplay rules
+Maintain two timelines. Presentation timeline controls how long the instruction is visible and when a prompt/next card appears. Cooking timeline records real task start, duration estimate, elapsed time, dependencies and food-safety readiness.
+Pure informational slides can auto-advance after a readable dwell; a starting default of ~8–12 seconds may be calibrated by text length and accessibility preferences. Preparation slides can show an estimated timer and preview upcoming tasks, but NEVER automatically mark the physical task completed solely because time elapsed. At a dependent checkpoint, require Done/voice confirmation; optionally soft-prompt if safe. Critical cooking steps ALWAYS require explicit confirmation or instrument-based evidence.
+If a user taps +1 min, +3 min, Pause, Done Early, or 'I'm behind', the task estimate and remaining schedule are recomputed. Unaffected independent timers continue unchanged. Never restart a cooking timer accidentally when reshuffling slides.
+8.4 Notification and offline design
+Keep screen awake while foreground session is active, with user consent and graceful fallback. Persist session events and absolute timer target timestamps to device storage. Recompute elapsed time on resume after browser sleep. Treat PWA background notifications as best effort, not guaranteed. For reliable background alerts consider later native capabilities. Offline existing verified plans should remain readable and timers locally controllable.
+9. Adaptive cooking engine — compilation and scheduling
+Compile RecipeCard steps into atomic CookingTasks. Each task stores taskId, phase, actionType, recipeStepRefs, ingredientRefs, equipment, resource/capacity needs, explicit vs estimated duration, heat info, active or passive work, user-presence requirement, safety requirements and dependencies.
+Build a directed acyclic dependency graph (DAG). Order constraints arise from the recipe (mix before bake, preheat before oven insertion, food safety, rest before carve, cook before serve), plus equipment constraints (one pan, one hob ring, one chopping board) and hazard separation. Reject cycles and fall back to the original safe sequence, surfacing a diagnostic.
+A deterministic scheduler performs a constrained topological sort, optimising the selected user preference subject to mandatory constraints. Smart Timing may overlap passive cooking with independent preparation, but not two simultaneous tasks needing the same person's attention.
+Preheat is a parallel equipment task when appropriate; the engine must schedule it early enough if specified. For unrecognised steps, retain the original order and label reordering unavailable. Original recipe order remains one-tap accessible.
+When time changes: update task's actual/estimated completion; recalculate only affected descendants and resource conflicts; preserve already-completed tasks and running independent timers; show a revised total ETA as an estimate. Keep an event log for replay and debugging.
+10. Timing model
+Timing source priority: explicit source duration > vetted culinary task rule > personalised historical estimate > conservative generic estimate. Display the provenance; never present an estimated oven temperature as a fact.
+Prep rule examples are task classes, not fixed universal truths: chop(quantity, cut, equipment, skill); peel(quantity, type); grate(quantity); measure; wash; clean/sanitise. Personalisation uses user-confirmed task completion/extension events, with bounded updates and an option to reset cooking-speed profile.
+Cooking timers are separate from slide timers and from doneness checks. Support multiple parallel absolute timers, each with stable ID, start, pause intervals, target/elapsed time, owner task and state. Pause of a passive oven timer should not silently suspend real cooking heat; explain that pausing the app timer is not pausing the food.
+11. Food safety and confidence boundaries
+Safety-critical constraints include raw poultry/meat cross-contamination, separation and cleaning of equipment, safe doneness checks, allergen assertions, hot oil, oven handling, refrigeration/resting instructions and unverified substitutions. The engine must not claim food safe merely because time ran out.
+For chicken and comparable higher-risk foods, include validated safe cooking guidance only where appropriate and distinguish it from the recipe's own instructions; provide checks without substituting unsupported invented values. Use up-to-date UK FSA guidance during implementation and maintain reviewed policy versions.
+If the source is contradictory or incomplete on a material safety requirement, flag for user verification; do not auto-complete or hide the problem. A user preference such as 'meat first' can reorder preparation, but inserts a cleaning checkpoint and cannot bypass food hygiene.
+12. Ingredient discovery / pantry integration
+Entry: Chef Mode > What Can I Cook? Start with saved and vetted recipes rather than unrestricted AI invention. Pantry can prepopulate likely ingredients, but user can tap items to add/remove and optionally specify quantities. Missing-item view distinguishes 'Have everything', 'Missing 1–2', 'Could make with substitution'.
+Rank candidate recipes by ingredient coverage, preferences, elapsed cooking time and effort; distinguish pantry-probable from confirmed on-hand. Link missing items to Shopping with source provenance. Present allergens as known or unverified, never inferred absence. AI-generated recipes, substitutions and personalised nutrition are a separate gated future phase.
+13. Shopping-list engine integration
+The Lab pipeline should run canonical recipe ingredients → planned servings scaling → deterministic shopping groups using the existing utilities or a compatible adapter, preserving raw lines, source IDs, qualifiers and recipe notes. Test multiple recipes, manual groceries, household/non-food products, category mapping, week selection, clear/check state and pantry 'Already got it' simulation.
+Specifically test same-name quantity merging for compatible units, incompatible-unit non-merging, optional/alternative ingredients, package multipliers, fractional amounts and 'to serve' compound lines. Never split an 'and/or' into products without clear component evidence. Display a trace for every generated shopping item back to its originating recipe line(s).
+Prevent canonical recipe improvements from changing production shopping quantities silently. Every parser change must run parser → saved recipe → planned meals → shopping golden fixtures.
+14. Development Lab: frontend, information architecture and UI
+The Lab must be isolated from production data and deployment. Preferred implementation: dedicated route/app shell in a private preview or separate Vite development app, sharing imported source domain modules where feasible; access-controlled, never promoted accidentally to planandplate.co.uk. Choose the simplest strategy after inspecting current repo and Vercel settings.
+Desktop layout: left source/input pane, centre clean recipe card, right diagnostics; tabs for Chef Simulation, Shopping and Regression Results. Mobile layout: source/preview segmented switch, collapsible warnings, bottom action bar and tappable issue marker. Respect small-screen keyboard and scrolling.
+Core navigation: Dashboard → Import Workspace → Canonical Recipe → Chef Timeline → Shopping Preview → Issue Reports → Fixture Library. All modules should share a test case ID. Provide loading, error, partially parsed, empty, validated and failed states.
+A single 'Run full pipeline' button executes recipe parse, step segmentation, cooking compile and shopping simulation; each stage logs its version and can be rerun independently. Provide compare-to-last-good output and raw evidence/structured JSON inspection for developers.
+15. Development Lab: monitoring and issue logging
+Every test run records runId, date/time, testCaseId, engine versions, Git commit, input hash, source fragment map, parser diagnostics, structured recipe, cooking graph, scheduled timeline, shopping output, warnings, assertions and runtime errors. Do not default to collecting user personal recipes in an external telemetry service.
+Quick issue report: component [Recipe/Steps/Chef Timing/Shopping/UI], severity, 'What happened?', 'What should have happened?', current output snapshot, one-tap attach reproducible test case, device/browser metadata (opt-in), screenshot (opt-in), share/export issue pack. Return a human-readable issue ID and clear status.
+The lab should be able to store issues locally for initial testing and export a redacted JSON report, with optional authenticated server issue tracking later. If GitHub issue submission is introduced, do it server-side with controlled credentials, never client-side tokens. Only attach copyrighted pasted recipe material to private reports with the user's explicit review.
+Issue workflow: NEW → REPRODUCED → FIX IN PROGRESS → VERIFIED → REGRESSION LOCKED → CLOSED. Every fix adds a fixture/assertion and reruns the full suite. Dashboard shows failures by subsystem, latest pass rate, critical blockers, regressions introduced by the last commit and unresolved owner reports.
+16. Test lab simulation and debuggability
+Virtual clock with time acceleration and deterministic seeds; replay events such as DONE_EARLY, EXTEND(+3m), PAUSE, RESUME, REORDER_REQUEST, TIMER_FINISHED and SAFETY_NOT_CONFIRMED. Verify that total ETA and dependent task starts change correctly while independent active timers remain intact.
+Visual cooking graph displays tasks, prerequisite edges, equipment conflicts, active/passive classification and decisions 'why task X comes before Y'. For each scheduling result, show 'blocked by [dependencies/resources]' rather than opaque AI narrative.
+Shopping inspector exposes canonical ingredient IDs, conversions, grouping/merge keys, categories, current planned servings and generated item source lines.
+17. Required regression fixture families
+• Real-world UK recipe copies including BBC Good Food pumpkin curry with chickpeas; BBC Good Food paneer, chickpea & spinach curry; Waitrose sprouts fried rice with pigs in blankets.
+• Ingredients + method together; ingredients then method; method then ingredients; pasting overlapping sections twice; full-page tabs with repeated titles and navigation noise.
+• Large unnumbered method blocks; numbered lists; subheadings; single-line multi-actions; decimal values, abbreviations and temperatures that must not be split incorrectly.
+• Fractional quantities, mixed-number units, package counts, optional ingredients, alternatives, ingredient groups, and unmeasured 'to serve' items.
+• Missing title, missing method, missing servings, wrong-order fragments, contradictory ingredients, repeated headings and recipe adverts.
+• Parallel oven/pan tasks, one-pan resource constraints, timings missed, pause/resume, sleep/resume, kitchen interruptions and dependency chain recalc.
+• Raw-meat-first preparation, cross-contamination, undercooked-food checkpoints and incomplete safety instructions.
+• Serving adjustment, cross-recipe ingredient merging, manual household items, category matching, legacy source ID preservation and pantry already-got simulation.
+18. Acceptance tests, scoring and release gates
+Golden RecipeCard: every required source ingredient and cooking action appears accurately in the structured card; steps are readable, numbered and properly ordered; metadata and optional amounts match source; any ambiguous content explicitly flagged. Human-reviewed expected results stored alongside source fixtures. A partial card must never be silently marked PERFECT.
+Chef: no invalid task dependency graphs; no safety blockers bypassed; meaningful timer adjustment works; presentation advances don't mark tasks complete; simulation can replay results deterministically; return-to-original order works.
+Shopping: no regression to current production golden fixtures, safe unit merging/scaling, original ingredient provenance traceable and manual/checked list semantics preserved.
+UI: Chrome Android and Safari iOS testing, landscape/portrait, large text, screen-reader labels, touch targets, reduced motion, offline resume and interrupted sessions. Do not claim real-device verification from desktop-only tests.
+Delivery gate: passing targeted test suite + full existing tests + lint + production build + preview mobile QA + reviewed issue list. Production merge/deploy remains a separate release decision.
+19. Backend, storage, service boundaries and security
+Initial Lab should run locally or within a private preview with fixture storage (IndexedDB or a simple versioned store) and import/export. Production app remains local-first until user accounts/sync have their own roadmap approval. Backend may be introduced for collaborative issue tracking, uploaded fixtures, AI parsing and cross-device testing once useful.
+If AI is added for optional parsing/classification, call a server-mediated service with size limits, consent, rate limits, input version and structured output schema; validate every returned field against source evidence. Never embed API keys in Vite frontend bundles. Cache by source hash and engine version. Provide deterministic fallback when the model is unavailable.
+Privacy: minimise personal or copyrighted content in telemetry, redact names/contact details where feasible, enforce preview authentication, separate test/production storage, restrict file sharing and let user delete tests/issue attachments. Treat copied recipe content as user-supplied source material; do not create a public scraped recipe catalogue by default.
+20. Architecture and module boundaries
+Recommended domain services (names are proposals): recipeSourceAdapter; recipeExtract; recipeNormalize; recipeStepSegmenter; recipeValidator; recipeCardStore; cookingPlanCompiler; dependencyScheduler; timerEngine; cookingSessionStore; recipeIngredientMatcher; shoppingAdapter; labIssueStore; labTestRunner.
+Frontend components (proposed): ImportWorkspace, RecipeCardPreview, SourceEvidenceDrawer, FieldReviewPanel, StepEditor, ChefPreflight, ChefPhaseView, CurrentInstructionCard, TimerDock, ScheduleReview, IngredientDiscovery, ShoppingTraceView, LabFixtureBrowser, LabDiagnosticsPanel, IssueReporter.
+Data flow principle: import modules produce RecipeCard once; cooking and shopping only read canonical structures. Shared code must be reusable by both production and Lab. All engine functions should be as pure as possible, with adapter wrappers at UI/storage boundaries.
+Version each parser, schema, cooking rule set and shopping adapter independently. Include contract tests so a new method segmenter does not inadvertently change ingredient identities or planned shopping rows.
+21. Implementation plan — isolated milestones
+Phase 0 — Baseline & protection
+Read current handoff/developer log/master plan, inspect focused source files, run existing tests, capture current golden fixture outputs and identify stable exports. Create a new working branch; no production changes.
+Phase 1 — Recipe Quality Lab MVP
+Build an isolated Import Workspace and Canonical Recipe Preview using existing parser; create recipe-card adapter, numbered method segmenter, source evidence mapping, review flags, comparison and JSON issue export. Populate real owner fixtures and goldens.
+Phase 2 — Recipe card quality hardening
+Improve extraction and segmentation against diverse sources, automate field-level quality gates, human-editable expected fixtures and regression dashboards. Do not proceed to Chef engine until critical recipe-card tests are stable.
+Phase 3 — Cooking compiler & simulation
+Compile accepted cards into task DAGs, resource constraints, conservative safety flags, virtual-clock test harness and timeline visualiser. Start with simple recipes then parallel multi-pan cases.
+Phase 4 — Chef UI & real-time scheduling
+Implement phase screen, countdowns, soft autoplay, task confirmation, plus-time/pause/resume, adaptive recalculation, foreground persistence and accessibility. Test on mobile preview.
+Phase 5 — Shopping end-to-end
+Connect RecipeCard to actual shopping engine; compare generated list with golden shopping expectations across recipes and servings; include optional pantry simulation and manual household items. Gate changes behind tests.
+Phase 6 — Optional ingredient discovery and controlled release
+Use validated recipes for ingredient-based suggestions. After alpha, progressively integrate shared modules into main app with feature flags/data migration tests. Explicit owner acceptance before production release.
+22. Open questions intentionally postponed, not blocking the Lab
+Exact AI provider/cost and whether any AI is necessary; background notification guarantees on native platforms; voice control; personalised ingredient substitutions; multi-user synchronisation; future supermarket commercial data; exact telemetry hosting and paid plan. These require targeted feasibility work and should not delay the canonical recipe-card milestone.
+23. Build-agent operating instructions
+Before writing any feature code, use this document together with the current Drive master plan and latest repository handoff. Inspect the actual code, establish the test baseline, and propose the smallest compatible architecture. Do not duplicate parsers in Lab and app; do not replace proven production behaviour with speculative AI output. Run tests on every milestone and create reproducible regression fixtures for each owner-reported issue. Keep changes preview-only until separately authorised to merge and deploy.
+The first testable deliverable to show the owner is a phone-friendly Lab page where they can paste a messy two-part recipe, see a clean numbered RecipeCard beside the original, correct any errors, report a problem with one action and run Shopping and Chef compilation checks on the same approved data. Do not substitute screenshots or mock outputs for functioning engine tests.
+24. Source of design context
+Existing Plan & Plate master product specification: https://docs.google.com/document/d/1bJ8Ox_wJ5RRgzkHdKd5XhoVjV5t_u1J8ejUTomtBwRk/edit
+Current repository: https://github.com/mattpilkyApps/plan-and-plate
+This specification reflects the user's November 2026 decisions: low-touch timed Chef Mode, adaptive task rescheduling, source-faithful numbered recipe cards first, and an isolated parser/Chef/Shopping QA Lab with issue monitoring.
+END — PLAN & PLATE RECIPE QUALITY LAB & ADAPTIVE CHEF MODE v1.0
