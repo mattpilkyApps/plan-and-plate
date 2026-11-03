@@ -1,5 +1,17 @@
 # Recipe Quality Lab — recovery handoff
 
+## Cooking and Shopping integration checkpoint
+
+Standalone UI now has six working areas. Reusable cooking compiler, DAG/resource scheduler, timestamp-based session reducer, virtual/real clocks, presentation autoplay, confirmation-only completion, independent timer adjustment, pause/resume, early/behind controls, preference persistence, safety-policy checkpoints, event replay and timeline inspection are implemented. Smart reordering is deliberately limited to supported preheat overlap and ingredient preparation preferences. Composite/unknown method instructions retain source order. Generic prep estimates are labelled, not claimed vetted/personalised. FSA policy sources reviewed 3 November 2026.
+
+Shopping consumes canonical cards through the production quantity/merge/category engine, supports multiple recipe snapshots, serving changes, optional items, manual groceries/household items and recoverable Already-got simulation. Every row has canonical ingredient/source provenance. No production Pantry implementation. An ambiguous optional component in a compound serving line keeps the whole line included and requests review.
+
+Quality hardening: exact source-label metadata refs, intra-fragment metadata conflicts, source-generated instruction integrity checks, optional-scope regression, and reviewed numbered-step expectations for all three owner recipe copies. Pumpkin has 7 practical steps, paneer 9, Waitrose sprouts 11; short context fragments and stirring reminders are grouped into usable kitchen instructions.
+
+Checks: 329 full tests pass, lint, production build and standalone Lab build pass; existing 57 cases and 16 workflows retained. The browser library's 76 recipe cases pass. Current next task: browser-verify the complete Chef/Shopping/issue flow at mobile widths, add browser-accessible deterministic engine scenarios, then final preview/recovery report. Code is formatted with Prettier (no added runtime dependency).
+
+First protected Lab deployment (MVP source a4dd70416188aeefc8fe38a916eabb15c006a92f): https://plan-and-plate-aqwgzmzf9-mattpilkyapps-projects.vercel.app/ ; dpl_ACnf6LfQ1WaL5T9kbx6bzyJtSA5E READY, target null/preview, authenticated fetch HTTP 200 returns Recipe Quality Lab HTML. This is an intermediate preview. Final integration deployment still needed. Use Vercel create_deployment with gitSource exact SHA, per-deployment buildCommand npm run build:lab and outputDirectory dist-lab. Omit target (API default preview); do not specify production or change project defaults. Preview authentication remains enabled.
+
 Updated 2026-11-03. Branch `lab/recipe-quality`, based on main `b07e4b1`. Never merge or promote this experimental branch without separate owner authorisation.
 
 ## Specification and baseline
