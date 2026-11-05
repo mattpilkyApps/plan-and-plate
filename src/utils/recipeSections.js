@@ -1,6 +1,7 @@
 import { classifyRecipeBlock, isStrongMethodStart, splitMethodNumber } from './recipeSignals.js'
 import { isRejectedIngredientLine, isInstructionLikeIngredientLine } from './ingredientParser.js'
 import { isIngredientContinuation, isIngredientSubsection } from './recipeIngredients.js'
+import { isIngredientPreferenceNote } from './ingredientPreparation.js'
 import {
   isIngredientsHeading, isMethodHeading, isNutritionHeading, isNoiseLine,
   isStopHeading, startsWithQuantity, isTimeValue, methodHeadingHasContent,
@@ -18,7 +19,7 @@ function ingredientHeadingHasContent(lines, index) {
   for (let next = index + 1; next < Math.min(index + 8, lines.length); next += 1) {
     const line = lines[next]
     if (isIngredientsHeading(line.text) || isMethodHeading(line.text)) return false
-    if (isNutritionHeading(line.text) || isNoiseLine(line.text)) continue
+    if (isNutritionHeading(line.text) || isNoiseLine(line.text) || isIngredientPreferenceNote(line.text)) continue
     if (isIngredientSubsection(line, lines[next + 1])) continue
     return !isStopHeading(line.text) && !isStrongMethodStart(line.text) &&
       !isRejectedIngredientLine(line.text) && !isInstructionLikeIngredientLine(line.text) && line.text.length <= 200

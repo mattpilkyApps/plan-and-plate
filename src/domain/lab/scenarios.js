@@ -220,6 +220,37 @@ export const shoppingScenarios = [
     raw: 'Flour mix\nServes 2\nIngredients\n100g flour\n2 tbsp flour\nMethod\nMix in a bowl.',
     expected: { 'quantities.flour': '100 g + 2 tbsp', sourceCount: 2 },
   },
+  {
+    id: 'shopping-ingredient-preferences',
+    kind: 'shopping-simulation',
+    layout: 'synthetic ingredient note and shopping identity contract',
+    raw: [
+      'Coconut curry note test',
+      'Serves 2',
+      'Ingredients',
+      'I prefer to simmer this slowly.',
+      '400ml coconut milk',
+      'I prefer full-fat or light.',
+      '1 tbsp olive oil (I prefer extra virgin) or vegetable oil',
+      '2 peppers, deseeded if you prefer less heat',
+      '1 tsp curry powder — I personally prefer mild or medium',
+      '- Use whichever you prefer.',
+      '1 lime. I prefer fresh limes.',
+      'salt and pepper',
+      'Method',
+      'Simmer the coconut milk and peppers for 10 minutes.',
+    ].join('\n'),
+    plannedServings: 4,
+    expected: {
+      'quantities.coconut milk': '800 ml',
+      'quantities.olive oil': '2 tbsp',
+      'quantities.peppers': '4',
+      'quantities.curry powder': '2 tsp',
+      'quantities.lime': '2',
+      'quantities.salt and pepper': '',
+      sourceCount: 6,
+    },
+  },
 ]
 export const engineScenarios = [...cookingScenarios, ...shoppingScenarios]
 

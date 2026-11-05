@@ -1,6 +1,7 @@
 import { assembleRecipeFragments } from '../../utils/recipeImportSession.js'
 import { parsePastedRecipe } from '../../utils/recipeImport.js'
 import { parseIngredientLine } from '../../utils/ingredientParser.js'
+import { splitIngredientPreferences } from '../../utils/ingredientPreparation.js'
 import { readRecipePageLines, readMetadata } from '../../utils/recipeText.js'
 import { sourceFragments, findEvidence, contentHash, tokens } from './source.js'
 import {
@@ -10,12 +11,12 @@ import {
   METHOD_VERSION,
 } from './method.js'
 
-export const RECIPE_VERSION = '1.1.0'
+export const RECIPE_VERSION = '1.2.0'
 export const ENGINE_VERSIONS = {
   schema: 1,
   recipe: RECIPE_VERSION,
   method: METHOD_VERSION,
-  parser: 'production-b07e4b1',
+  parser: 'production-b07e4b1+ingredient-preferences',
   cooking: '1.0.0',
   timers: '1.0.0',
   shopping: '1.0.0',
@@ -136,10 +137,12 @@ function findMetadataConflicts(fragments) {
 export function canonicalIngredient(rawLine, index, fragments, heading = '') {
   const parsed = parseIngredientLine(rawLine)
   const quantity = parsed?.quantity || ''
-  const packageMatch = rawLine.match(
+  const { ingredientText } = splitIngredientPreferences(rawLine)
+  const packageMatch = ingredientText.match(
     /\b(\d+)\s*[x×]\s*(\d+(?:\.\d+)?)\s*(kg|g|ml|l)\b/i,
   )
-  const optionalWord = /\boptional\b/i.test(rawLine)
+  const optionalWord = /\boptional\b/i.test(ingredientText)
+  const alternative = ingredientText.match(/\bor\b.*/i)?.[0].trim()
   const optionalScopeAmbiguous =
     optionalWord &&
     /\b(?:and|or)\b/i.test(parsed?.name || rawLine) &&
@@ -164,9 +167,7 @@ export function canonicalIngredient(rawLine, index, fragments, heading = '') {
       : optionalWord || /^optional/i.test(heading)
         ? 'item'
         : 'none',
-    alternatives: /\bor\b/i.test(rawLine)
-      ? [rawLine.slice(rawLine.search(/\bor\b/i))]
-      : [],
+    alternatives: alternative ? [alternative] : [],
     packageSize: packageMatch
       ? {
           count: Number(packageMatch[1]),

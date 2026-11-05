@@ -8,6 +8,8 @@ import {
   allIngredients,
 } from '../src/domain/recipe/card.js'
 import { generateCanonicalShopping } from '../src/domain/shopping/adapter.js'
+import { shoppingScenarios } from '../src/domain/lab/scenarios.js'
+import { evidenceText } from '../src/domain/recipe/source.js'
 import { generateShoppingGroups } from '../src/utils/shoppingList.js'
 import { recipeCorpus } from './fixtures/recipe-corpus/cases.js'
 
@@ -90,6 +92,37 @@ test('Canonical Shopping incompatible units retain separate stated quantities an
   )
   assert.equal(flour.quantity, '100 g + 2 tbsp')
   assert.equal(flour.trace.length, 2)
+})
+
+test('Ingredient preference prose keeps its source and does not become a product or substitution', () => {
+  const { raw } = shoppingScenarios.find(
+    (entry) => entry.id === 'shopping-ingredient-preferences',
+  )
+  const card = createRecipeCard([raw])
+  const byName = Object.fromEntries(
+    allIngredients(card).map((ingredient) => [ingredient.productName, ingredient]),
+  )
+  assert.equal(card.sourceFragments[0].rawText, raw)
+  assert.deepEqual(card.notes, [
+    'I prefer to simmer this slowly.',
+    'Use whichever you prefer.',
+  ])
+  assert.deepEqual(
+    card.steps.map((step) => step.instruction),
+    ['Simmer the coconut milk and peppers for 10 minutes.'],
+  )
+  assert.deepEqual(byName['coconut milk'].alternatives, [])
+  assert.ok(byName['coconut milk'].preparation.includes('I prefer full-fat or light'))
+  assert.deepEqual(byName['olive oil'].alternatives, ['or vegetable oil'])
+  assert.ok(byName['olive oil'].preparation.includes('I prefer extra virgin'))
+  assert.ok(byName.peppers.preparation.includes('deseeded if you prefer less heat'))
+  const milk = rows(generateCanonicalShopping([{ card: approveRecipeCard(card) }]))
+    .find((item) => item.name === 'coconut milk')
+  assert.equal(milk.trace.length, 1)
+  assert.match(
+    evidenceText(milk.trace[0].sourceRefs[0], card.sourceFragments),
+    /400ml coconut milk\nI prefer full-fat or light/,
+  )
 })
 
 test('Canonical Shopping already-got simulation is recoverable, optional exclusion remains explicit', () => {

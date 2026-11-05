@@ -1,5 +1,15 @@
 # Recipe Quality Lab — recovery handoff
 
+## Android feedback follow-up — 5 November 2026
+
+Matt reviewed one coconut curry import. The Lab found ingredients and method, but he moved or removed misclassified material. Shopping also used preference prose such as “I prefer …” in item names. His exact phone session is local to the original preview and browser. No report or raw paste was available for this change.
+
+The synthetic `shopping-ingredient-preferences` fixture reproduced polluted product names and separate comment rows before the fix. The shared importer now attaches adjacent preference prose to its ingredient, keeps unanchored comments in Recipe notes, and builds Shopping from clean product names. Original wording stays in the paste and ingredient evidence. Explicit substitutions, preparation, counts, and compound names are retained. The recipe engine is 1.2.0. Existing reviewed cards and Shopping snapshots are historical revisions. Rebuild from source, review, approve and add the fresh card to Shopping to exercise this change.
+
+Validation passed with 348 full tests, 93 Lab cases and 589 assertions, 57 parser cases, 16 paste workflows, lint, both builds, and both service worker syntax checks. Browser QA pasted the synthetic recipe, verified one numbered instruction, six ingredients, two Recipe notes, clean Shopping labels and scaled 800 ml coconut milk for four servings. Its Shopping trace still displayed the original preference comment.
+
+Next, reopen the original preview on the same device. Export a reviewed full issue pack from **Issues → Review & export**, enabling **Include recipe text, outputs, timings and shopping traces**. A saved fixture from **Test library → My reviewed cases** also carries the raw paste and approved card. Compare the exact coconut curry source against the corrected card, add a private or safely reduced regression fixture for each verified section error, and rerun the full pipeline. Keep the older preview available for its local data.
+
 ## Verified final preview and source — 3 November 2026
 
 - **Usable protected Lab:** https://plan-and-plate-7d082suoi-mattpilkyapps-projects.vercel.app/ . Existing Vercel authentication is retained; Matt may need to sign in on his phone.

@@ -14,7 +14,7 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
   const sections = indexRecipeSections(lines)
   const extractedIngredients = sections.ingredientStart >= 0
     ? extractRecipeIngredients(lines.slice(sections.ingredientStart, sections.ingredientEnd))
-    : { ingredients: [], sections: [] }
+    : { ingredients: [], sections: [], notes: [] }
   const extractedMethod = sections.methodStart >= 0
     ? extractRecipeMethod(lines.slice(sections.methodStart, sections.methodEnd), extractedIngredients.ingredients)
     : { steps: [], notes: [], diagnostics: { state: 'BEFORE_RECIPE', stoppedBy: 'missing-method', discarded: [], reviewNeeded: true } }
@@ -26,11 +26,12 @@ export function parsePastedRecipe(text, { includeDiagnostics = false } = {}) {
   for (const header of headers) {
     for (const [field, value] of Object.entries(header)) if (value && !values[field]) values[field] = value
   }
+  const notes = [...extractedIngredients.notes, ...extractedMethod.notes]
   const result = {
     ...values,
     ingredients: extractedIngredients.ingredients.join('\n'),
     method: extractedMethod.steps.join('\n\n'),
-    ...(extractedMethod.notes.length ? { notes: extractedMethod.notes.join('\n\n') } : {}),
+    ...(notes.length ? { notes: notes.join('\n\n') } : {}),
   }
   if (includeDiagnostics) {
     result.diagnostics = {

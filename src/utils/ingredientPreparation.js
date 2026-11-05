@@ -19,3 +19,37 @@ export const preparationNotePattern = new RegExp(
 export function isPreparationContinuation(text) {
   return preparationContinuation.test(text)
 }
+
+const authorPreference = String.raw`(?:i|we)\s+(?:personally\s+)?prefer\b`
+const choicePreference = String.raw`use\s+(?:whichever|whatever|what)\s+you\s+prefer\b`
+const conditionalPreference = String.raw`if\s+(?:you\s+prefer|preferred)\b`
+const preference = `(?:${authorPreference}|${choicePreference}|${conditionalPreference})`
+const standalonePreference = new RegExp(
+  `^(?:\\(\\s*|[-–—]\\s+)?(?:${authorPreference}|${choicePreference}|${conditionalPreference}[.)!?]*$)`,
+  'i',
+)
+const parentheticalPreference = new RegExp(`\\(\\s*(${preference}[^()]*)\\)`, 'gi')
+const trailingPreference = new RegExp(
+  `(?:\\s*[.,;:–—]\\s*|\\s+-\\s+)(${preference}.*)$|\\s+(${authorPreference}.*)$`,
+  'i',
+)
+
+export function isIngredientPreferenceNote(text) {
+  return standalonePreference.test(text)
+}
+
+// Remove only explicit commentary from the text used to identify a product.
+// Parenthetical notes can appear before a real "or" substitution.
+export function splitIngredientPreferences(text) {
+  const notes = []
+  const withoutParentheses = text.replace(parentheticalPreference, (_, note) => {
+    notes.push(note.trim())
+    return ' '
+  })
+  const tail = withoutParentheses.match(trailingPreference)
+  if (tail) notes.push(tail[1] || tail[2])
+  const ingredientText = tail
+    ? withoutParentheses.slice(0, tail.index)
+    : withoutParentheses
+  return { ingredientText: ingredientText.trim(), notes }
+}

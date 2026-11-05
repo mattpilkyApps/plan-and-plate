@@ -1,22 +1,22 @@
 {
-  "generatedAt": "2026-11-03T19:06:26.120Z",
+  "generatedAt": "2026-11-05T08:25:25.965Z",
   "engineVersions": {
     "schema": 1,
-    "recipe": "1.1.0",
+    "recipe": "1.2.0",
     "method": "1.0.0",
-    "parser": "production-b07e4b1",
+    "parser": "production-b07e4b1+ingredient-preferences",
     "cooking": "1.0.0",
     "timers": "1.0.0",
     "shopping": "1.0.0"
   },
-  "sourceFingerprint": "27db73ba5a96ab0e64eebb430fa5a38e6174b257cf9c8bf305be49723ff4bfeb",
+  "sourceFingerprint": "95f13c7d5e11ab3fb47819502a39b029874add143023d87da307980906984f2a",
   "baseline": {
     "existingTests": 217,
     "recipeCorpus": 57,
     "fragmentWorkflows": 16
   },
-  "totalCases": 92,
-  "passed": 92,
+  "totalCases": 93,
+  "passed": 93,
   "failed": 0,
   "warnings": 52,
   "exactNumberedStepGoldens": [
@@ -27,7 +27,7 @@
     "lab-decimals-and-heat",
     "lab-groups-and-options"
   ],
-  "assertionCount": 581,
+  "assertionCount": 589,
   "failures": [],
   "cases": [
     {
@@ -3320,6 +3320,45 @@
         },
         {
           "field": "quantities.flour",
+          "passed": true
+        },
+        {
+          "field": "sourceCount",
+          "passed": true
+        }
+      ],
+      "reviewCodes": []
+    },
+    {
+      "id": "shopping-ingredient-preferences",
+      "passed": true,
+      "assertions": [
+        {
+          "field": "runtime",
+          "passed": true
+        },
+        {
+          "field": "quantities.coconut milk",
+          "passed": true
+        },
+        {
+          "field": "quantities.olive oil",
+          "passed": true
+        },
+        {
+          "field": "quantities.peppers",
+          "passed": true
+        },
+        {
+          "field": "quantities.curry powder",
+          "passed": true
+        },
+        {
+          "field": "quantities.lime",
+          "passed": true
+        },
+        {
+          "field": "quantities.salt and pepper",
           "passed": true
         },
         {

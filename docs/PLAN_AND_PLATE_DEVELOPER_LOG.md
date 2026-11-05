@@ -841,3 +841,11 @@ MVP checkpoint: canonical engine is pushed as f075275e26c56efbd3f0ea7f9b3aebf703
 
 Recovered clean main b07e4b1 and read both current Drive specifications in full. Baseline 217 tests, 57 corpus cases, 16 paste workflows, lint and production build pass. Created lab/recipe-quality. Reused existing extraction/session/ingredient functions; added versioned canonical cards, raw-fragment evidence, lossless method partitions, review/approval and compatibility adapter. Added 80 source/card regression checks. No production navigation/storage changes. See docs/lab/HANDOFF.md and approved specification snapshot for recovery. Lab UI and cooking/shopping simulators follow after validated foundation.
 
+## 2026-11-05 — Lab ingredient preference follow-up
+
+Matt reported a coconut curry import that needed Ingredients and Method corrections, followed by preference prose in Shopping. The exact paste and reviewed card stay in his browser until he shares an export. A synthetic case reproduced two distinct failures, an inline note attached to a product name and a separate line becoming a phantom product.
+
+The shared ingredient parser now separates explicit preference notes from product identity. The recipe extractor attaches adjacent comments to their ingredient and sends detached comments to Recipe notes. Source text, primary amounts, genuine alternatives and Shopping provenance remain available. The new browser and Node scenario verifies names and serving scale, and the evidence test checks the note, the original source span and the numbered method.
+
+348/348 tests, 93/93 Lab cases with 589 assertions, 57/57 recipe corpus, 16 paste workflows, lint, both builds, service worker syntax and whitespace passed. Browser QA exercised the synthetic paste, recipe approval, six Shopping products, four-serving scaling and the coconut milk source trace. The next defect to reproduce is the exact section mix-up using Matt's export from the original preview. Keep this work on lab/recipe-quality.
+

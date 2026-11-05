@@ -1,5 +1,5 @@
 import { isInstructionLikeIngredientLine, isRejectedIngredientLine } from './ingredientParser.js'
-import { isPreparationContinuation } from './ingredientPreparation.js'
+import { isIngredientPreferenceNote, isPreparationContinuation } from './ingredientPreparation.js'
 import { classifyRecipeBlock } from './recipeSignals.js'
 import { getHeading, startsWithQuantity, isNoiseLine, isMethodHeading, isStopHeading, isIngredientsHeading, isNutritionHeading } from './recipeText.js'
 
@@ -7,6 +7,7 @@ export function isIngredientContinuation(text, servingSection = false) {
   if (/^optional\s*:\s*(?:\d|[¼½¾⅓⅔⅛⅜⅝⅞])/i.test(text)) return false
   return (
     /^(?:or\b|to serve\b|for serving\b|to taste\b|optional\b|plus\b|such as\b|and\b.*\bto serve\b)/i.test(text) ||
+    isIngredientPreferenceNote(text) ||
     isPreparationContinuation(text) ||
     (servingSection && /^and\b/i.test(text)) ||
     /^(?:leaves|juice only|zest only)$/i.test(text)
@@ -60,12 +61,24 @@ function appendIngredient(ingredients, line, servingSection = false) {
 export function extractRecipeIngredients(lines) {
   const ingredients = []
   const sections = []
+  const notes = []
   let servingSection = false
   for (let index = 0; index < lines.length; index += 1) {
     const line = lines[index]
     if (isIngredientsHeading(line.text) || isNoiseLine(line.text)) continue
     if (isNutritionHeading(line.text) && !ingredients.length) continue
     if (isStopHeading(line.text) || isMethodHeading(line.text)) break
+    if (isIngredientPreferenceNote(line.text)) {
+      const previous = ingredients.at(-1)
+      const adjacentIngredient = ingredients.length > (sections.at(-1)?.startIndex ?? 0) &&
+        previous.endsWith(lines[index - 1].text) && !isMeasureOnly(previous)
+      if (adjacentIngredient && !line.bullet && !line.blankBefore && !line.headingLevel) {
+        ingredients[ingredients.length - 1] += ', ' + line.text
+      } else {
+        notes.push(line.text)
+      }
+      continue
+    }
     if (isIngredientSubsection(line, lines[index + 1])) {
       sections.push({ name: line.text.replace(/:$/, ''), startIndex: ingredients.length })
       servingSection = /^(?:to serve|for serving)$/i.test(getHeading(line.text))
@@ -76,5 +89,5 @@ export function extractRecipeIngredients(lines) {
     if (['ADVERTISEMENT', 'PRODUCT', 'NAVIGATION', 'PROMOTION'].includes(type) && !startsWithQuantity(line.text)) continue
     appendIngredient(ingredients, line, servingSection)
   }
-  return { ingredients, sections }
+  return { ingredients, sections, notes }
 }

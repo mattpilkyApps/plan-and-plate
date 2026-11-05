@@ -1,4 +1,7 @@
-import { preparationWords, preparationAdverbs, preparationNotePattern } from './ingredientPreparation.js'
+import {
+  isIngredientPreferenceNote, preparationWords, preparationAdverbs,
+  preparationNotePattern, splitIngredientPreferences,
+} from './ingredientPreparation.js'
 
 const knownUnits = [
   'g',
@@ -510,7 +513,8 @@ export function cleanIngredientName(name) {
 export function isRejectedIngredientLine(line) {
   const cleanLine = cleanIngredientText(line).replace(/:$/, '')
 
-  return rejectedIngredientPatterns.some((pattern) => pattern.test(cleanLine))
+  return isIngredientPreferenceNote(cleanLine) ||
+    rejectedIngredientPatterns.some((pattern) => pattern.test(cleanLine))
 }
 
 export function isInstructionLikeIngredientLine(line) {
@@ -569,7 +573,8 @@ export function parseIngredientLine(line) {
     return null
   }
 
-  const parseableText = rawText.replace(/^(?:(?:optional\s*:|about\b|approximately\b|approx\.?\s)\s*)+/i, '')
+  const { ingredientText, notes } = splitIngredientPreferences(rawText)
+  const parseableText = ingredientText.replace(/^(?:(?:optional\s*:|about\b|approximately\b|approx\.?\s)\s*)+/i, '')
   if (/^(?:\d+(?:\.\d+)?(?:-\d+(?:\.\d+)?)?)(?:\s*(?:g|kg|ml|l|tsp|tbsp|cups?))?$/i.test(parseableText)) return null
 
   const fallbackIngredient = {
@@ -579,7 +584,7 @@ export function parseIngredientLine(line) {
     name: cleanIngredientName(parseableText),
   }
 
-  const implicitMeasure = rawText.match(
+  const implicitMeasure = ingredientText.match(
     /^(?:a\s+)?(?:(?:small|large)\s+)?(pinch|handful)\s+(?:of\s+)?(.+)$/i,
   )
   const parsedLine = splitAmountAndName(parseableText) || splitNameAndAmount(parseableText)
@@ -602,7 +607,7 @@ export function parseIngredientLine(line) {
   }
   ingredient ||= fallbackIngredient
   if (!ingredient.name) return null
-  const qualifiers = getIngredientQualifiers(rawText)
+  const qualifiers = [...getIngredientQualifiers(ingredientText), ...notes]
   return qualifiers.length ? { ...ingredient, qualifiers } : ingredient
 }
 
