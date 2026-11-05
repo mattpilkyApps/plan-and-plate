@@ -849,3 +849,5 @@ The shared ingredient parser now separates explicit preference notes from produc
 
 348/348 tests, 93/93 Lab cases with 589 assertions, 57/57 recipe corpus, 16 paste workflows, lint, both builds, service worker syntax and whitespace passed. Browser QA exercised the synthetic paste, recipe approval, six Shopping products, four-serving scaling and the coconut milk source trace. The next defect to reproduce is the exact section mix-up using Matt's export from the original preview. Keep this work on lab/recipe-quality.
 
+Preview publication: https://plan-and-plate-a5dgwpsnn-mattpilkyapps-projects.vercel.app/ is READY for `b04a25d550ef4183588884f502ef024c8789b938`. Deployment `dpl_71RozcG1tysJCMTKJ6TgZBJzZHyQ` used the Lab build and produced `index-CEmRrZES.js`, matching the local build. Preview authentication is enabled. Existing device data is available at the original preview URL.
+

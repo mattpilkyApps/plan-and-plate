@@ -2,6 +2,8 @@
 
 ## Android feedback follow-up — 5 November 2026
 
+Updated protected preview: https://plan-and-plate-a5dgwpsnn-mattpilkyapps-projects.vercel.app/ . Vercel reported READY for `b04a25d550ef4183588884f502ef024c8789b938` (deployment `dpl_71RozcG1tysJCMTKJ6TgZBJzZHyQ`, preview target). The Lab build entry `index-CEmRrZES.js` matches the local build from the same commit. The browser flow was verified locally. Signed-in access to the hosted URL was not verified in this session.
+
 Matt reviewed one coconut curry import. The Lab found ingredients and method, but he moved or removed misclassified material. Shopping also used preference prose such as “I prefer …” in item names. His exact phone session is local to the original preview and browser. No report or raw paste was available for this change.
 
 The synthetic `shopping-ingredient-preferences` fixture reproduced polluted product names and separate comment rows before the fix. The shared importer now attaches adjacent preference prose to its ingredient, keeps unanchored comments in Recipe notes, and builds Shopping from clean product names. Original wording stays in the paste and ingredient evidence. Explicit substitutions, preparation, counts, and compound names are retained. The recipe engine is 1.2.0. Existing reviewed cards and Shopping snapshots are historical revisions. Rebuild from source, review, approve and add the fresh card to Shopping to exercise this change.
